@@ -14,7 +14,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --clean && node -e \"const fs=require('fs');const p='dist/index.js';fs.writeFileSync(p,'#!/usr/bin/env node\\n'+fs.readFileSync(p,'utf8'));fs.chmodSync(p,0o755)\"",
+    "build": "tsup src/index.ts --format esm --clean && node ./scripts/binify.mjs",
     "check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
