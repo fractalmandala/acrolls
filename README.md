@@ -28,9 +28,12 @@ pnpm --filter @acrolls/example-kit dev
 Open the kit-consumer example, then try:
 
 ```bash
-pnpm --filter @acrolls/cli exec node ./dist/index.js validate ../../examples/starter/article.md
-pnpm --filter @acrolls/cli exec node ./dist/index.js studio ../../examples/starter/article.md
+./packages/cli/dist/index.js validate examples/starter/article.md
+./packages/cli/dist/index.js studio examples/starter/article.md
+./packages/cli/dist/index.js integrate --dry-run
 ```
+
+**Studio (0.1.1)** shows source + live Publication HTML (banner, tables, Shiki, mermaid), Save is atomic, binds `127.0.0.1`.
 
 ## Host install (when published)
 
