@@ -78,6 +78,7 @@ CSS is first-class. SASS is an additional pack for token authoring, not a requir
 - CLI `integrate --yes`: backup + patch svelte.config / layout CSS import
 - Mermaid fences → lazy client render
 - Shared `renderAcrollsArticleHtml()` for Studio/validate parity
+- **`@acrolls/docs`**: docs shell templates — sidebar, collapsible accordion sections, breadcrumbs, pager, mobile drawer; config-driven `DocsNav`
 
 ### Deferred
 

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "pnpm -r --filter './packages/*' run build",
+    "build:docs": "pnpm --filter @acrolls/docs build",
     "dev:example": "pnpm --filter @acrolls/example-kit dev",
     "build:example": "pnpm --filter @acrolls/example-kit build",
     "check": "pnpm -r --filter './packages/*' run check",

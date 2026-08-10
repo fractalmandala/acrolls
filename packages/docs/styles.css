@@ -1,0 +1,367 @@
+/* @acrolls/docs — shell layout, sidebar, accordion, breadcrumbs, pager */
+
+.acrolls-docs-shell {
+  --acrolls-docs-sidebar-width: 16.5rem;
+  --acrolls-docs-gap: 1.5rem;
+  --acrolls-docs-border: var(--border, var(--border-primary, color-mix(in oklab, currentColor 14%, transparent)));
+  --acrolls-docs-muted: var(--muted-foreground, var(--text-secondary, color-mix(in oklab, currentColor 55%, transparent)));
+  --acrolls-docs-fg: var(--foreground, var(--text-primary, currentColor));
+  --acrolls-docs-accent: var(--accent, var(--theme-color, currentColor));
+  --acrolls-docs-surface: var(--card, var(--background-secondary, color-mix(in oklab, currentColor 4%, transparent)));
+  --acrolls-docs-radius: var(--radius, 0.5rem);
+
+  display: grid;
+  grid-template-columns: var(--acrolls-docs-sidebar-width) minmax(0, 1fr);
+  gap: 0;
+  align-items: start;
+  min-height: 60vh;
+  color: var(--acrolls-docs-fg);
+}
+
+.acrolls-docs-shell__menu-btn,
+.acrolls-docs-shell__backdrop {
+  display: none;
+}
+
+.acrolls-docs-shell__sidebar {
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  padding: 0.25rem 1rem 1.5rem 0;
+  border-right: 1px solid var(--acrolls-docs-border);
+}
+
+.acrolls-docs-shell__main {
+  min-width: 0;
+  padding: 0.25rem 0 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.acrolls-docs-shell__top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.acrolls-docs-shell__content {
+  min-width: 0;
+}
+
+.acrolls-docs-shell__footer {
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--acrolls-docs-border);
+}
+
+/* Sidebar */
+.acrolls-docs-sidebar__brand {
+  margin-bottom: 1rem;
+  padding-right: 0.5rem;
+}
+
+.acrolls-docs-sidebar__title {
+  font-weight: 650;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: inherit;
+  letter-spacing: -0.01em;
+}
+
+.acrolls-docs-sidebar__title:hover {
+  color: var(--acrolls-docs-accent);
+}
+
+.acrolls-docs-sidebar__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--acrolls-docs-muted);
+  line-height: 1.35;
+}
+
+.acrolls-docs-sidebar__filter {
+  display: block;
+  margin-bottom: 0.85rem;
+}
+
+.acrolls-docs-sidebar__filter input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--acrolls-docs-border);
+  border-radius: var(--acrolls-docs-radius);
+  background: var(--acrolls-docs-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.acrolls-docs-sidebar__filter input:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--acrolls-docs-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.acrolls-docs-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.acrolls-docs-sidebar__empty {
+  font-size: 0.85rem;
+  color: var(--acrolls-docs-muted);
+  margin: 0.5rem 0;
+}
+
+/* Accordion */
+.acrolls-docs-accordion {
+  border-radius: var(--acrolls-docs-radius);
+}
+
+.acrolls-docs-accordion__summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.4rem;
+  border-radius: calc(var(--acrolls-docs-radius) * 0.8);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--acrolls-docs-muted);
+  user-select: none;
+}
+
+.acrolls-docs-accordion__summary::-webkit-details-marker {
+  display: none;
+}
+
+.acrolls-docs-accordion__summary:hover {
+  color: var(--acrolls-docs-fg);
+  background: color-mix(in oklab, var(--acrolls-docs-surface) 80%, transparent);
+}
+
+.acrolls-docs-accordion__chevron {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.acrolls-docs-accordion[open] > .acrolls-docs-accordion__summary .acrolls-docs-accordion__chevron {
+  transform: rotate(45deg);
+}
+
+.acrolls-docs-accordion__list {
+  list-style: none;
+  margin: 0 0 0.35rem;
+  padding: 0 0 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.acrolls-docs-accordion__link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  padding: 0.4rem 0.55rem;
+  border-radius: calc(var(--acrolls-docs-radius) * 0.8);
+  border-left: 2px solid transparent;
+}
+
+.acrolls-docs-accordion__link:hover {
+  background: var(--acrolls-docs-surface);
+}
+
+.acrolls-docs-accordion__link.is-active {
+  background: var(--acrolls-docs-surface);
+  border-left-color: var(--acrolls-docs-accent);
+  font-weight: 600;
+}
+
+.acrolls-docs-accordion__badge {
+  font-size: 0.68rem;
+  color: var(--acrolls-docs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Breadcrumbs */
+.acrolls-docs-breadcrumbs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0;
+  font-size: 0.78rem;
+}
+
+.acrolls-docs-breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.acrolls-docs-breadcrumbs__sep {
+  color: var(--acrolls-docs-muted);
+  opacity: 0.7;
+  margin-inline: 0.15rem;
+}
+
+.acrolls-docs-breadcrumbs__link {
+  color: var(--acrolls-docs-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.acrolls-docs-breadcrumbs__link:hover {
+  color: var(--acrolls-docs-fg);
+}
+
+.acrolls-docs-breadcrumbs__current {
+  color: var(--acrolls-docs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Pager */
+.acrolls-docs-pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.acrolls-docs-pager__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--acrolls-docs-border);
+  border-radius: var(--acrolls-docs-radius);
+  background: var(--acrolls-docs-surface);
+  min-height: 4rem;
+}
+
+.acrolls-docs-pager__link:hover {
+  border-color: color-mix(in oklab, var(--acrolls-docs-accent) 45%, var(--acrolls-docs-border));
+}
+
+.acrolls-docs-pager__link--next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.acrolls-docs-pager__dir {
+  font-size: 0.75rem;
+  color: var(--acrolls-docs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.acrolls-docs-pager__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.acrolls-docs-pager__spacer {
+  display: block;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .acrolls-docs-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .acrolls-docs-shell__menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--acrolls-docs-border);
+    border-radius: var(--acrolls-docs-radius);
+    background: var(--acrolls-docs-surface);
+    color: inherit;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    width: fit-content;
+  }
+
+  .acrolls-docs-shell__sidebar {
+    display: none;
+    position: fixed;
+    z-index: 40;
+    inset: 0 auto 0 0;
+    width: min(20rem, 88vw);
+    max-height: 100vh;
+    padding: 1rem;
+    background: var(--background, Canvas);
+    border-right: 1px solid var(--acrolls-docs-border);
+    box-shadow: 0 0 0 1px color-mix(in oklab, #000 4%, transparent),
+      12px 0 32px color-mix(in oklab, #000 12%, transparent);
+  }
+
+  .acrolls-docs-shell.is-mobile-nav-open .acrolls-docs-shell__sidebar {
+    display: block;
+  }
+
+  .acrolls-docs-shell.is-mobile-nav-open .acrolls-docs-shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: color-mix(in oklab, #000 40%, transparent);
+    cursor: pointer;
+  }
+
+  .acrolls-docs-shell__main {
+    padding-left: 0;
+  }
+
+  .acrolls-docs-pager {
+    grid-template-columns: 1fr;
+  }
+
+  .acrolls-docs-pager__link--next {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
