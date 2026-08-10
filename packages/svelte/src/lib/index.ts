@@ -6,3 +6,4 @@ export { default as Video } from './Video.svelte';
 export { default as ZoomableImage } from './ZoomableImage.svelte';
 export { default as PublicationLayout } from './PublicationLayout.svelte';
 export { enhanceCodeFrames } from './code-frame-enhance.js';
+export { enhanceMermaid } from './enhance-mermaid.js';

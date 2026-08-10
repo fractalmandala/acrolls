@@ -55,17 +55,27 @@ function decorateLines(
 ): string {
   // codeHtml is inner HTML of <code>…</code>
   // Prefer operating on Shiki's existing span.line rows when present.
-  if (codeHtml.includes('class="line"') || codeHtml.includes("class='line'")) {
+  // Match Shiki line spans whether class is first or later in the attribute list
+  if (/\bclass="[^"]*\bline\b/.test(codeHtml) || /class='[^']*\bline\b/.test(codeHtml)) {
     let n = 0;
     const hasFocus = meta.focus.size > 0;
-    return codeHtml.replace(/<span class="line([^"]*)">/g, (_full, rest: string) => {
+    return codeHtml.replace(/<span\b([^>]*)>/g, (full, attrs: string) => {
+      if (!/\bclass=(["'])[^"']*\bline\b/.test(attrs) && !/\bclass="[^"]*\bline\b/.test(attrs)) {
+        return full;
+      }
       n += 1;
-      const attrs: string[] = [`class="line${rest}"`, `data-line="${n}"`];
-      if (meta.highlight.has(n)) attrs.push('data-highlighted=""');
-      if (hasFocus) attrs.push(`data-focused="${meta.focus.has(n) ? 'true' : 'false'}"`);
-      if (meta.add.has(n)) attrs.push('data-diff="add"');
-      if (meta.remove.has(n)) attrs.push('data-diff="remove"');
-      return `<span ${attrs.join(' ')}>`;
+      let next = attrs;
+      if (!/\bdata-line=/.test(next)) next += ` data-line="${n}"`;
+      if (meta.highlight.has(n) && !/\bdata-highlighted\b/.test(next)) {
+        next += ' data-highlighted=""';
+      }
+      if (hasFocus) {
+        next = next.replace(/\sdata-focused="[^"]*"/g, '');
+        next += ` data-focused="${meta.focus.has(n) ? 'true' : 'false'}"`;
+      }
+      if (meta.add.has(n) && !/\bdata-diff=/.test(next)) next += ' data-diff="add"';
+      if (meta.remove.has(n) && !/\bdata-diff=/.test(next)) next += ' data-diff="remove"';
+      return `<span${next}>`;
     });
   }
 
@@ -98,6 +108,13 @@ export function createAcrollsHighlighter(options: HighlightOptions = {}) {
   ): Promise<string> {
     const fence = parseFenceMeta(meta);
     const language = (lang || 'text').replace(/^language-/, '') || 'text';
+
+    if (language === 'mermaid') {
+      const src = escapeHtml(code.trim());
+      return escapeForSvelte(
+        `<div class="acrolls-mermaid" data-acrolls-mermaid><pre class="acrolls-mermaid__fallback"><code>${src}</code></pre><div class="acrolls-mermaid__canvas" hidden></div></div>`
+      );
+    }
 
     let preHtml: string;
     try {

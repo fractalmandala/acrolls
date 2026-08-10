@@ -72,12 +72,20 @@ CSS is first-class. SASS is an additional pack for token authoring, not a requir
 - Explicit Save; no proprietary document store
 - Bind `127.0.0.1`; no telemetry
 
-### Deferred (post-v0)
+### Polish (0.1.1)
+
+- Studio: live Publication HTML preview (banner, tables, Shiki, mermaid) + copy/wrap enhancement
+- CLI `integrate --yes`: backup + patch svelte.config / layout CSS import
+- Mermaid fences → lazy client render
+- Shared `renderAcrollsArticleHtml()` for Studio/validate parity
+
+### Deferred
 
 - Medium import
-- Full rich-text Studio mode with protected MDX/SVX blocks
+- Full rich-text Studio mode with protected SVX blocks
 - Packed consumer CI matrix across OS
 - npm publish automation
+- mdsvex layout slot → snippet once mdsvex supports it
 
 ## Success criteria
 

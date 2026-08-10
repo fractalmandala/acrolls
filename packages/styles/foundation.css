@@ -349,6 +349,30 @@
   background: #000;
 }
 
+/* Mermaid */
+.acrolls .acrolls-mermaid {
+  margin-block: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--acrolls-border);
+  border-radius: var(--acrolls-radius);
+  background: var(--acrolls-surface);
+  overflow-x: auto;
+}
+
+.acrolls .acrolls-mermaid__fallback {
+  margin: 0;
+  font-family: var(--acrolls-font-code);
+  font-size: var(--acrolls-code-size);
+  white-space: pre-wrap;
+}
+
+.acrolls .acrolls-mermaid__canvas svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
 /* A11y / motion / print */
 @media (prefers-reduced-motion: reduce) {
   .acrolls * {

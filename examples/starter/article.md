@@ -32,3 +32,12 @@ Long lines can wrap when the reader toggles wrap on the code frame.
 ```bash
 pnpm exec acrolls validate ./examples/starter/article.md
 ```
+
+### Handshake flow
+
+```mermaid
+graph TD
+  A[Peer connects] --> B{Handshake ok?}
+  B -->|yes| C[Exchange bitfield]
+  B -->|no| D[Drop connection]
+```

@@ -6,8 +6,15 @@ import { rehypeAcrollsHeadingAnchors } from './rehype-heading-anchors.js';
 
 export { parseFenceMeta, parseRangeList } from './code-meta.js';
 export { createAcrollsHighlighter } from './highlighter.js';
+export type { HighlightOptions } from './highlighter.js';
 export { rehypeAcrollsTableWrap } from './rehype-table-wrap.js';
 export { rehypeAcrollsHeadingAnchors } from './rehype-heading-anchors.js';
+export { rehypeAcrollsCode } from './rehype-code.js';
+export { remarkAcrollsCodeMeta } from './remark-code-meta.js';
+export { renderAcrollsArticleHtml } from './render-html.js';
+export type { RenderHtmlResult } from './render-html.js';
+export { splitFrontmatter, renderBannerHtml } from './frontmatter.js';
+export type { Frontmatter } from './frontmatter.js';
 
 export type AcrollsMdsvexOptions = HighlightOptions & {
   /** Path to Publication layout (host or package). */

@@ -1,6 +1,6 @@
 {
   "name": "@acrolls/svelte",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Svelte 5 publication primitives for Acrolls.",
   "license": "Apache-2.0",
   "type": "module",
@@ -22,6 +22,9 @@
   "scripts": {
     "build": "svelte-package -i src/lib -o dist",
     "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "mermaid": "^11.9.0"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
