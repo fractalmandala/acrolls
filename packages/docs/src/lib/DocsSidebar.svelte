@@ -1,46 +1,92 @@
 <script lang="ts">
-	import type { DocsNav } from './types.js';
+	import type { DocsNav, DocsNavNode, DocsNavSection } from './types.js';
 	import DocsAccordion from './DocsAccordion.svelte';
-	import { sectionShouldOpen } from './nav.js';
+	import { navStorageKey, withNavIds } from './nav.js';
+	import { readOpenState, writeOpenState } from './storage.js';
+	import { browser } from './browser.js';
+	import { onMount } from 'svelte';
 
 	type Props = {
 		nav: DocsNav;
 		pathname: string;
-		/** Optional search filter (client) */
 		filterable?: boolean;
+		/** Persist accordion open state in localStorage (default true) */
+		persistOpen?: boolean;
 		class?: string;
 	};
 
-	let { nav, pathname, filterable = false, class: className = '' }: Props = $props();
+	let {
+		nav: navIn,
+		pathname,
+		filterable = false,
+		persistOpen = true,
+		class: className = ''
+	}: Props = $props();
+
+	const nav = $derived(withNavIds(navIn));
+	const storageKey = $derived(navStorageKey(nav));
 
 	let query = $state('');
-	let openOverrides = $state<Record<string, boolean>>({});
+	let openMap = $state<Record<string, boolean>>({});
+	let hydrated = $state(false);
+
+	onMount(() => {
+		if (persistOpen) {
+			openMap = readOpenState(storageKey);
+		}
+		hydrated = true;
+	});
+
+	// re-read if storage key changes (nav switch user ↔ developer)
+	$effect(() => {
+		const key = storageKey;
+		if (!browser || !persistOpen || !hydrated) return;
+		openMap = readOpenState(key);
+	});
 
 	const q = $derived(query.trim().toLowerCase());
 
-	const visibleSections = $derived.by(() => {
+	function filterNodes(nodes: DocsNavNode[]): DocsNavNode[] {
+		if (!q) return nodes;
+		const out: DocsNavNode[] = [];
+		for (const n of nodes) {
+			const selfMatch =
+				n.title.toLowerCase().includes(q) ||
+				(n.description?.toLowerCase().includes(q) ?? false);
+			const kids = n.children ? filterNodes(n.children) : [];
+			if (selfMatch || kids.length) {
+				out.push({
+					...n,
+					children: kids.length ? kids : n.children,
+					// expand groups that matched while filtering
+					defaultOpen: true
+				});
+			}
+		}
+		return out;
+	}
+
+	const visibleSections = $derived.by((): DocsNavSection[] => {
 		return nav.sections
 			.map((section) => {
 				if (!q) return section;
-				const items = section.items.filter(
-					(i) =>
-						i.title.toLowerCase().includes(q) ||
-						(i.description?.toLowerCase().includes(q) ?? false)
-				);
+				const items = filterNodes(section.items);
 				if (!items.length && !section.title.toLowerCase().includes(q)) return null;
-				return { ...section, items: items.length ? items : section.items };
+				return {
+					...section,
+					items: items.length ? items : section.items,
+					defaultOpen: true
+				};
 			})
-			.filter((s): s is (typeof nav.sections)[number] => s != null);
+			.filter((s): s is DocsNavSection => s != null);
 	});
 
 	function onToggle(id: string, open: boolean) {
-		openOverrides = { ...openOverrides, [id]: open };
-	}
-
-	function openFor(section: (typeof nav.sections)[number]): boolean {
-		if (q) return true;
-		if (openOverrides[section.id] !== undefined) return openOverrides[section.id]!;
-		return sectionShouldOpen(section, pathname);
+		if (persistOpen) {
+			openMap = writeOpenState(storageKey, id, open);
+		} else {
+			openMap = { ...openMap, [id]: open };
+		}
 	}
 </script>
 
@@ -61,7 +107,13 @@
 
 	<nav class="acrolls-docs-sidebar__nav" aria-label="{nav.title} sections">
 		{#each visibleSections as section (section.id)}
-			<DocsAccordion {section} {pathname} open={openFor(section)} {onToggle} />
+			<DocsAccordion
+				{section}
+				{pathname}
+				{openMap}
+				{onToggle}
+				forceOpen={Boolean(q)}
+			/>
 		{:else}
 			<p class="acrolls-docs-sidebar__empty">No matching pages.</p>
 		{/each}

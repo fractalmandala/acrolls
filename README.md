@@ -15,7 +15,7 @@ Independent of the mandala monorepo — lives at `/Users/amrit/acrolls`.
 | `@acrolls/styles` | `foundation.css`, `default.css`, optional SASS tokens |
 | `@acrolls/sveltekit` | SvelteKit mdsvex options + layout default |
 | `@acrolls/cli` | `init`, `integrate`, `validate`, `studio` |
-| `@acrolls/docs` | Docs shell: sidebar, accordion nav, breadcrumbs, pager |
+| `@acrolls/docs` | Docs shell (Fumadocs-class): nested nav, TOC, crumbs, pager |
 
 ## Quick start (this repo)
 

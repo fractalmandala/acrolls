@@ -1,41 +1,48 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { DocsCrumb, DocsNav, DocsPagerLink } from './types.js';
-	import { buildDocsCrumbs, docsPager } from './nav.js';
+	import { buildDocsCrumbs, docsPager, withNavIds } from './nav.js';
 	import DocsSidebar from './DocsSidebar.svelte';
 	import DocsBreadcrumbs from './DocsBreadcrumbs.svelte';
 	import DocsPager from './DocsPager.svelte';
+	import DocsToc from './DocsToc.svelte';
 
 	type Props = {
 		nav: DocsNav;
 		pathname: string;
-		/** Override crumbs; default built from nav + pathname */
 		crumbs?: DocsCrumb[];
 		homeHref?: string;
 		homeLabel?: string;
 		filterable?: boolean;
-		/** Show prev/next footer */
 		showPager?: boolean;
-		/** Optional mobile menu label */
+		/** Right-rail table of contents from article headings */
+		showToc?: boolean;
+		tocMinLevel?: number;
+		tocMaxLevel?: number;
+		persistOpen?: boolean;
 		menuLabel?: string;
-		/** Main article / page body */
 		children: Snippet;
-		/** Optional slot above content (banners, alerts) */
 		header?: Snippet;
 	};
 
 	let {
-		nav,
+		nav: navIn,
 		pathname,
 		crumbs,
 		homeHref = '/',
 		homeLabel = 'Home',
 		filterable = true,
 		showPager = true,
+		showToc = true,
+		tocMinLevel = 2,
+		tocMaxLevel = 3,
+		persistOpen = true,
 		menuLabel = 'Docs menu',
 		children,
 		header
 	}: Props = $props();
+
+	const nav = $derived(withNavIds(navIn));
 
 	const resolvedCrumbs = $derived(
 		crumbs ?? buildDocsCrumbs(nav, pathname, { homeHref, homeLabel })
@@ -45,15 +52,19 @@
 	const next = $derived(pager.next as DocsPagerLink);
 
 	let mobileOpen = $state(false);
+	let articleEl = $state<HTMLElement | null>(null);
 
-	// close mobile drawer on navigation
 	$effect(() => {
 		pathname;
 		mobileOpen = false;
 	});
 </script>
 
-<div class="acrolls-docs-shell" class:is-mobile-nav-open={mobileOpen}>
+<div
+	class="acrolls-docs-shell"
+	class:is-mobile-nav-open={mobileOpen}
+	class:has-toc={showToc}
+>
 	<button
 		type="button"
 		class="acrolls-docs-shell__menu-btn"
@@ -74,7 +85,7 @@
 	{/if}
 
 	<div class="acrolls-docs-shell__sidebar" id="acrolls-docs-sidebar">
-		<DocsSidebar {nav} {pathname} {filterable} />
+		<DocsSidebar {nav} {pathname} {filterable} {persistOpen} />
 	</div>
 
 	<div class="acrolls-docs-shell__main">
@@ -87,14 +98,24 @@
 			{/if}
 		</header>
 
-		<div class="acrolls-docs-shell__content">
-			{@render children()}
-		</div>
+		<div class="acrolls-docs-shell__body">
+			<div class="acrolls-docs-shell__content">
+				<div class="acrolls-docs-shell__article" bind:this={articleEl}>
+					{@render children()}
+				</div>
 
-		{#if showPager && (previous || next)}
-			<footer class="acrolls-docs-shell__footer">
-				<DocsPager {previous} {next} />
-			</footer>
-		{/if}
+				{#if showPager && (previous || next)}
+					<footer class="acrolls-docs-shell__footer">
+						<DocsPager {previous} {next} />
+					</footer>
+				{/if}
+			</div>
+
+			{#if showToc}
+				<aside class="acrolls-docs-shell__toc" aria-label="Table of contents">
+					<DocsToc contentEl={articleEl} watch={pathname} minLevel={tocMinLevel} maxLevel={tocMaxLevel} />
+				</aside>
+			{/if}
+		</div>
 	</div>
 </div>

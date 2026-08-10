@@ -1,27 +1,31 @@
 <script lang="ts">
-	import type { DocsNavItem, DocsNavSection } from './types.js';
-	import { normalizePath } from './nav-path.js';
+	import type { DocsNavSection } from './types.js';
+	import { nodeContainsPath, sectionShouldOpen } from './nav.js';
+	import DocsNavTree from './DocsNavTree.svelte';
 
 	type Props = {
 		section: DocsNavSection;
 		pathname: string;
-		/** Controlled open state; when undefined, uses defaultOpen + active child */
-		open?: boolean;
-		onToggle?: (id: string, open: boolean) => void;
+		openMap: Record<string, boolean>;
+		onToggle: (id: string, open: boolean) => void;
+		forceOpen?: boolean;
 	};
 
-	let { section, pathname, open, onToggle }: Props = $props();
+	let { section, pathname, openMap, onToggle, forceOpen = false }: Props = $props();
 
-	function isActive(item: DocsNavItem): boolean {
-		return normalizePath(item.href) === normalizePath(pathname);
-	}
+	const hasActive = $derived(section.items.some((i) => nodeContainsPath(i, pathname)));
 
-	const hasActive = $derived(section.items.some((i) => isActive(i)));
-	const isOpen = $derived(open ?? (section.defaultOpen || hasActive));
+	const isOpen = $derived(
+		forceOpen
+			? true
+			: openMap[section.id] !== undefined
+				? openMap[section.id]!
+				: sectionShouldOpen(section, pathname)
+	);
 
 	function handleToggle(e: Event) {
 		const el = e.currentTarget as HTMLDetailsElement;
-		onToggle?.(section.id, el.open);
+		onToggle(section.id, el.open);
 	}
 </script>
 
@@ -35,21 +39,7 @@
 		<span class="acrolls-docs-accordion__title">{section.title}</span>
 		<span class="acrolls-docs-accordion__chevron" aria-hidden="true"></span>
 	</summary>
-	<ul class="acrolls-docs-accordion__list" role="list">
-		{#each section.items as item}
-			<li>
-				<a
-					class="acrolls-docs-accordion__link"
-					class:is-active={isActive(item)}
-					href={item.href}
-					aria-current={isActive(item) ? 'page' : undefined}
-				>
-					<span class="acrolls-docs-accordion__link-title">{item.title}</span>
-					{#if item.badge}
-						<span class="acrolls-docs-accordion__badge">{item.badge}</span>
-					{/if}
-				</a>
-			</li>
-		{/each}
-	</ul>
+	<div class="acrolls-docs-accordion__body">
+		<DocsNavTree nodes={section.items} {pathname} {openMap} {onToggle} {forceOpen} />
+	</div>
 </details>

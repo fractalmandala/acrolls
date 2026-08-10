@@ -1,40 +1,46 @@
-/** Single leaf link in the docs sidebar. */
-export type DocsNavItem = {
-	/** Display title */
+/**
+ * Recursive nav node — leaf (href) and/or group (children).
+ * Groups may also have href for an overview page.
+ */
+export type DocsNavNode = {
+	/** Stable id for open-state persistence; auto-derived if omitted */
+	id?: string;
 	title: string;
-	/** Absolute or root-relative href */
-	href: string;
-	/** Optional slug (host routing convenience) */
+	/** Page href; optional for pure group nodes */
+	href?: string;
 	slug?: string;
-	/** Optional short description (index pages, tooltips) */
 	description?: string;
-	/** Optional badge text */
 	badge?: string;
-};
-
-/** Collapsible accordion section in the sidebar. */
-export type DocsNavSection = {
-	/** Stable id for open-state keys */
-	id: string;
-	/** Section heading */
-	title: string;
-	/** Open by default (and when a child is active) */
+	/** Open this group by default */
 	defaultOpen?: boolean;
-	items: DocsNavItem[];
+	/** Nested children (unlimited depth) */
+	children?: DocsNavNode[];
 };
 
-/** Full docs nav tree for one documentation surface. */
+/** Top-level collapsible section in the sidebar. */
+export type DocsNavSection = {
+	id: string;
+	title: string;
+	defaultOpen?: boolean;
+	items: DocsNavNode[];
+};
+
+/** Full docs nav tree for one documentation surface (user, developer, …). */
 export type DocsNav = {
 	/** Sidebar product/docs title */
 	title: string;
 	/** Index href for this docs area */
 	baseHref: string;
-	/** Optional subtitle under title */
 	subtitle?: string;
+	/**
+	 * Storage namespace for accordion open state.
+	 * Defaults to a slug of `title` when omitted.
+	 */
+	storageKey?: string;
 	sections: DocsNavSection[];
 };
 
-/** Breadcrumb segment. Last segment is typically non-linking current page. */
+/** Breadcrumb segment. Last is typically the current page (no href). */
 export type DocsCrumb = {
 	label: string;
 	href?: string;
@@ -44,3 +50,14 @@ export type DocsPagerLink = {
 	title: string;
 	href: string;
 } | null;
+
+/** On-page table of contents entry. */
+export type DocsTocItem = {
+	id: string;
+	text: string;
+	/** Heading level 2–6 */
+	level: number;
+};
+
+/** @deprecated alias — use DocsNavNode */
+export type DocsNavItem = DocsNavNode;

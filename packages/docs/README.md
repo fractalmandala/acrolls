@@ -1,68 +1,85 @@
 # @acrolls/docs
 
-Config-driven documentation shell for SvelteKit hosts:
+**Fumadocs-class documentation shell for SvelteKit.**
 
-- **Sidebar** with collapsible accordion sections
-- **Breadcrumbs**
-- **Prev / next pager**
-- Optional nav filter
-- Mobile drawer menu
-
-Pairs with `@acrolls/svelte` `Publication` for article body content.
+Config-driven navigation, nested accordions, on-page TOC, breadcrumbs, prev/next pager, and persisted open state — without owning your content pipeline. Pair with `@acrolls/mdsvex` + `@acrolls/svelte` `Publication` for article bodies.
 
 ## Install
 
 ```bash
-pnpm add @acrolls/docs
+pnpm add @acrolls/docs @acrolls/svelte @acrolls/styles @acrolls/mdsvex
 ```
 
 ```js
 import '@acrolls/docs/styles.css';
+import '@acrolls/styles/foundation.css'; // or default.css
 import { DocsShell, type DocsNav } from '@acrolls/docs';
 ```
 
-## Nav config
+## Nested nav
 
 ```ts
-export const userDocsNav: DocsNav = {
-  title: 'User guide',
-  baseHref: '/docs/user',
-  subtitle: 'Read, explore, discover',
+export const developerNav: DocsNav = {
+  title: 'Developer',
+  baseHref: '/docs/developer',
+  storageKey: 'dharmalib-developer', // localStorage namespace
   sections: [
     {
-      id: 'start',
-      title: 'Start here',
+      id: 'core',
+      title: 'Core systems',
       defaultOpen: true,
       items: [
-        { title: 'Getting started', href: '/docs/user/getting-started', slug: 'getting-started' },
-        { title: 'Finding texts', href: '/docs/user/finding-texts', slug: 'finding-texts' }
-      ]
-    },
-    {
-      id: 'explore',
-      title: 'Explore',
-      items: [
-        { title: 'Word lens', href: '/docs/user/word-lens', slug: 'word-lens' }
+        { title: 'Architecture', href: '/docs/developer/architecture' },
+        {
+          id: 'data',
+          title: 'Data layer',
+          defaultOpen: true,
+          children: [
+            { title: 'Corpus pipeline', href: '/docs/developer/corpus-pipeline' },
+            { title: 'Artifact contracts', href: '/docs/developer/artifact-contracts' }
+          ]
+        }
       ]
     }
   ]
 };
 ```
 
-## Layout usage
+## Shell
 
 ```svelte
 <script>
   import { page } from '$app/state';
   import { DocsShell } from '@acrolls/docs';
-  import { userDocsNav } from '$lib/docs/user-nav';
+  import { developerNav } from '$lib/docs/developer-nav';
   import '@acrolls/docs/styles.css';
   let { children } = $props();
 </script>
 
-<DocsShell nav={userDocsNav} pathname={page.url.pathname} homeHref="/" homeLabel="App">
+<DocsShell
+  nav={developerNav}
+  pathname={page.url.pathname}
+  homeHref="/"
+  homeLabel="App"
+  showToc={true}
+  persistOpen={true}
+>
   {@render children()}
 </DocsShell>
 ```
 
-Article pages still render body (e.g. mdsvex `Publication`) inside the shell content area.
+### Features
+
+| Feature | API |
+|---|---|
+| Nested sidebar groups | `DocsNavNode.children` (unlimited depth) |
+| Accordion open state | `persistOpen` → `localStorage` key `acrolls-docs:open:<storageKey>` |
+| On-page TOC | `showToc` scans `h2–h3` in the article (configurable levels) |
+| Breadcrumbs | Auto from nav trail |
+| Prev / next | Flattened leaf order |
+| Mobile | Drawer sidebar + menu button |
+| Filter | Sidebar search expands matching groups |
+
+## Roadmap (product)
+
+Themes, full marketing/docs site, npm publish — see root `PRODUCT.md`.
