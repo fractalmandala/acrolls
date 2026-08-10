@@ -1,55 +1,52 @@
 # Acrolls
 
-**Acrolls** is an open-source publishing SDK for **SvelteKit**. It turns ordinary Markdown and mdsvex (`.md` / `.svx`) into publication-grade technical articles on websites you already own.
+**SvelteKit publishing + documentation framework** — Markdown/mdsvex articles and a Fumadocs-class docs shell.
 
 > Just write. Acrolls handles the rest.
 
-Independent of the mandala monorepo — lives at `/Users/amrit/acrolls`.
+Not a CMS or host. You own the SvelteKit app; Acrolls owns compile, article UI, and docs chrome.
+
+## Documentation (start here)
+
+**→ [docs/README.md](./docs/README.md)** — self-serve handbook to wire Acrolls into **your** projects.
+
+| Guide | Topic |
+|---|---|
+| [Getting started](./docs/getting-started.md) | First integration |
+| [Local install](./docs/local-install.md) | `file:` packages before npm |
+| [Integrate SvelteKit](./docs/integrate-sveltekit.md) | Config + route patterns |
+| [Content authoring](./docs/content-authoring.md) | Markdown / SVX / fences |
+| [Docs shell](./docs/docs-shell.md) | Sidebar, TOC, nav, persistence |
+| [Styles](./docs/styles.md) | foundation / default / tokens |
+| [CLI](./docs/cli.md) | validate · studio · integrate |
+| [Troubleshooting](./docs/troubleshooting.md) | Common failures |
+| [Checklist](./docs/checklist.md) | Printable integration list |
+
+Copy-paste: [docs/snippets/](./docs/snippets/).
 
 ## Packages
 
 | Package | Purpose |
 |---|---|
-| `@acrolls/mdsvex` | Shared mdsvex pipeline (GFM, slugs, tables, Shiki, fence meta) |
-| `@acrolls/svelte` | `Publication`, Banner, Callout, Figure, Video, … (Svelte 5) |
-| `@acrolls/styles` | `foundation.css`, `default.css`, optional SASS tokens |
-| `@acrolls/sveltekit` | SvelteKit mdsvex options + layout default |
+| `@acrolls/mdsvex` | mdsvex pipeline (GFM, slugs, tables, Shiki, fence meta) |
+| `@acrolls/svelte` | `Publication`, Banner, Callout, Figure, Video, Mermaid |
+| `@acrolls/styles` | `foundation.css`, `default.css`, SASS tokens |
+| `@acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager |
 | `@acrolls/cli` | `init`, `integrate`, `validate`, `studio` |
-| `@acrolls/docs` | Docs shell (Fumadocs-class): nested nav, TOC, crumbs, pager |
 
-## Quick start (this repo)
+## Develop this monorepo
 
 ```bash
 cd /Users/amrit/acrolls
 pnpm install
 pnpm build
 pnpm --filter @acrolls/example-kit dev
-```
-
-Open the kit-consumer example, then try:
-
-```bash
 ./packages/cli/dist/index.js validate examples/starter/article.md
-./packages/cli/dist/index.js studio examples/starter/article.md
-./packages/cli/dist/index.js integrate --dry-run
 ```
 
-**Studio (0.1.1)** shows source + live Publication HTML (banner, tables, Shiki, mermaid), Save is atomic, binds `127.0.0.1`.
+## Status
 
-## Host install (when published)
-
-```bash
-pnpm add @acrolls/svelte @acrolls/styles @acrolls/mdsvex @acrolls/sveltekit
-pnpm add -D @acrolls/cli mdsvex
-```
-
-Wire `svelte.config.js` with `mdsvex(createAcrollsSvelteKitMdsvexOptions())` and import `@acrolls/styles/default.css` in the root layout.
-
-## Docs
-
-- [PRODUCT.md](./PRODUCT.md) — product scope (v0 A+B+C)
-- [TECH.md](./TECH.md) — architecture
-- [SKILL.md](./SKILL.md) — agent integration skill
+Alpha. Not on npm yet — install via `file:` from this repo ([local-install.md](./docs/local-install.md)). Roadmap: [docs/VISION.md](./docs/VISION.md).
 
 ## License
 
