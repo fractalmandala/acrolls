@@ -6,16 +6,17 @@ Step-by-step host wiring. Assumes packages are already installed ([local-install
 
 ## A. Compiler (`svelte.config.js`)
 
-Use **`createAcrollsMdsvexOptions` from `@acrolls/mdsvex`** (not `@acrolls/sveltekit` until published).
+Use **`createAcrollsMdsvexPreprocessor` from `@acrolls/mdsvex`** (not `@acrolls/sveltekit` until published). It normalizes unsafe Markdown before mdsvex parses it.
 
 ```js
 import adapter from '@sveltejs/adapter-auto'; // or adapter-vercel, etc.
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { mdsvex } from 'mdsvex';
-import { createAcrollsMdsvexOptions } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
 
-const acrolls = createAcrollsMdsvexOptions({
-  extensions: ['.md', '.svx']
+const acrolls = createAcrollsMdsvexPreprocessor({
+  extensions: ['.md', '.svx'],
+  // Opt into safe migration pages for an existing Markdown corpus.
+  // onInvalidDocument: 'error-page'
   // layout: omit for full control, or set a path to a layout .svelte
   // strict: true  // fail on unknown fence languages
 });
@@ -23,7 +24,7 @@ const acrolls = createAcrollsMdsvexOptions({
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   extensions: ['.svelte', '.md', '.svx'],
-  preprocess: [vitePreprocess(), mdsvex(acrolls)],
+  preprocess: [vitePreprocess(), acrolls],
   kit: {
     adapter: adapter()
   }
@@ -39,8 +40,21 @@ export default config;
 | `extensions` | `['.svx','.md']` | Files mdsvex pretreats |
 | `layout` | none | mdsvex layout map or string path |
 | `strict` | `false` | Unknown code languages error instead of plaintext |
+| `onInvalidDocument` | `fail` | `fail` or Markdown-only `error-page` in migration mode |
+| source safety | enabled | Markdown-only Svelte-shaped literals are wrapped as inline code before parsing |
 
 Do **not** set a global Publication layout unless every Markdown file on the site is an article (including random READMEs in routes). Prefer wrapping with `Publication` only on docs/blog routes.
+
+For an existing corpus, preflight it first and opt into the same invalid-document policy in
+the host:
+
+```bash
+acrolls validate ./docs --mode migration --on-invalid error-page --report acrolls-report.json
+```
+
+The preprocessor catches the transformed Svelte parse boundary for `.md` files and returns a
+safe diagnostic module when `onInvalidDocument: 'error-page'` is enabled. The default remains
+`fail`, so a host that does not opt into migration behavior keeps its existing build gate.
 
 ---
 
@@ -121,70 +135,89 @@ src/routes/notes/
 
 ---
 
-## E. Pattern 2 — folder of guides with slug routes
+## E. Pattern 2 — generated docs tree
 
+Use the content-source layer when the docs are maintained as a directory tree. The
+filesystem root, public URL prefix, and SvelteKit route directory are independent choices:
+
+| Filesystem | Public URL | SvelteKit route |
+|---|---|---|
+| `docs/**/*.md` | `/docs/...` | `src/routes/docs/` |
+| `content/**/*.md` | `/content/...` | `src/routes/content/` |
+| `posts/**/*.md` | `/posts/...` | `src/routes/posts/` |
+
+The first directory level becomes a navigation section, files inside it become section
+items, and deeper directories become nested groups. `index.md` becomes the route for its
+containing directory. This means a tree such as:
+
+```text
+docs/
+├── text-collection-organization/
+│   ├── grammatical-studies.md
+│   └── literary-works/
+│       └── classical-kavya.md
+└── user-guide/
+    ├── getting-started.md
+    └── reading-texts.md
 ```
-src/routes/docs/
-  +layout.svelte          ← DocsShell
-  +page.svelte            ← index
-  [slug]/
-    +page.ts
-    +page.svelte
-  guides/
-    intro.md
-    api.md
-```
 
-**`src/lib/docs/nav.ts`** — see [snippets/nav.ts](./snippets/nav.ts).
+can generate `DocsNav` sections for `Text Collection Organization` and `User Guide`
+without a hand-written `nav.ts`.
 
-**`src/routes/docs/+layout.svelte`** — see [snippets/docs-layout.svelte](./snippets/docs-layout.svelte).
-
-**`src/routes/docs/[slug]/+page.ts`**
+Create `src/lib/docs/source.ts`:
 
 ```ts
-import { error } from '@sveltejs/kit';
 import type { Component } from 'svelte';
-import type { PageLoad } from './$types';
+import {
+  createDocsContentSource,
+  defineDocsConfig,
+  type DocsMetadata
+} from '@acrolls/docs/content';
 
-const modules = import.meta.glob('../guides/*.md');
+const contentPrefix = '../../docs/';
+const modules = import.meta.glob('../../docs/**/*.md', {
+  import: 'default'
+}) as Record<string, () => Promise<Component>>;
+const metadata = import.meta.glob('../../docs/**/*.md', {
+  eager: true,
+  import: 'metadata'
+}) as Record<string, DocsMetadata>;
 
-export const load: PageLoad = async ({ params }) => {
-  const key = `../guides/${params.slug}.md`;
-  const loader = modules[key];
-  if (!loader) error(404, 'Not found');
-  const mod = (await loader()) as {
-    default: Component;
-    metadata?: Record<string, string>;
-  };
-  return {
-    document: mod.default,
-    metadata: mod.metadata ?? {}
-  };
-};
+export const docs = createDocsContentSource({
+  documents: Object.entries(modules).map(([key, load]) => ({
+    key: key.slice(contentPrefix.length),
+    metadata: metadata[key],
+    load
+  })),
+  config: defineDocsConfig({
+    title: 'Documentation',
+    baseHref: '/docs',
+    subtitle: 'Guides and reference'
+  })
+});
 ```
 
-**`src/routes/docs/[slug]/+page.svelte`**
+Use `docs.nav` in `DocsShell`, `docs.get(params.slug)` for validation, and
+`docs.entries()` for static route entries. The external local-install path supports Markdown
+sources (`.md`) here; `.svx` can still be imported through normal mdsvex routes, but automatic
+content discovery is Markdown-first. The workspace-only `@acrolls/sveltekit` adapter will
+offer the same source shape when it is published as an installable package.
 
-```svelte
-<script lang="ts">
-  import { Publication } from '@acrolls/svelte';
-  import type { PageProps } from './$types';
-  let { data }: PageProps = $props();
-  const Doc = $derived(data.document);
-</script>
+Use a catch-all route for nested documents:
 
-<article>
-  <Publication>
-    <Doc />
-  </Publication>
-</article>
+```text
+src/routes/docs/
+├── +layout.svelte
+├── +page.svelte
+└── [...slug]/
+    ├── +page.ts
+    └── +page.svelte
 ```
 
-Co-locate guides next to the route if you prefer:
-
-```ts
-const modules = import.meta.glob('./*.md'); // for docs/user/*.md style
-```
+The complete root page, catch-all files, and lazy `DocumentPage` are in
+[`getting-started.md`](./getting-started.md). The root route renders `docs/index.md` rather
+than redirecting; omit that source only when the host writes its own `/docs` overview. A
+single `[slug]` route is only enough when every document is flat.
 
 ---
 
@@ -211,7 +244,7 @@ Open only trusted local SVX (it is executable).
 ## G. What **not** to do
 
 1. Import Acrolls CSS in root layout **and** docs layout twice (duplicated rules — pick one place).  
-2. Use `createAcrollsSvelteKitMdsvexOptions` from `@acrolls/sveltekit` while that package is only `workspace:*` — stick to `@acrolls/mdsvex`.  
+2. Use `createAcrollsMdsvexPreprocessor` from `@acrolls/mdsvex` while the adapter package is only `workspace:*`; it includes the Markdown source-safety layer.
 3. Put non-article Markdown under the same extensions without wrapping (or they get Shiki transforms but no shell — usually fine).  
 4. Expect Studio to execute full SVX component trees (Studio HTML pipeline strips `<script>` for safety).  
 

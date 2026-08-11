@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DocsNavSection } from './types.js';
 	import { nodeContainsPath, sectionShouldOpen } from './nav.js';
+	import { normalizePath } from './nav-path.js';
 	import DocsNavTree from './DocsNavTree.svelte';
 
 	type Props = {
@@ -13,7 +14,10 @@
 
 	let { section, pathname, openMap, onToggle, forceOpen = false }: Props = $props();
 
-	const hasActive = $derived(section.items.some((i) => nodeContainsPath(i, pathname)));
+	const hasActive = $derived(
+		Boolean(section.href && normalizePath(section.href) === normalizePath(pathname)) ||
+		section.items.some((i) => nodeContainsPath(i, pathname))
+	);
 
 	const isOpen = $derived(
 		forceOpen
@@ -36,7 +40,22 @@
 	ontoggle={handleToggle}
 >
 	<summary class="acrolls-docs-accordion__summary">
-		<span class="acrolls-docs-accordion__title">{section.title}</span>
+		{#if section.href}
+			<a
+				class="acrolls-docs-accordion__title"
+				class:is-active={normalizePath(section.href) === normalizePath(pathname)}
+				href={section.href}
+				aria-current={normalizePath(section.href) === normalizePath(pathname) ? 'page' : undefined}
+				onclick={(event) => event.stopPropagation()}
+			>
+				{section.title}
+			</a>
+		{:else}
+			<span class="acrolls-docs-accordion__title">{section.title}</span>
+		{/if}
+		{#if section.badge}
+			<span class="acrolls-docs-tree__badge">{section.badge}</span>
+		{/if}
 		<span class="acrolls-docs-accordion__chevron" aria-hidden="true"></span>
 	</summary>
 	<div class="acrolls-docs-accordion__body">

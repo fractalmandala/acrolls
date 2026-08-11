@@ -9,6 +9,10 @@ Not a CMS or host. You own the SvelteKit app; Acrolls owns compile, article UI, 
 ## Documentation (start here)
 
 **→ [docs/README.md](./docs/README.md)** — self-serve handbook to wire Acrolls into **your** projects.
+For the next independent host trial, begin with the [third-host setup path](./docs/README.md#third-host-trial) and work through the [checklist](./docs/checklist.md).
+
+For coding agents, start with [`llms.txt`](./llms.txt), then follow the linked integration and
+validation guides in order.
 
 | Guide | Topic |
 |---|---|
@@ -18,7 +22,7 @@ Not a CMS or host. You own the SvelteKit app; Acrolls owns compile, article UI, 
 | [Content authoring](./docs/content-authoring.md) | Markdown / SVX / fences |
 | [Docs shell](./docs/docs-shell.md) | Sidebar, TOC, nav, persistence |
 | [Styles](./docs/styles.md) | foundation / default / tokens |
-| [CLI](./docs/cli.md) | validate · studio · integrate |
+| [CLI reference](./docs/cli.md) | onboard · validate · studio · integrate |
 | [Troubleshooting](./docs/troubleshooting.md) | Common failures |
 | [Checklist](./docs/checklist.md) | Printable integration list |
 
@@ -33,6 +37,10 @@ Copy-paste: [docs/snippets/](./docs/snippets/).
 | `@acrolls/styles` | `foundation.css`, `default.css`, SASS tokens |
 | `@acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager |
 | `@acrolls/cli` | `init`, `integrate`, `validate`, `studio` |
+
+`@acrolls/sveltekit` is intentionally not listed for external `file:` installation yet: it
+uses workspace-internal dependencies. External hosts should use `@acrolls/mdsvex` and
+`@acrolls/docs/content` directly until registry packages are available.
 
 ## Develop this monorepo
 

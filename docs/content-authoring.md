@@ -15,6 +15,11 @@ Acrolls content is **source-owned** Markdown or mdsvex. Git is the CMS.
 
 ## Frontmatter
 
+Frontmatter is optional. When it is absent, the Acrolls mdsvex preprocessor emits an
+empty `metadata` export so eager metadata globs remain build-safe. Docs navigation then
+falls back to the configured entry title or a humanized filename. A body `# Heading`
+still renders normally, but it is not used as navigation metadata.
+
 ```md
 ---
 title: Getting started
@@ -34,7 +39,23 @@ Common keys (for banners / metadata):
 | `reading` | Meta line (avoid key `metadata` — clashes with mdsvex export) |
 | `image` / `imageAlt` | Banner image |
 
-If you use mdsvex **layout** that reads frontmatter into a banner, those fields drive it. With only `<Publication>`, frontmatter is still available as `export const metadata` from the module — your page can render a title if you want.
+Acrolls uses these YAML frontmatter fields to display page titles and descriptions when the
+standard `PublicationLayout` or `Banner` is used. With only `<Publication>`, frontmatter is
+still available as `export const metadata` from the module, so a host-owned route must pass it
+to `Banner` (or render an equivalent accessible header) if it composes the article itself.
+
+For generated docs, frontmatter `title`, then `description` (or `brief`) supplies the
+navigation record by default. A matching `documents` or `entries` configuration value in
+`defineDocsConfig` takes precedence. Use configuration for deliberate navigation labels and
+frontmatter for content-owned defaults.
+
+### File URI links
+
+Markdown link destinations cannot contain raw spaces. Exported `file://` references must
+percent-encode them as `%20`; otherwise the Markdown parser preserves the source as literal
+text instead of creating an anchor. Acrolls does not make a local file URI portable or resolve
+it into a web route—the host owns that policy. A host may add its own link-normalization
+preprocess, but hand-authored file URIs should already be encoded.
 
 ---
 
@@ -90,6 +111,40 @@ graph TD
 ```
 
 Renders client-side (lazy). Fallback shows source until JS runs.
+
+### Literal examples in Markdown
+
+Use inline code for syntax that resembles Svelte or a typed-language generic:
+
+```md
+The return type is `Result<T, String>` and the path is `content/<Category>/`.
+```
+
+The Acrolls preprocessor also protects a narrow set of these constructs automatically in
+`.md` files. `.svx` files are intentionally not rewritten because they may contain real
+Svelte components. Run `acrolls validate --strict` in CI when explicit authoring is preferred.
+
+## Existing corpus migration
+
+Acrolls distinguishes a controlled authored corpus from a folder of documents imported from
+somewhere else. A missing frontmatter block is acceptable in migration mode and receives the
+same readable filename fallback used by generated navigation. It is not evidence that the
+document body is valid Svelte.
+
+Preflight the entire directory before deployment:
+
+```bash
+acrolls validate ./docs --mode migration --on-invalid error-page --report acrolls-report.json
+```
+
+Each document is classified as `ready`, `normalized`, or `rejected`. A rejected Markdown
+document can become a safe, routable “Document unavailable” page in migration `error-page`
+mode, while valid documents continue to render. The diagnostic page is intentionally visible:
+Acrolls does not silently discard broken source. Use authored mode or `--on-invalid fail` when
+the deployment must be all-or-nothing.
+
+This protection applies to `.md` prose. `.svx` is executable Svelte and remains trusted
+content with fail-fast behavior; only open local `.svx` files that you intend to execute.
 
 ### Callouts / figures (SVX or imported components)
 

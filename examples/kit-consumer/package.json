@@ -10,6 +10,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@acrolls/docs": "workspace:*",
     "@acrolls/mdsvex": "workspace:*",
     "@acrolls/styles": "workspace:*",
     "@acrolls/svelte": "workspace:*",

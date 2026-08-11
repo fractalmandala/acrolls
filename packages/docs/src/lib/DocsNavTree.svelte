@@ -35,7 +35,7 @@
 </script>
 
 <ul class="acrolls-docs-tree" class:is-nested={depth > 0} role="list" data-depth={depth}>
-	{#each nodes as node (node.id ?? node.title)}
+	{#each nodes as node (node.id ?? node.href ?? node.title)}
 		<li class="acrolls-docs-tree__item">
 			{#if node.children?.length}
 				<details
@@ -55,10 +55,13 @@
 							>
 								{node.title}
 							</a>
-						{:else}
-							<span class="acrolls-docs-tree__group-label">{node.title}</span>
-						{/if}
-						<span class="acrolls-docs-tree__chevron" aria-hidden="true"></span>
+				{:else}
+					<span class="acrolls-docs-tree__group-label">{node.title}</span>
+				{/if}
+				{#if node.badge}
+					<span class="acrolls-docs-tree__badge">{node.badge}</span>
+				{/if}
+				<span class="acrolls-docs-tree__chevron" aria-hidden="true"></span>
 					</summary>
 					<DocsNavTree
 						nodes={node.children}

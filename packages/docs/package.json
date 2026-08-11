@@ -1,6 +1,6 @@
 {
   "name": "@acrolls/docs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Fumadocs-class docs shell for SvelteKit: nested nav, TOC, breadcrumbs, pager, persisted state.",
   "license": "Apache-2.0",
   "type": "module",
@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "svelte": "./dist/index.js",
       "import": "./dist/index.js"
+    },
+    "./content": {
+      "types": "./dist/content.d.ts",
+      "import": "./dist/content.js"
     },
     "./styles.css": "./styles.css"
   },

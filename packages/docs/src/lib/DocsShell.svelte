@@ -17,6 +17,8 @@
 		showPager?: boolean;
 		/** Right-rail table of contents from article headings */
 		showToc?: boolean;
+		/** Break out of a constrained host column when the shell owns the page layout */
+		fullBleed?: boolean;
 		tocMinLevel?: number;
 		tocMaxLevel?: number;
 		persistOpen?: boolean;
@@ -34,6 +36,7 @@
 		filterable = true,
 		showPager = true,
 		showToc = true,
+		fullBleed = false,
 		tocMinLevel = 2,
 		tocMaxLevel = 3,
 		persistOpen = true,
@@ -64,6 +67,7 @@
 	class="acrolls-docs-shell"
 	class:is-mobile-nav-open={mobileOpen}
 	class:has-toc={showToc}
+	class:is-full-bleed={fullBleed}
 >
 	<button
 		type="button"
@@ -85,7 +89,13 @@
 	{/if}
 
 	<div class="acrolls-docs-shell__sidebar" id="acrolls-docs-sidebar">
-		<DocsSidebar {nav} {pathname} {filterable} {persistOpen} />
+		<DocsSidebar
+			{nav}
+			{pathname}
+			{filterable}
+			{persistOpen}
+			class="acrolls-docs-sidebar--shell"
+		/>
 	</div>
 
 	<div class="acrolls-docs-shell__main">

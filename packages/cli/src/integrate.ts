@@ -41,15 +41,14 @@ export async function detectHost(root: string) {
 
 const SVELTE_CONFIG_SNIPPET = `import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { mdsvex } from 'mdsvex';
-import { createAcrollsSvelteKitMdsvexOptions } from '@acrolls/sveltekit';
+import { createAcrollsSvelteKitMdsvexPreprocessor } from '@acrolls/sveltekit';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   extensions: ['.svelte', '.svx', '.md'],
   preprocess: [
     vitePreprocess(),
-    mdsvex(createAcrollsSvelteKitMdsvexOptions())
+    createAcrollsSvelteKitMdsvexPreprocessor()
   ],
   kit: {
     adapter: adapter()
@@ -81,11 +80,12 @@ function patchSvelteConfig(source: string): { next: string; changed: boolean; no
   let next = source;
   let changed = false;
 
-  if (!next.includes('mdsvex')) {
-    notes.push('add mdsvex preprocess (manual merge recommended if config is complex)');
+  const hasAcrollsPreprocessor = next.includes('createAcrollsSvelteKitMdsvexPreprocessor');
+  if (!next.includes('mdsvex') && !hasAcrollsPreprocessor) {
+    notes.push('add Acrolls mdsvex preprocessor (manual merge recommended if config is complex)');
   }
   if (!next.includes('@acrolls/sveltekit') && !next.includes('createAcrolls')) {
-    notes.push('wire createAcrollsSvelteKitMdsvexOptions()');
+    notes.push('wire createAcrollsSvelteKitMdsvexPreprocessor()');
   }
   if (!next.includes("'.svx'") && !next.includes('".svx"')) {
     if (next.includes('extensions:')) {
@@ -104,22 +104,32 @@ function patchSvelteConfig(source: string): { next: string; changed: boolean; no
     }
   }
 
-  if (!next.includes('mdsvex(') && next.includes('preprocess:')) {
+  if (!hasAcrollsPreprocessor && next.includes('preprocess:')) {
     // try inject mdsvex into preprocess array
     if (next.includes('preprocess: [')) {
       next = next.replace(
         /preprocess:\s*\[/,
-        `preprocess: [\n    mdsvex(createAcrollsSvelteKitMdsvexOptions()),\n    `
+        `preprocess: [\n    createAcrollsSvelteKitMdsvexPreprocessor(),\n    `
       );
-      if (!next.includes("from 'mdsvex'") && !next.includes('from "mdsvex"')) {
-        next = `import { mdsvex } from 'mdsvex';\n` + next;
-      }
-      if (!next.includes('@acrolls/sveltekit')) {
+      const hasPreprocessorImport = /createAcrollsSvelteKitMdsvexPreprocessor\s*[,}]/.test(next);
+      if (!hasPreprocessorImport && next.includes("from '@acrolls/sveltekit'")) {
+        next = next.replace(
+          /import\s*\{([^}]*)\}\s*from\s*'@acrolls\/sveltekit';/,
+          (_full, names: string) =>
+            `import {${names.trim()}, createAcrollsSvelteKitMdsvexPreprocessor} from '@acrolls/sveltekit';`
+        );
+      } else if (!hasPreprocessorImport && next.includes('from "@acrolls/sveltekit"')) {
+        next = next.replace(
+          /import\s*\{([^}]*)\}\s*from\s*"@acrolls\/sveltekit";/,
+          (_full, names: string) =>
+            `import {${names.trim()}, createAcrollsSvelteKitMdsvexPreprocessor} from "@acrolls/sveltekit";`
+        );
+      } else if (!hasPreprocessorImport) {
         next =
-          `import { createAcrollsSvelteKitMdsvexOptions } from '@acrolls/sveltekit';\n` + next;
+          `import { createAcrollsSvelteKitMdsvexPreprocessor } from '@acrolls/sveltekit';\n` + next;
       }
       changed = true;
-      notes.push('injected mdsvex(createAcrollsSvelteKitMdsvexOptions()) into preprocess');
+      notes.push('injected createAcrollsSvelteKitMdsvexPreprocessor() into preprocess');
     }
   }
 

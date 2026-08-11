@@ -5,28 +5,43 @@ import type {
 	DocsNavSection,
 	DocsPagerLink
 } from './types.js';
-import { normalizePath, slugify } from './nav-path.js';
+import { normalizePath, slugify, stableId } from './nav-path.js';
 
-export { normalizePath, slugify } from './nav-path.js';
+export { normalizePath, slugify, stableId } from './nav-path.js';
 
 /** Ensure every node has a stable id. */
 export function withNavIds(nav: DocsNav): DocsNav {
+	const used = new Set<string>();
 	return {
 		...nav,
-		sections: nav.sections.map((section) => ({
-			...section,
-			items: section.items.map((item, i) => stampIds(item, `${section.id}/${i}`))
-		}))
+		sections: nav.sections.map((section, sectionIndex) => {
+			const sectionId = claimId(section.id || stableId(`section-${sectionIndex}-${section.title}`), used);
+			return {
+				...section,
+				id: sectionId,
+				items: section.items.map((item, i) => stampIds(item, `${sectionId}/${i}`, used))
+			};
+		})
 	};
 }
 
-function stampIds(node: DocsNavNode, path: string): DocsNavNode {
-	const id = node.id ?? (slugify(path + '-' + node.title) || path);
+function stampIds(node: DocsNavNode, path: string, used: Set<string>): DocsNavNode {
+	const id = claimId(node.id ?? stableId(node.href ?? `${path}-${node.title}`), used);
 	return {
 		...node,
 		id,
-		children: node.children?.map((c, i) => stampIds(c, `${id}/${i}`))
+		children: node.children?.map((c, i) => stampIds(c, `${id}/${i}`, used))
 	};
+}
+
+/** Keep host-provided or stale generated IDs from crashing keyed navigation rendering. */
+function claimId(candidate: string, used: Set<string>): string {
+	const base = candidate || 'item';
+	let id = base;
+	let suffix = 2;
+	while (used.has(id)) id = `${base}-${suffix++}`;
+	used.add(id);
+	return id;
 }
 
 /** Leaf pages only (nodes with href), depth-first. */
@@ -38,7 +53,18 @@ export function flattenDocsNav(nav: DocsNav): DocsNavNode[] {
 			if (n.children?.length) walk(n.children);
 		}
 	};
-	for (const s of nav.sections) walk(s.items);
+	for (const s of nav.sections) {
+		if (s.href) {
+			out.push({
+				id: s.id,
+				title: s.title,
+				href: s.href,
+				slug: s.slug,
+				description: s.description
+			});
+		}
+		walk(s.items);
+	}
 	return out;
 }
 
@@ -72,6 +98,9 @@ export function findActiveTrail(
 ): { section: DocsNavSection; nodes: DocsNavNode[] } | null {
 	const path = normalizePath(pathname);
 	for (const section of nav.sections) {
+		if (section.href && normalizePath(section.href) === path) {
+			return { section, nodes: [] };
+		}
 		const trail = findTrailInNodes(section.items, path, []);
 		if (trail) return { section, nodes: trail };
 	}
@@ -155,6 +184,7 @@ export function sectionShouldOpen(
 ): boolean {
 	if (forcedOpenIds?.has(section.id)) return true;
 	if (section.defaultOpen) return true;
+	if (section.href && normalizePath(section.href) === normalizePath(pathname)) return true;
 	return section.items.some((i) => nodeContainsPath(i, pathname));
 }
 
@@ -177,7 +207,9 @@ export function navStorageKey(nav: DocsNav): string {
 export function openIdsForPath(nav: DocsNav, pathname: string): string[] {
 	const ids: string[] = [];
 	for (const section of nav.sections) {
-		if (section.items.some((i) => nodeContainsPath(i, pathname))) {
+		if (section.href && normalizePath(section.href) === normalizePath(pathname)) {
+			ids.push(section.id);
+		} else if (section.items.some((i) => nodeContainsPath(i, pathname))) {
 			ids.push(section.id);
 			collectOpenNodeIds(section.items, pathname, ids);
 		} else if (section.defaultOpen) {

@@ -9,9 +9,9 @@ Acrolls is the **SvelteKit equivalent** of Fumadocs / Starlight / Astro starligh
 | Compile | `@acrolls/mdsvex` | Markdown / `.svx` → slugs, Shiki, tables, validation |
 | Article UI | `@acrolls/svelte` | `Publication`, callouts, figures, mermaid |
 | Styles | `@acrolls/styles` | Foundation / default CSS + SASS tokens |
-| **Docs shell** | **`@acrolls/docs`** | Nested nav, TOC, crumbs, pager, persistence |
-| Kit glue | `@acrolls/sveltekit` | Host config helpers |
-| CLI | `@acrolls/cli` | integrate, validate, studio |
+| **Docs source + shell** | **`@acrolls/docs`** | Markdown tree, generated nav, TOC, crumbs, pager, persistence |
+| Kit glue | `@acrolls/sveltekit` | Host config and Markdown source adapter |
+| CLI | `@acrolls/cli` | onboard, integrate, validate, studio |
 
 ## Docs shell (current)
 
@@ -21,6 +21,10 @@ Acrolls is the **SvelteKit equivalent** of Fumadocs / Starlight / Astro starligh
 - Prev/next leaf order
 - localStorage open-state persistence
 - Mobile drawer + filter
+- Markdown content source with generated routes, metadata, nav, and static entries
+
+Automatic `.svx` discovery and visual styling are intentionally later stages. Styling will
+follow custom CSS and pure indented SASS aligned with CUBE CSS; Tailwind is not required.
 
 ## Next (framework finish)
 

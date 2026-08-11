@@ -21,6 +21,11 @@ export type DocsNavNode = {
 export type DocsNavSection = {
 	id: string;
 	title: string;
+	/** Optional landing-page link for this top-level group. */
+	href?: string;
+	slug?: string;
+	description?: string;
+	badge?: string;
 	defaultOpen?: boolean;
 	items: DocsNavNode[];
 };

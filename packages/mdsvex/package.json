@@ -1,7 +1,7 @@
 {
   "name": "@acrolls/mdsvex",
   "version": "0.1.1",
-  "description": "Shared mdsvex compile pipeline for Acrolls (slugs, tables, Shiki, fence meta).",
+  "description": "Shared mdsvex compile and Markdown source-safety pipeline for Acrolls (slugs, tables, Shiki, Mermaid, fence meta).",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,6 +23,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sveltejs/acorn-typescript": "^1.0.12",
+    "acorn": "^8.18.0",
     "github-slugger": "^2.0.0",
     "hast-util-to-string": "^3.0.1",
     "rehype-slug": "^6.0.0",
@@ -38,12 +40,14 @@
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "@types/unist": "^3.0.3",
+    "svelte": "^5.38.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "mdsvex": ">=0.12.0"
+    "mdsvex": ">=0.12.0",
+    "svelte": ">=5.0.0"
   },
   "keywords": [
     "acrolls",

@@ -4,6 +4,10 @@ Goal: in one existing SvelteKit app, render a Markdown page with Acrolls article
 
 **Time:** ~15 minutes if the app already uses Svelte 5 + Kit 2.
 
+If you are handing this installation to an agent, start with the terminal reference instead:
+run `acrolls onboard --docs-dir docs --base-href /docs --json` from the host root and follow
+the returned checkpoints. This guide is the human-readable version of the same wiring.
+
 ---
 
 ## 0. Build Acrolls (once)
@@ -39,7 +43,7 @@ pnpm add \
 pnpm add -D mdsvex
 ```
 
-If `pnpm` complains about `workspace:*` from a package, only add the four above — do **not** add `@acrolls/sveltekit` via `file:` until published (it has workspace deps). Import mdsvex options from `@acrolls/mdsvex` instead.
+If `pnpm` complains about `workspace:*` from a package, only add the four above — do **not** add `@acrolls/sveltekit` via `file:` until published (it has workspace deps). Import the mdsvex preprocessor from `@acrolls/mdsvex` instead.
 
 ---
 
@@ -48,10 +52,9 @@ If `pnpm` complains about `workspace:*` from a package, only add the four above 
 ```js
 import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { mdsvex } from 'mdsvex';
-import { createAcrollsMdsvexOptions } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
 
-const acrolls = createAcrollsMdsvexOptions({
+const acrolls = createAcrollsMdsvexPreprocessor({
   // no default layout — you wrap with Publication in the page/layout
   extensions: ['.md', '.svx']
 });
@@ -59,7 +62,7 @@ const acrolls = createAcrollsMdsvexOptions({
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   extensions: ['.svelte', '.md', '.svx'],
-  preprocess: [vitePreprocess(), mdsvex(acrolls)],
+  preprocess: [vitePreprocess(), acrolls],
   kit: { adapter: adapter() }
 };
 
@@ -134,15 +137,214 @@ You should see:
 
 ## 5. Optional: docs shell for a `/docs` area
 
-See [docs-shell.md](./docs-shell.md). Short version:
+See [docs-shell.md](./docs-shell.md) for a manually authored shell. If you use the
+generated source in the next section, `docs.nav` replaces the hand-written object. Short
+version:
 
-1. Define a `DocsNav` object  
+1. Define or generate a `DocsNav` object
 2. Put `<DocsShell>` in `src/routes/docs/+layout.svelte`  
 3. Render articles with `<Publication>` inside pages  
 
 ---
 
-## 6. Validate content from the CLI
+## 6. Generate a docs area from Markdown
+
+If your docs live in a directory, Acrolls can build the navigation and route records from
+the files instead of maintaining a hand-written `DocsNav` object. You do not need to
+organize the files under a directory literally named `docs`; `content/`, `posts/`, or any
+other host-owned directory works the same way.
+
+Three paths are independent:
+
+| Concern | Example | Purpose |
+|---|---|---|
+| Filesystem content root | `../../docs` | Where the Markdown files live relative to `source.ts` |
+| Public URL root | `/docs` | The URL prefix Acrolls generates for the documents |
+| SvelteKit route directory | `src/routes/docs` | The route that renders the docs shell |
+
+For example, the same content can be served as `/docs`, `/content`, or `/posts` by
+changing `baseHref` and placing the catch-all route under the corresponding SvelteKit
+route directory. The filesystem directory and public URL do not have to share a name.
+
+Put Markdown files in a content directory. `index.md` becomes the route for its containing
+folder:
+
+```text
+docs/
+├── index.md
+├── guides/
+│   ├── index.md
+│   └── installation.md
+└── reference/
+    └── configuration.md
+```
+
+Create `src/lib/docs/source.ts`. This example uses `docs/`, but replace both glob paths
+and `contentPrefix` if your content lives under `content/` or `posts/`:
+
+```ts
+import type { Component } from 'svelte';
+import {
+  createDocsContentSource,
+  defineDocsConfig,
+  type DocsMetadata
+} from '@acrolls/docs/content';
+
+type DocsArticle = Component;
+const contentPrefix = '../../docs/';
+
+const modules = import.meta.glob('../../docs/**/*.md', {
+  import: 'default'
+}) as Record<string, () => Promise<DocsArticle>>;
+
+const metadata = import.meta.glob('../../docs/**/*.md', {
+  eager: true,
+  import: 'metadata'
+}) as Record<string, DocsMetadata>;
+
+export const docs = createDocsContentSource({
+  documents: Object.entries(modules).map(([key, load]) => ({
+    key: key.slice(contentPrefix.length),
+    metadata: metadata[key],
+    load
+  })),
+  config: defineDocsConfig({
+    title: 'Documentation',
+    baseHref: '/docs',
+    subtitle: 'Generated from Markdown',
+    folders: {
+      guides: { title: 'Guides', order: 1 },
+      reference: { title: 'Reference', order: 2 }
+    }
+  })
+});
+```
+
+The source interprets the filesystem tree as navigation:
+
+- The first directory level becomes a top-level `DocsNav` section.
+- Markdown files directly inside that directory become section items.
+- Deeper directories become nested groups with their own child items.
+- `index.md` becomes the route for its containing directory.
+
+The source provides:
+
+- `docs.nav` — generated `DocsNav` for `DocsShell`
+- `docs.get(slug)` — document lookup for route validation
+- `docs.load(slug)` — lazy document loading
+- `docs.entries()` — route entries for prerendering
+
+Titles come from frontmatter. Folder names are humanized by default and can be overridden
+in `folders`. Set `hidden: true` in frontmatter or configuration to remove a page from
+navigation while keeping it routable; it is not an access-control mechanism.
+
+`@acrolls/sveltekit` contains a convenience adapter used by this monorepo's workspace
+example. When working from the local Acrolls packages, use the pure `@acrolls/docs/content`
+source shown above: the SvelteKit adapter is not yet safe to install through `file:`.
+
+Add a docs layout using the generated nav:
+
+```svelte
+<script lang="ts">
+  import '@acrolls/styles/default.css';
+  import '@acrolls/docs/styles.css';
+  import { page } from '$app/state';
+  import { DocsShell } from '@acrolls/docs';
+  import { docs } from '$lib/docs/source';
+  import type { Snippet } from 'svelte';
+
+  let { children }: { children: Snippet } = $props();
+</script>
+
+<DocsShell nav={docs.nav} pathname={page.url.pathname}>
+  {@render children()}
+</DocsShell>
+```
+
+Then use a root page and catch-all route under the same public URL prefix. For `/docs`,
+the route directory is `src/routes/docs`; for `/content`, it would be
+`src/routes/content`. The root page renders the discovered `docs/index.md` (whose slug is
+an empty string); it does **not** redirect to an arbitrary child. Use `[...slug]`, rather
+than `[slug]`, whenever nested folders are allowed:
+
+```ts
+// src/routes/docs/+page.ts
+import type { PageLoad } from './$types';
+
+export const load: PageLoad = () => ({ slug: '' });
+```
+
+```svelte
+<!-- src/routes/docs/+page.svelte -->
+<script lang="ts">
+  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+</script>
+
+<DocumentPage slug="" />
+```
+
+If the docs area needs a host-authored overview instead, write that in `+page.svelte` and
+omit the root `+page.ts`; do not add `docs/index.md` for that route.
+
+```ts
+// src/routes/docs/[...slug]/+page.ts
+import { error } from '@sveltejs/kit';
+import type { EntryGenerator, PageLoad } from './$types';
+import { docs } from '$lib/docs/source';
+
+export const entries: EntryGenerator = () =>
+  docs.documents
+    .filter((document) => document.slug)
+    .map((document) => ({ slug: document.slug }));
+
+export const load: PageLoad = ({ params }) => {
+  const slug = params.slug ?? '';
+  if (!docs.get(slug)) error(404, `Documentation page "${slug || 'index'}" not found`);
+  return { slug };
+};
+```
+
+```svelte
+<!-- src/routes/docs/[...slug]/+page.svelte -->
+<script lang="ts">
+  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+  let { data }: { data: { slug: string } } = $props();
+</script>
+
+<DocumentPage slug={data.slug} />
+```
+
+In `DocumentPage.svelte`, load the matching component and render it inside your existing
+article presentation:
+
+```svelte
+<script lang="ts">
+  import { docs } from '$lib/docs/source';
+  import { Publication } from '@acrolls/svelte';
+  let { slug }: { slug: string } = $props();
+  const document = $derived(docs.get(slug));
+</script>
+
+{#if document}
+  {#await document.loader() then Article}
+    <Publication>
+      <Article />
+    </Publication>
+  {/await}
+{:else}
+  <p>Documentation page not found.</p>
+{/if}
+```
+
+Copy-ready versions live in [snippets/docs-source.ts](./snippets/docs-source.ts),
+[snippets/docs-generated-layout.svelte](./snippets/docs-generated-layout.svelte),
+[snippets/docs-root-page.svelte](./snippets/docs-root-page.svelte),
+[snippets/page-load.ts](./snippets/page-load.ts), and
+[snippets/document-page.svelte](./snippets/document-page.svelte). The working workspace
+example is in [`examples/kit-consumer`](../examples/kit-consumer/); it intentionally uses
+the workspace-only SvelteKit adapter and is not the external `file:` install path.
+
+## 7. Validate content from the CLI
 
 ```bash
 /Users/amrit/acrolls/packages/cli/dist/index.js validate ./src/routes/blog/hello.md
@@ -160,5 +362,8 @@ See [docs-shell.md](./docs-shell.md). Short version:
 - [ ] CSS imported once (`default` or `foundation`)  
 - [ ] Body wrapped in `Publication`  
 - [ ] `pnpm dev` shows the article  
+- [ ] Docs root renders `docs/index.md` (or a deliberate host-owned overview)
+- [ ] A nested docs URL renders through `[...slug]`
+- [ ] `pnpm build` succeeds in the host
 
 If something fails → [troubleshooting.md](./troubleshooting.md).

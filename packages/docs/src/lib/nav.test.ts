@@ -77,4 +77,53 @@ describe('nested nav', () => {
 			'Artifacts'
 		]);
 	});
+
+	it('treats a top-level section landing as a page', () => {
+		const nav: DocsNav = {
+			title: 'Docs',
+			baseHref: '/docs',
+			sections: [{
+				id: 'guides',
+				title: 'Guides',
+				href: '/docs/guides',
+				items: [{ title: 'Install', href: '/docs/guides/install' }]
+			}]
+		};
+
+		expect(flattenDocsNav(nav).map((item) => item.title)).toEqual(['Guides', 'Install']);
+		expect(findActiveDocsItem(nav, '/docs/guides')?.title).toBe('Guides');
+		expect(buildDocsCrumbs(nav, '/docs/guides').map((crumb) => crumb.label)).toEqual([
+			'Home',
+			'Docs',
+			'Guides'
+		]);
+		expect(docsPager(nav, '/docs/guides/install').previous?.title).toBe('Guides');
+	});
+
+	it('isolates duplicate host ids before keyed rendering', () => {
+		const nav: DocsNav = {
+			title: 'Docs',
+			baseHref: '/docs',
+			sections: [
+				{
+					id: 'same',
+					title: 'One',
+					items: [{ id: 'same-page', title: 'First', href: '/docs/first' }]
+				},
+				{
+					id: 'same',
+					title: 'Two',
+					items: [{ id: 'same-page', title: 'Second', href: '/docs/second' }]
+				}
+			]
+		};
+
+		const normalized = withNavIds(nav);
+		const ids = normalized.sections.flatMap((section) => [
+			section.id,
+			...section.items.map((item) => item.id)
+		]);
+		expect(new Set(ids).size).toBe(ids.length);
+		expect(ids).toEqual(['same', 'same-page', 'same-2', 'same-page-2']);
+	});
 });

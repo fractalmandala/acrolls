@@ -27,6 +27,20 @@
   color: var(--acrolls-docs-fg);
 }
 
+/*
+ * A host may already have an app shell with its own centered content column.
+ * Opt into this escape hatch when DocsShell is the page-level layout surface;
+ * it restores the shell's available viewport width without requiring the host
+ * to duplicate or manually reimplement the docs rails.
+ */
+.acrolls-docs-shell.is-full-bleed {
+  width: 100vw;
+  margin-inline-start: calc(50% - 50vw);
+  position: relative;
+  z-index: 1;
+  background: var(--background, Canvas);
+}
+
 .acrolls-docs-shell.has-toc {
   grid-template-columns: var(--acrolls-docs-sidebar-width) minmax(0, 1fr);
 }
@@ -93,6 +107,29 @@
   margin-top: 0.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--acrolls-docs-border);
+}
+
+/* Sidebar primitive tokens: DocsSidebar is also supported outside DocsShell. */
+.acrolls-docs-sidebar:not(.acrolls-docs-sidebar--shell) {
+  --acrolls-docs-border: var(
+    --border,
+    var(--border-primary, color-mix(in oklab, currentColor 14%, transparent))
+  );
+  --acrolls-docs-muted: var(
+    --muted-foreground,
+    var(--text-secondary, color-mix(in oklab, currentColor 55%, transparent))
+  );
+  --acrolls-docs-fg: var(--foreground, var(--text-primary, currentColor));
+  --acrolls-docs-accent: var(--accent, var(--theme-color, currentColor));
+  --acrolls-docs-surface: var(
+    --card,
+    var(--background-secondary, color-mix(in oklab, currentColor 4%, transparent))
+  );
+  --acrolls-docs-radius: var(--radius, 0.5rem);
+
+  min-width: 0;
+  width: 100%;
+  color: var(--acrolls-docs-fg);
 }
 
 /* Sidebar brand / filter */

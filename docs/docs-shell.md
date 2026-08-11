@@ -18,9 +18,58 @@ Fumadocs-class chrome for multi-page documentation areas.
 
 Article **body** is still yours: usually `<Publication><Doc /></Publication>`.
 
+`DocsShell` is the composed page-level option: it owns the left navigation sidebar, the
+article body grid, and the optional right-hand table-of-contents sidebar. Keep the article
+inside `.acrolls-docs-shell__body`; the body is one column without a TOC and becomes an
+article + TOC grid when the TOC is enabled.
+
+If the host already owns an app shell with its own sidebar / center / sidebar grid, use the
+exported `DocsSidebar` primitive instead of nesting `DocsShell` inside that center column:
+
+```svelte
+<main class="appbody">
+  <aside class="sidebarleft">
+    <DocsSidebar nav={docsNav} pathname={page.url.pathname} filterable />
+  </aside>
+  <article class="bodymain">{@render children()}</article>
+  <aside class="sidebarright"><!-- host-owned TOC or tools --></aside>
+</main>
+```
+
+This keeps Acrolls responsible for generated navigation behavior while the host remains
+responsible for its existing page-level column layout. The host can compose breadcrumbs,
+article content, TOC, and pager independently when it does not need the full shell.
+
+When the host wants the complete `DocsShell` but cannot remove its outer constrained wrapper,
+set `fullBleed` explicitly:
+
+```svelte
+<DocsShell fullBleed nav={docsNav} pathname={page.url.pathname}>
+  {@render children()}
+</DocsShell>
+```
+
+For the cleanest integration, mount the full shell outside the competing app-body wrapper.
+`fullBleed` is the compatibility boundary for hosts where that wrapper cannot be changed;
+ancestor `overflow: hidden` or transforms can still clip a viewport breakout.
+
 ---
 
-## 1. Define navigation
+## 1. Choose generated or manual navigation
+
+For Markdown directory trees, prefer the generated source described in
+[`getting-started.md`](./getting-started.md) and [`integrate-sveltekit.md`](./integrate-sveltekit.md).
+It derives sections, nested groups, items, routes, breadcrumbs, and pager order from the
+filesystem and frontmatter, so you do not need to maintain this object by hand.
+
+Generated configuration remains host-owned: `folders` customizes a filesystem-derived tree;
+`entries` can define groups, landing pages, parentage, routes, labels, visibility, ordering,
+and badges. An explicit entry wins over document configuration, which wins over frontmatter.
+`hidden: true` removes a page from navigation only—it is not authorization. Generated IDs are
+stable; provide an explicit `id` only when you need to preserve a manual identifier.
+
+Use a manual `DocsNav` when the navigation is intentionally curated or does not map to a
+content directory.
 
 **`src/lib/docs/nav.ts`** (copy [snippets/nav.ts](./snippets/nav.ts)):
 
@@ -74,6 +123,7 @@ export const docsNav: DocsNav = {
 
 - **Leaf pages** need `href` (used for pager + active state).  
 - **Groups** use `children` (optional `href` for overview pages).  
+- **Sections and groups** may also carry `href`, `description`, and `badge` for generated or curated overview navigation.
 - **`storageKey`** namespaces accordion state (`acrolls-docs:open:<key>`).  
 - **`id`** on sections/groups should be stable (don’t rename casually or open state “resets”).  
 
@@ -132,6 +182,7 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 | `homeHref` / `homeLabel` | `/` · `Home` | First breadcrumb |
 | `filterable` | `true` | Sidebar filter input |
 | `showToc` | `true` | Right TOC rail |
+| `fullBleed` | `false` | Break out of a constrained host column when DocsShell owns the page layout |
 | `showPager` | `true` | Prev/next footer |
 | `persistOpen` | `true` | localStorage accordion state |
 | `tocMinLevel` / `tocMaxLevel` | `2` / `3` | Heading levels in TOC |

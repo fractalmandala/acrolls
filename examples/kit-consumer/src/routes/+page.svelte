@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Article from '../../../starter/article.md';
+	import Article from '../content/index.md';
 	import { Callout, Figure } from '@acrolls/svelte';
 </script>
 

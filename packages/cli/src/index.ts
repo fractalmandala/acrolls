@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-import { mkdir } from 'node:fs/promises';
+import { mkdir, stat } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
-import { compile } from 'mdsvex';
-import { createAcrollsMdsvexOptions, renderAcrollsArticleHtml } from '@acrolls/mdsvex';
 import { parseArgs, exists } from './util.js';
 import { cmdIntegrate, detectHost } from './integrate.js';
+import { cmdOnboard } from './onboarding.js';
 import { cmdStudio } from './studio.js';
+import {
+  formatValidationDiagnostic,
+  validateCorpus,
+  validationExitCode
+} from './validate.js';
 
 const VERSION = '0.1.1';
 
@@ -14,9 +18,10 @@ function help() {
 
 Usage:
   acrolls                        Show project state
-  acrolls init [--content-dir <path>] [--dry-run] [--yes]
+  acrolls init [--content-dir <path>] [--dry-run]
   acrolls integrate [--dry-run] [--mode foundation|default] [--yes]
-  acrolls validate <file.md|file.svx> [--strict]
+  acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--acrolls-root <path>] [--check] [--non-interactive|--interactive] [--json]
+  acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]
   acrolls studio <file.md|file.svx> [--port <n>] [--no-open] [--mode foundation|default]
   acrolls --help
   acrolls --version
@@ -42,7 +47,7 @@ async function cmdInit(args: ReturnType<typeof parseArgs>) {
 async function cmdValidate(args: ReturnType<typeof parseArgs>) {
   const file = args._[1];
   if (!file) {
-    console.error('Usage: acrolls validate <file.md|file.svx> [--strict]');
+    console.error('Usage: acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]');
     return 2;
   }
   const abs = resolve(process.cwd(), file);
@@ -51,26 +56,41 @@ async function cmdValidate(args: ReturnType<typeof parseArgs>) {
     return 1;
   }
   const strict = Boolean(args.flags.strict);
-  const { readFile } = await import('node:fs/promises');
-  const source = await readFile(abs, 'utf8');
-  try {
-    const result = await compile(source, {
-      filename: abs,
-      ...createAcrollsMdsvexOptions({ strict, extensions: ['.svx', '.md'] })
-    } as never);
-    if (!result || !result.code) {
-      console.error('Validation failed: empty mdsvex compile result');
-      return 1;
-    }
-    // Also exercise HTML pipeline (Studio parity)
-    await renderAcrollsArticleHtml(source, { strict });
-    console.log(`OK ${file} (mdsvex ${result.code.length} chars + html pipeline)`);
-    return 0;
-  } catch (err) {
-    console.error(`FAIL ${file}`);
-    console.error(err instanceof Error ? err.message : err);
-    return 1;
+  const modeValue = String(args.flags.mode ?? (strict ? 'authored' : 'migration'));
+  if (modeValue !== 'authored' && modeValue !== 'migration') {
+    console.error('Invalid --mode. Use authored or migration.');
+    return 2;
   }
+  const onInvalid = String(args.flags['on-invalid'] ?? 'fail');
+  if (onInvalid !== 'fail' && onInvalid !== 'error-page') {
+    console.error('Invalid --on-invalid. Use fail or error-page.');
+    return 2;
+  }
+  const isDirectory = (await stat(abs)).isDirectory();
+  const target = isDirectory ? abs : resolve(abs, '..');
+  const report = typeof args.flags.report === 'string' ? String(args.flags.report) : undefined;
+  const result = await validateCorpus({
+    root: target,
+    files: isDirectory ? undefined : [abs],
+    mode: modeValue as 'authored' | 'migration',
+    onInvalid: onInvalid as 'fail' | 'error-page',
+    strict,
+    report
+  });
+  const documents = isDirectory
+    ? result.documents
+    : result.documents.filter((document) => document.file === abs);
+  for (const document of documents) {
+    for (const diagnostic of document.diagnostics) {
+      console.error(formatValidationDiagnostic(diagnostic, result.root));
+    }
+  }
+  const { discovered, ready, normalized, rejected } = result.summary;
+  console.log(`${discovered} discovered · ${ready} ready · ${normalized} normalized · ${rejected} rejected`);
+  return validationExitCode(result, onInvalid as 'fail' | 'error-page', {
+    mode: modeValue as 'authored' | 'migration',
+    strict
+  });
 }
 
 async function cmdStatus() {
@@ -106,6 +126,7 @@ async function main() {
     if (!cmd) code = await cmdStatus();
     else if (cmd === 'init') code = await cmdInit(args);
     else if (cmd === 'integrate') code = await cmdIntegrate(args);
+    else if (cmd === 'onboard') code = await cmdOnboard(args);
     else if (cmd === 'validate') code = await cmdValidate(args);
     else if (cmd === 'studio') code = await cmdStudio(args);
     else {

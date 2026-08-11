@@ -9,6 +9,23 @@ export type {
 } from './types.js';
 
 export {
+	createDocsContentSource,
+	defineDocsConfig,
+	DocsContentError
+} from './content.js';
+export type {
+	DocsContentConfig,
+	DocsContentEntryConfig,
+	DocsContentDocument,
+	DocsContentInput,
+	DocsContentLoader,
+	DocsContentSource,
+	DocsDocumentConfig,
+	DocsFolderConfig,
+	DocsMetadata
+} from './content.js';
+
+export {
 	flattenDocsNav,
 	findActiveDocsItem,
 	findActiveSection,
@@ -22,7 +39,8 @@ export {
 	navStorageKey,
 	openIdsForPath,
 	normalizePath,
-	slugify
+	slugify,
+	stableId
 } from './nav.js';
 
 export { scanHeadings } from './toc.js';

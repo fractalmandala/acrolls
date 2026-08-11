@@ -2,12 +2,12 @@
 
 | Package | Import | Role |
 |---|---|---|
-| `@acrolls/mdsvex` | `createAcrollsMdsvexOptions`, `renderAcrollsArticleHtml`, … | Compile pipeline |
+| `@acrolls/mdsvex` | `createAcrollsMdsvexPreprocessor`, `createAcrollsMdsvexOptions`, `renderAcrollsArticleHtml`, … | Compile pipeline + source safety |
 | `@acrolls/svelte` | `Publication`, `Callout`, `Figure`, … | Article components |
 | `@acrolls/styles` | CSS / SASS entrypoints | Article styles |
 | `@acrolls/docs` | `DocsShell`, `DocsNav` types, helpers | Docs chrome |
-| `@acrolls/cli` | binary | validate / studio / integrate |
-| `@acrolls/sveltekit` | Kit helpers | Prefer mdsvex package until published |
+| `@acrolls/cli` | binary | onboard / validate / studio / integrate |
+| `@acrolls/sveltekit` | Kit helpers | Workspace-only for now; do **not** add through `file:` in an external host |
 
 ---
 
@@ -24,7 +24,9 @@ import {
 
 | Export | Use |
 |---|---|
-| `createAcrollsMdsvexOptions(opts?)` | Pass to `mdsvex(...)` |
+| `createAcrollsMdsvexPreprocessor(opts?)` | Preferred Svelte preprocessor; normalizes unsafe Markdown before mdsvex |
+| `createAcrollsMdsvexOptions(opts?)` | Lower-level options object for direct `mdsvex(...)` usage |
+| `normalizeAcrollsMarkdown(source, opts?)` | Normalize Markdown and return source-safety findings |
 | `renderAcrollsArticleHtml(source)` | Studio / HTML preview string |
 | `parseFenceMeta` | Test or custom tools |
 
@@ -80,6 +82,16 @@ import '@acrolls/docs/styles.css';
 
 ---
 
+## Local-host compatibility
+
+For an external SvelteKit app using a local Acrolls clone, install only
+`@acrolls/mdsvex`, `@acrolls/svelte`, `@acrolls/styles`, and `@acrolls/docs`. Import the
+generated source API from `@acrolls/docs/content`. `@acrolls/sveltekit` is used by this
+monorepo's workspace example and cannot currently be consumed safely through a `file:`
+dependency because it declares `workspace:*` dependencies.
+
 ## Versioning
 
-Monorepo packages currently track `0.1.x` / `0.2.x` independently. Treat as alpha: pin `file:` paths and rebuild consciously.
+Monorepo packages currently track independent alpha versions (for example docs `0.3.x` and
+SvelteKit helpers `0.2.x`). Pin local `file:` paths consciously, rebuild Acrolls before a
+host refresh, and expect API changes before 1.0.

@@ -1,7 +1,7 @@
 {
   "name": "@acrolls/cli",
   "version": "0.1.1",
-  "description": "Acrolls CLI: init, integrate, validate, studio.",
+  "description": "Acrolls CLI: onboard, init, integrate, validate, studio.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
@@ -15,7 +15,8 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --clean && node ./scripts/binify.mjs",
-    "check": "tsc --noEmit -p tsconfig.json"
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@acrolls/mdsvex": "workspace:*",
@@ -25,7 +26,8 @@
   "devDependencies": {
     "@types/node": "^22.17.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=20.19.0"

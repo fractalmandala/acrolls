@@ -6,13 +6,30 @@ export function normalizePath(path: string): string {
 	return bare || '/';
 }
 
-/** Slugify for storage keys / auto ids. */
-export function slugify(value: string): string {
+function normalizeSlug(value: string): string {
 	return value
 		.toLowerCase()
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '')
-		.slice(0, 64);
+		.replace(/^-+|-+$/g, '');
+}
+
+/** Slugify for storage keys and bounded public-facing auto ids. */
+export function slugify(value: string): string {
+	return normalizeSlug(value).slice(0, 64);
+}
+
+/** Full-length deterministic identity for navigation nodes and persistence keys. */
+export function stableId(value: string): string {
+	const normalized = value
+		.toLowerCase()
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '');
+	const identity = [...normalized]
+		.map((character) => /[a-z0-9]/.test(character)
+			? character
+			: `-${character.codePointAt(0)!.toString(36)}-`)
+		.join('');
+	return identity || 'item';
 }

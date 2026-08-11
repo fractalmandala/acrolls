@@ -1,16 +1,15 @@
 import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { mdsvex } from 'mdsvex';
-import { createAcrollsMdsvexOptions } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
 
-const acrolls = createAcrollsMdsvexOptions({
+const acrolls = createAcrollsMdsvexPreprocessor({
 	extensions: ['.md', '.svx']
 });
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	extensions: ['.svelte', '.md', '.svx'],
-	preprocess: [vitePreprocess(), mdsvex(acrolls)],
+	preprocess: [vitePreprocess(), acrolls],
 	kit: {
 		adapter: adapter()
 	}

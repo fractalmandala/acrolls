@@ -44,6 +44,9 @@ cd /Users/amrit/acrolls && pnpm build
 cd /path/to/your-app && pnpm install   # refresh file: links if needed
 ```
 
+Restart the host dev server after this refresh. Package managers may cache a packed
+`file:` dependency, so rebuilding Acrolls alone is not always enough.
+
 ## Do not install (for now)
 
 | Package | Why |
@@ -56,6 +59,7 @@ cd /path/to/your-app && pnpm install   # refresh file: links if needed
 ```bash
 ACROLLS=/Users/amrit/acrolls
 "$ACROLLS/packages/cli/dist/index.js" --help
+"$ACROLLS/packages/cli/dist/index.js" onboard --non-interactive --docs-dir docs --base-href /docs
 "$ACROLLS/packages/cli/dist/index.js" validate ./path/to/article.md
 "$ACROLLS/packages/cli/dist/index.js" studio ./path/to/article.md
 "$ACROLLS/packages/cli/dist/index.js" integrate --dry-run
@@ -64,7 +68,7 @@ ACROLLS=/Users/amrit/acrolls
 ## pnpm + file: tips
 
 - Always `pnpm build` Acrolls before `pnpm add file:…`  
-- If types/resolves go stale: delete `node_modules/@acrolls` and `pnpm install`  
+- If types or modules go stale: rebuild Acrolls, run `pnpm install` in the host, then restart `pnpm dev`. Do not manually delete package folders from `node_modules`.
 - Do not publish the host app with `file:` deps — wait for registry versions  
 
 ## Multiple hosts

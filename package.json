@@ -12,7 +12,7 @@
     "dev:example": "pnpm --filter @acrolls/example-kit dev",
     "build:example": "pnpm --filter @acrolls/example-kit build",
     "check": "pnpm -r --filter './packages/*' run check",
-    "test": "pnpm -r --filter './packages/*' run test --if-present",
+    "test": "pnpm -r --if-present --filter './packages/*' run test",
     "cli": "pnpm --filter @acrolls/cli exec node ./dist/index.js"
   },
   "devDependencies": {
