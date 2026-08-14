@@ -1,4 +1,4 @@
-# Docs shell (`@acrolls/docs`)
+# Docs shell (`acrolls/docs`)
 
 Fumadocs-class chrome for multi-page documentation areas.
 
@@ -74,7 +74,7 @@ content directory.
 **`src/lib/docs/nav.ts`** (copy [snippets/nav.ts](./snippets/nav.ts)):
 
 ```ts
-import type { DocsNav } from '@acrolls/docs';
+import type { DocsNav } from 'acrolls/docs';
 
 export const docsNav: DocsNav = {
   title: 'Documentation',
@@ -137,11 +137,11 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 
 ```svelte
 <script lang="ts">
-  import '@acrolls/styles/foundation.css'; // or default.css
-  import '@acrolls/docs/styles.css';
+  import 'acrolls/styles/foundation.css'; // or default.css
+  import 'acrolls/docs/styles.css';
   import { page } from '$app/state';
-  import { DocsShell } from '@acrolls/docs';
-  import { docsNav } from '$lib/docs/nav';
+  import { DocsShell } from 'acrolls/docs';
+  import { docs } from '../../lib/docs/source';
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -149,7 +149,7 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 
 <div class="docs-root">
   <DocsShell
-    nav={docsNav}
+    nav={docs.nav}
     pathname={page.url.pathname}
     homeHref="/"
     homeLabel="Home"
@@ -194,7 +194,7 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 
 ```svelte
 <script lang="ts">
-  import { Publication } from '@acrolls/svelte';
+  import { Publication } from 'acrolls/svelte';
   import type { PageProps } from './$types';
   let { data }: PageProps = $props();
   const Doc = $derived(data.document);
@@ -216,10 +216,10 @@ TOC looks inside `.acrolls-docs-shell__article` (shell wraps children). Headings
 On `/docs`, set `showToc={false}` and `showPager={false}` (as above). List cards from your nav:
 
 ```ts
-import { flattenDocsNav } from '@acrolls/docs';
-import { docsNav } from '$lib/docs/nav';
+import { flattenDocsNav } from 'acrolls/docs';
+import { docs } from '../../lib/docs/source';
 
-export const guides = flattenDocsNav(docsNav).map((i) => ({
+export const guides = flattenDocsNav(docs.nav).map((i) => ({
   href: i.href!,
   title: i.title,
   description: i.description ?? ''
@@ -263,7 +263,7 @@ Pager order = depth-first leaf order.
 Clear state: DevTools → Application → Local Storage → delete the key, or:
 
 ```ts
-import { clearOpenState } from '@acrolls/docs';
+import { clearOpenState } from 'acrolls/docs';
 clearOpenState('myapp-docs');
 ```
 

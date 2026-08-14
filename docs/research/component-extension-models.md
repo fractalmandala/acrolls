@@ -60,7 +60,7 @@ React, Vue, Svelte, or Astro.
 
 Acrolls should keep three extension boundaries separate:
 
-1. **Content components:** `@acrolls/svelte` / SVX components such as `Publication`,
+1. **Content components:** `acrolls/svelte` / SVX components such as `Publication`,
    `Callout`, `Figure`, and future interactive content primitives.
 2. **Navigation primitive:** `DocsSidebar`, which supplies generated navigation behavior
    without claiming the host's page-level grid.

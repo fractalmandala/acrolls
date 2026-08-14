@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, relative, resolve } from 'node:path';
 import type { Args } from './util.js';
 import { exists } from './util.js';
 import { detectHost } from './integrate.js';
@@ -10,7 +9,6 @@ export type OnboardingOptions = {
 	docsDir: string;
 	baseHref: string;
 	mode: 'foundation' | 'default';
-	acrollsRoot?: string;
 };
 
 export type OnboardingStep = {
@@ -42,8 +40,6 @@ export type OnboardingPlan = {
 	steps: OnboardingStep[];
 };
 
-const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-
 export async function buildOnboardingPlan(options: OnboardingOptions): Promise<OnboardingPlan> {
 	const root = resolve(options.root);
 	const detectedHost = await detectHost(root);
@@ -56,6 +52,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 				hasMdsvex: false,
 				hasAcrolls: false,
 				deps: {},
+				viteConfig: null,
 				svelteConfig: null,
 				layout: null
 			};
@@ -67,39 +64,76 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	const globRoot = toPosix(relative(sourceDirectory, docsAbsolute));
 	const contentGlob = globRoot.startsWith('.') ? globRoot : `./${globRoot}`;
 	const contentPrefix = `${contentGlob.replace(/^\.\//, '')}/`;
-	const configFile = host.svelteConfig ?? 'svelte.config.js';
+	const configFile = host.viteConfig ?? host.svelteConfig ?? 'vite.config.ts';
 	const layoutFile = host.layout ?? 'src/routes/+layout.svelte';
-	const routeDirectory = `src/routes${baseHref}`;
+	const routeDirectory = baseHref === '/' ? 'src/routes' : `src/routes${baseHref}`;
 	const docsLayoutFile = `${routeDirectory}/+layout.svelte`;
 	const configSource = await readOptional(resolve(root, configFile));
 	const layoutSource = await readOptional(resolve(root, layoutFile));
 	const docsLayoutSource = await readOptional(resolve(root, docsLayoutFile));
 	const hostDeps = 'deps' in host ? (host.deps as Record<string, string>) : {};
-	const hasDocs = Boolean(hostDeps['@acrolls/docs']);
-	const localAcrollsRoot = await resolveLocalAcrollsRoot(options.acrollsRoot);
+	const hasDocs = Boolean(hostDeps.acrolls);
+	const nestedHref = baseHref === '/' ? '/<nested-slug>' : `${baseHref}/<nested-slug>`;
 
 	const sourceFile = 'src/lib/docs/source.ts';
 	const documentPageFile = 'src/lib/docs/DocumentPage.svelte';
 	const rootRouteFile = `${routeDirectory}/+page.svelte`;
 	const catchAllSvelteFile = `${routeDirectory}/[...slug]/+page.svelte`;
 	const catchAllLoadFile = `${routeDirectory}/[...slug]/+page.ts`;
+	const sourceSource = await readOptional(resolve(root, sourceFile));
+	const docsLayoutSourceForCheck = await readOptional(resolve(root, docsLayoutFile));
+	const documentPageSource = await readOptional(resolve(root, documentPageFile));
+	const rootRouteSource = await readOptional(resolve(root, rootRouteFile));
+	const catchAllLoadSource = await readOptional(resolve(root, catchAllLoadFile));
+	const catchAllSvelteSource = await readOptional(resolve(root, catchAllSvelteFile));
+	const sourceReady =
+		(sourceSource.includes('createDocsContentSource') || sourceSource.includes('createAcrollsDocsSource')) &&
+		sourceSource.includes('import.meta.glob') &&
+		sourceSource.includes("import: 'metadata'") &&
+		sourceSource.includes('metadata') &&
+		sourceSource.includes(contentGlob) &&
+		(sourceSource.includes(contentPrefix) || sourceSource.includes('contentRoot')) &&
+		((sourceSource.includes('key:') && sourceSource.includes('load')) ||
+			(sourceSource.includes('modules') && sourceSource.includes('metadata')));
+	const docsLayoutReady =
+		/(DocsShell|DocsSidebar)/.test(docsLayoutSourceForCheck) &&
+		docsLayoutSourceForCheck.includes('docs.nav') &&
+		(layoutSource.includes('acrolls/docs/styles.css') ||
+			docsLayoutSourceForCheck.includes('acrolls/docs/styles.css'));
+	const documentPageReady =
+		documentPageSource.includes('docs.get') &&
+		documentPageSource.includes('loader') &&
+		(documentPageSource.includes('Publication') ||
+			configSource.includes('PublicationLayout') ||
+			configSource.includes('createAcrollsSvelteKitMdsvexPreprocessor'));
+	const routesReady =
+		rootRouteSource.includes('DocumentPage') &&
+		catchAllLoadSource.includes('entries') &&
+		catchAllLoadSource.includes('docs.get') &&
+		catchAllLoadSource.includes('error(404') &&
+		catchAllSvelteSource.includes('DocumentPage') &&
+		catchAllSvelteSource.includes('data.slug');
 
 	const sourceCode = docsSourceSnippet({ contentGlob, contentPrefix, baseHref });
-	const docsLayoutCode = docsLayoutSnippet({ baseHref });
+	const docsSourceImport = relativeImport(routeDirectory, sourceFile);
+	const documentPageImport = relativeImport(routeDirectory, documentPageFile);
+	const nestedDocumentPageImport = relativeImport(`${routeDirectory}/[...slug]`, documentPageFile);
+	const nestedDocsSourceImport = relativeImport(`${routeDirectory}/[...slug]`, sourceFile);
+	const docsLayoutCode = docsLayoutSnippet({ baseHref, docsSourceImport });
 	const documentPageCode = documentPageSnippet();
-	const catchAllLoadCode = catchAllLoadSnippet();
-	const catchAllSvelteCode = catchAllSvelteSnippet();
+	const catchAllLoadCode = catchAllLoadSnippet(nestedDocsSourceImport);
+	const catchAllSvelteCode = catchAllSvelteSnippet(nestedDocumentPageImport);
 
 	const steps: OnboardingStep[] = [
 		{
 			id: 'install',
 			title: 'Install the host dependencies',
 			action: 'Run this from the existing SvelteKit project root. The command is read-only until you execute it.',
-			command: installCommand(localAcrollsRoot),
+			command: installCommand(),
 			caution:
-				'For a local Acrolls clone, do not install @acrolls/sveltekit through file:; it has workspace-internal dependencies. Use @acrolls/mdsvex directly as the next step shows.',
-			verify: 'package.json contains @acrolls/mdsvex, @acrolls/svelte, @acrolls/styles, and @acrolls/docs.',
-			completed: Boolean(host.hasAcrolls && host.hasMdsvex && host.hasSvelte && hasDocs)
+				'Install the public acrolls package only. Its supported subpath exports provide the compiler, components, styles, docs shell, and CLI.',
+			verify: 'package.json contains acrolls and the host already contains SvelteKit/Svelte.',
+			completed: Boolean(host.hasAcrolls && host.hasSvelte && hasDocs)
 		},
 		{
 			id: 'preprocessor',
@@ -109,25 +143,29 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 				'Open this file. Merge the import and preprocessor into the existing config; keep your adapter and kit settings.',
 			code: preprocessorSnippet(),
 			caution:
-				'Use createAcrollsMdsvexPreprocessor from @acrolls/mdsvex. If the config already calls mdsvex(...), replace that call rather than adding a second Markdown preprocessor. Do not replace a complex existing preprocess array blindly. .svx remains executable Svelte and fail-fast.',
+				'For SvelteKit 3, merge these options into sveltekit() in vite.config.ts. SvelteKit 2.62+ supports the same shape. Use createAcrollsMdsvexPreprocessor from acrolls/mdsvex. Keep .svelte in the extensions array; the preprocessor extensions option lists only .md and .svx. If the config already calls mdsvex(...), replace that call rather than adding a second Markdown preprocessor. Preserve the host adapter and other Vite plugins.',
 			verify:
-				'The config has .svelte, .md, and .svx extensions and calls createAcrollsMdsvexPreprocessor() (or the workspace-only SvelteKit wrapper).',
+				'The exported SvelteKit config keeps extensions: [\'.svelte\', \'.md\', \'.svx\'] and its preprocess includes vitePreprocess() plus createAcrollsMdsvexPreprocessor() (or the acrolls/sveltekit wrapper).',
 			completed:
-				configSource.includes('createAcrollsMdsvexPreprocessor') ||
-				configSource.includes('createAcrollsSvelteKitMdsvexPreprocessor')
+				(configSource.includes('createAcrollsMdsvexPreprocessor') ||
+					configSource.includes('createAcrollsSvelteKitMdsvexPreprocessor')) &&
+				configSource.includes('preprocess') &&
+				configSource.includes('.svelte') &&
+				configSource.includes('.md') &&
+				configSource.includes('.svx')
 		},
 		{
 			id: 'styles',
 			title: 'Add the Acrolls style preset',
 			file: docsLayoutFile,
 			action: `Add this import once to the docs surface. The recommended location is ${docsLayoutFile}; choose the ${mode} preset and do not load both presets.`,
-			code: `import '@acrolls/styles/${mode}.css';`,
+			code: `import 'acrolls/styles/${mode}.css';`,
 			caution:
 				'Import one Acrolls style preset exactly once per docs/blog surface. If the root layout already owns the preset, leave this line out of the docs layout instead of importing it twice.',
-			verify: `The chosen @acrolls/styles/${mode}.css import appears exactly once in the docs surface.`,
+			verify: `The chosen acrolls/styles/${mode}.css import appears exactly once in the docs surface.`,
 			completed:
-				layoutSource.includes(`@acrolls/styles/${mode}.css`) ||
-				docsLayoutSource.includes(`@acrolls/styles/${mode}.css`)
+				layoutSource.includes(`acrolls/styles/${mode}.css`) ||
+				docsLayoutSource.includes(`acrolls/styles/${mode}.css`)
 		},
 		{
 			id: 'content',
@@ -147,9 +185,9 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			action: `Create this file. It maps the ${docsDir}/ corpus into a serializable Acrolls page tree.`,
 			code: sourceCode,
 			caution:
-				'The lazy component glob and eager metadata glob must use the identical pattern. The contentPrefix must match that pattern or every route key will be wrong. This starter discovers .md only; .svx is intentionally explicit.',
+				'The lazy component glob and eager metadata glob must use the identical pattern. The contentPrefix must match that pattern or every route key will be wrong. Filesystem folders are discovered automatically; add folders only for label/order/presentation overrides. This starter discovers .md only; .svx is intentionally explicit.',
 			verify: 'The source exports docs and the two glob patterns are identical.',
-			completed: await exists(resolve(root, sourceFile))
+			completed: sourceReady
 		},
 		{
 			id: 'docs-layout',
@@ -159,8 +197,8 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			code: docsLayoutCode,
 			caution:
 				'DocsShell owns the docs chrome. If your site already owns the outer three-column shell, use DocsSidebar instead and do not nest a second DocsShell inside the center column.',
-			verify: `The docs layout renders DocsShell with docs.nav and imports @acrolls/docs/styles.css.`,
-			completed: await exists(resolve(root, docsLayoutFile))
+			verify: `The docs layout renders DocsShell with docs.nav and imports acrolls/docs/styles.css.`,
+			completed: docsLayoutReady
 		},
 		{
 			id: 'document-page',
@@ -171,27 +209,24 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			caution:
 				'Keep the Publication wrapper. It mounts code-frame and Mermaid enhancers; CSS alone does not provide those behaviors.',
 			verify: 'The component resolves docs.get(slug), awaits document.loader(), and renders <Publication>.',
-			completed: await exists(resolve(root, documentPageFile))
+			completed: documentPageReady
 		},
 		{
 			id: 'routes',
 			title: 'Add the docs routes',
 			file: `${rootRouteFile}, ${catchAllLoadFile}, ${catchAllSvelteFile}`,
 			action: 'Create the root page and the nested catch-all route. Copy each snippet into its named file.',
-			code: `// ${rootRouteFile}\n${rootRouteSnippet()}\n\n// ${catchAllLoadFile}\n${catchAllLoadCode}\n\n// ${catchAllSvelteFile}\n${catchAllSvelteCode}`,
+			code: `// ${rootRouteFile}\n${rootRouteSnippet(documentPageImport)}\n\n// ${catchAllLoadFile}\n${catchAllLoadCode}\n\n// ${catchAllSvelteFile}\n${catchAllSvelteCode}`,
 			caution:
 				'The root route handles the empty slug. The catch-all entries must exclude the empty root slug, or the same page will be generated twice.',
 			verify: `Both ${baseHref} and a nested ${baseHref}/<slug> route return a page; unknown slugs return 404.`,
-			completed:
-				(await exists(resolve(root, rootRouteFile))) &&
-				(await exists(resolve(root, catchAllLoadFile))) &&
-				(await exists(resolve(root, catchAllSvelteFile)))
+			completed: routesReady
 		},
 		{
 			id: 'preflight',
 			title: 'Preflight the corpus before starting the host',
 			action: 'Run this from the host root and fix the report before deployment.',
-			command: `acrolls validate ./${docsDir} --mode migration --on-invalid error-page --report ./.acrolls-report.json`,
+			command: `pnpm exec acrolls validate ./${docsDir} --mode migration --on-invalid error-page --report ./.acrolls-report.json`,
 			caution:
 				'Use authored mode or --on-invalid fail for an all-or-nothing corpus. error-page is a visible Markdown fallback, not true import exclusion. Invalid .svx remains fail-fast.',
 			verify: 'The summary has no unexpected rejected documents, or every rejected Markdown page is intentionally visible as a diagnostic page.',
@@ -204,7 +239,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			command: 'pnpm dev',
 			caution:
 				'If the browser shows a compiler avalanche, stop and inspect the first source file in the preflight report. Do not repair dozens of generated Svelte errors one by one.',
-			verify: `Open ${baseHref}, ${baseHref}/<nested-slug>, refresh both, and confirm the browser console has no runtime errors.`,
+			verify: `Open ${baseHref}, ${nestedHref}, refresh both, and confirm the browser console has no runtime errors.`,
 			completed: false
 		},
 		{
@@ -214,7 +249,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			command: 'pnpm build',
 			caution:
 				'Acrolls does not choose your adapter or deployment provider. Keep the host adapter, environment variables, base path, and SPA/SSR routing rules under host ownership.',
-			verify: `After deployment, check ${baseHref}, ${baseHref}/<nested-slug>, direct refreshes, code highlighting, Mermaid, navigation, and a deliberate 404.`,
+			verify: `After deployment, check ${baseHref}, ${nestedHref}, direct refreshes, code highlighting, Mermaid, navigation, and a deliberate 404.`,
 			completed: false
 		}
 	];
@@ -238,7 +273,31 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 }
 
 export function renderOnboardingPlan(plan: OnboardingPlan): string {
-	const lines = [
+	const lines = onboardingHeader(plan);
+
+	for (const [index, step] of plan.steps.entries()) {
+		lines.push(...renderStepLines(plan, index, step), '');
+	}
+
+	return lines.join('\n');
+}
+
+/** Render one checkpoint for the interactive terminal walkthrough. */
+export function renderOnboardingStep(plan: OnboardingPlan, index: number, step: OnboardingStep): string {
+	return renderStepLines(plan, index, step).join('\n');
+}
+
+/** Render a completed checkpoint without repeating its full instructions. */
+export function renderCompletedOnboardingStep(
+	plan: OnboardingPlan,
+	index: number,
+	step: OnboardingStep
+): string {
+	return [`Step ${index + 1} of ${plan.steps.length}`, `[done] ${step.title}`, 'Already complete — continuing.'].join('\n');
+}
+
+function onboardingHeader(plan: OnboardingPlan): string[] {
+	return [
 		'Acrolls onboarding',
 		'=================',
 		`Host: ${plan.host.kind} at ${plan.root}`,
@@ -246,22 +305,20 @@ export function renderOnboardingPlan(plan: OnboardingPlan): string {
 		`Style mode: ${plan.mode}`,
 		'',
 		'Run each step in order. This command is guidance-only; it does not edit host files.',
-		'Use `acrolls onboard --check` to rescan completed checkpoints or `--json` for a modal/UI client.',
+		'Use `pnpm exec acrolls onboard --check` to rescan completed checkpoints or `--json` for a modal/UI client.',
 		''
 	];
+}
 
-	for (const [index, step] of plan.steps.entries()) {
-		lines.push(`[${step.completed ? 'done' : '    '}] ${index + 1}. ${step.title}`);
-		if (step.file) lines.push(`FILE: ${step.file}`);
-		lines.push(step.action);
-		if (step.command) lines.push(`\nCOMMAND:\n  ${step.command}`);
-		if (step.code) lines.push(`\nCODE:\n${indent(step.code)}`);
-		if (step.caution) lines.push(`\nWATCH OUT:\n  ${step.caution}`);
-		lines.push(`\nCHECK:\n  ${step.verify}`);
-		lines.push('');
-	}
-
-	return lines.join('\n');
+function renderStepLines(plan: OnboardingPlan, index: number, step: OnboardingStep): string[] {
+	const lines = [`Step ${index + 1} of ${plan.steps.length}`, `[${step.completed ? 'done' : '    '}] ${step.title}`];
+	if (step.file) lines.push(`FILE: ${step.file}`);
+	lines.push(step.action);
+	if (step.command) lines.push(`\nCOMMAND:\n  ${step.command}`);
+	if (step.code) lines.push(`\nCODE:\n${indent(step.code)}`);
+	if (step.caution) lines.push(`\nWATCH OUT:\n  ${step.caution}`);
+	lines.push(`\nCHECK:\n  ${step.verify}`);
+	return lines;
 }
 
 export async function cmdOnboard(args: Args): Promise<number> {
@@ -275,13 +332,12 @@ export async function cmdOnboard(args: Args): Promise<number> {
 		root,
 		docsDir: String(args.flags['docs-dir'] ?? 'docs'),
 		baseHref: String(args.flags['base-href'] ?? '/docs'),
-		mode: modeValue,
-		acrollsRoot: typeof args.flags['acrolls-root'] === 'string' ? String(args.flags['acrolls-root']) : undefined
+		mode: modeValue
 	});
 
 	if (!plan.host.hasKit) {
 		console.error(`Acrolls onboarding expects an existing SvelteKit host; detected ${plan.host.kind}.`);
-		console.error('Use the SvelteKit adapter first, then rerun `acrolls onboard`.');
+		console.error('Use the SvelteKit adapter first, then rerun `pnpm exec acrolls onboard`.');
 		return 1;
 	}
 
@@ -295,60 +351,71 @@ export async function cmdOnboard(args: Args): Promise<number> {
 		!checkOnly &&
 		!args.flags['non-interactive'] &&
 		(args.flags.interactive === true || (Boolean(process.stdin.isTTY) && Boolean(process.stdout.isTTY)));
-	console.log(renderOnboardingPlan(plan));
 
 	if (!interactive) {
-		console.log('Non-interactive mode: complete the steps above, then rerun `acrolls onboard --check`.');
+		console.log(renderOnboardingPlan(plan));
+		console.log('Non-interactive mode: complete the steps above, then rerun `pnpm exec acrolls onboard --check`.');
 		return 0;
 	}
 
+	console.log(onboardingHeader(plan).join('\n'));
+	console.log('Interactive mode: one checkpoint at a time. Press Enter or type "next" to move forward; type "q" to pause.');
 	const readline = await import('node:readline/promises');
 	const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 	try {
 		for (const [index, step] of plan.steps.entries()) {
-			if (step.completed) continue;
-			const answer = await rl.question(`\nStep ${index + 1} ready? Press Enter after completing it (q to stop): `);
-			if (answer.trim().toLowerCase() === 'q') {
-				console.log('Onboarding paused. Rerun `acrolls onboard --check` to resume from the remaining checkpoints.');
-				return 0;
+			if (step.completed) {
+				console.log(`\n${renderCompletedOnboardingStep(plan, index, step)}`);
+				continue;
+			}
+			console.log(`\n${renderOnboardingStep(plan, index, step)}`);
+			let answer = await rl.question('\nMove to next? [Enter/next] · [q] pause: ');
+			while (!isNextCommand(answer)) {
+				if (isQuitCommand(answer)) {
+					console.log('Onboarding paused. Rerun `pnpm exec acrolls onboard --check` to resume from the remaining checkpoints.');
+					return 0;
+				}
+				console.log('Please press Enter, type "next", or type "q" to pause.');
+				answer = await rl.question('Move to next? [Enter/next] · [q] pause: ');
 			}
 		}
 	} finally {
 		rl.close();
 	}
 
-	console.log('\nOnboarding walkthrough complete. Run `acrolls onboard --check`, then deploy and verify the docs URL.');
+	console.log('\nOnboarding walkthrough complete. Run `pnpm exec acrolls onboard --check`, then deploy and verify the docs URL.');
 	return 0;
 }
 
+function normalizedAnswer(answer: string): string {
+	return answer.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isNextCommand(answer: string): boolean {
+	const value = normalizedAnswer(answer);
+	return value === '' || value === 'n' || value === 'next' || value === 'move to next';
+}
+
+function isQuitCommand(answer: string): boolean {
+	const value = normalizedAnswer(answer);
+	return value === 'q' || value === 'quit' || value === 'exit';
+}
+
 function normalizeBaseHref(value: string): string {
-	const normalized = `/${value.replace(/^\/+/, '').replace(/\/+$/, '')}`;
-	return normalized === '/' ? '/docs' : normalized;
+	const trimmed = value.trim();
+	if (!trimmed || trimmed === '/') return '/';
+	return `/${trimmed.replace(/^\/+/, '').replace(/\/+$/, '')}`;
 }
 
-async function resolveLocalAcrollsRoot(explicit?: string): Promise<string | undefined> {
-	const candidates = [explicit, process.env.ACROLLS_ROOT, PACKAGE_ROOT].filter(
-		(value): value is string => Boolean(value)
-	);
-	for (const candidate of candidates) {
-		const root = resolve(candidate);
-		if (await exists(join(root, 'packages/mdsvex/package.json'))) return root;
-	}
-	return undefined;
-}
-
-function installCommand(acrollsRoot?: string): string {
-	if (acrollsRoot) {
-		return [
-			`pnpm add file:${acrollsRoot}/packages/mdsvex file:${acrollsRoot}/packages/svelte file:${acrollsRoot}/packages/styles file:${acrollsRoot}/packages/docs`,
-			'pnpm add -D mdsvex'
-		].join('\n');
-	}
-	return ['pnpm add @acrolls/mdsvex @acrolls/svelte @acrolls/styles @acrolls/docs', 'pnpm add -D mdsvex'].join('\n');
+function installCommand(): string {
+	return 'pnpm add acrolls@latest';
 }
 
 function preprocessorSnippet(): string {
-	return `import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
+	return `import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
+import { defineConfig } from 'vite';
 
 const acrolls = createAcrollsMdsvexPreprocessor({
   extensions: ['.md', '.svx'],
@@ -356,8 +423,15 @@ const acrolls = createAcrollsMdsvexPreprocessor({
   // onInvalidDocument: 'error-page'
 });
 
-// Merge into the existing config:
-preprocess: [vitePreprocess(), acrolls]`;
+// Merge these options into the host's existing sveltekit() call.
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      extensions: ['.svelte', '.md', '.svx'],
+      preprocess: [vitePreprocess(), acrolls]
+    })
+  ]
+});`;
 }
 
 function docsSourceSnippet({
@@ -374,7 +448,7 @@ import {
   createDocsContentSource,
   defineDocsConfig,
   type DocsMetadata
-} from '@acrolls/docs/content';
+} from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 const contentPrefix = '${contentPrefix}';
@@ -396,20 +470,23 @@ export const docs = createDocsContentSource({
   config: defineDocsConfig({
     title: 'Documentation',
     baseHref: '${baseHref}',
-    subtitle: 'Generated from Markdown',
-    folders: {
-      guides: { title: 'Guides', order: 1 }
-    }
+    subtitle: 'Generated from Markdown'
   })
 });`;
 }
 
-function docsLayoutSnippet({ baseHref }: { baseHref: string }): string {
+function docsLayoutSnippet({
+	baseHref,
+	docsSourceImport
+}: {
+	baseHref: string;
+	docsSourceImport: string;
+}): string {
 	return `<script lang="ts">
-  import '@acrolls/docs/styles.css';
+  import 'acrolls/docs/styles.css';
   import { page } from '$app/state';
-  import { DocsShell } from '@acrolls/docs';
-  import { docs } from '$lib/docs/source';
+  import { DocsShell } from 'acrolls/docs';
+  import { docs } from '${docsSourceImport}';
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -423,8 +500,8 @@ function docsLayoutSnippet({ baseHref }: { baseHref: string }): string {
 
 function documentPageSnippet(): string {
 	return `<script lang="ts">
-  import { docs } from '$lib/docs/source';
-  import { Publication } from '@acrolls/svelte';
+  import { docs } from './source';
+  import { Publication } from 'acrolls/svelte';
 
   let { slug }: { slug: string } = $props();
   const document = $derived(docs.get(slug));
@@ -441,18 +518,18 @@ function documentPageSnippet(): string {
 {/if}`;
 }
 
-function rootRouteSnippet(): string {
+function rootRouteSnippet(documentPageImport: string): string {
 	return `<script lang="ts">
-  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+  import DocumentPage from '${documentPageImport}';
 </script>
 
 <DocumentPage slug="" />`;
 }
 
-function catchAllLoadSnippet(): string {
+function catchAllLoadSnippet(docsSourceImport: string): string {
 	return `import { error } from '@sveltejs/kit';
 import type { EntryGenerator, PageLoad } from './$types';
-import { docs } from '$lib/docs/source';
+import { docs } from '${docsSourceImport}';
 
 export const entries: EntryGenerator = () =>
   docs.documents.filter((document) => document.slug).map((document) => ({ slug: document.slug }));
@@ -464,9 +541,9 @@ export const load: PageLoad = ({ params }) => {
 };`;
 }
 
-function catchAllSvelteSnippet(): string {
+function catchAllSvelteSnippet(documentPageImport: string): string {
 	return `<script lang="ts">
-  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+  import DocumentPage from '${documentPageImport}';
   let { data }: { data: { slug: string } } = $props();
 </script>
 
@@ -490,4 +567,9 @@ function indent(value: string): string {
 
 function toPosix(value: string): string {
 	return value.replaceAll('\\', '/');
+}
+
+function relativeImport(fromDirectory: string, target: string): string {
+	const path = toPosix(relative(fromDirectory, target)).replace(/\.ts$/, '');
+	return path.startsWith('.') ? path : `./${path}`;
 }

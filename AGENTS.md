@@ -20,7 +20,7 @@ Context for any coding agent working on **Acrolls** (`/Users/amrit/acrolls`).
 ## Tech stack
 
 - pnpm workspaces, Node ≥ 20.19  
-- Svelte 5 (runes), SvelteKit 2  
+- Svelte 5 (runes), SvelteKit 2.62+ / 3
 - mdsvex + remark-gfm + rehype-slug + Shiki  
 - TypeScript, tsup for TS libs, `svelte-package` for Svelte packages  
 - Apache-2.0  
@@ -34,7 +34,8 @@ Context for any coding agent working on **Acrolls** (`/Users/amrit/acrolls`).
 | `@acrolls/styles` | `foundation.css`, `default.css`, SASS tokens |
 | `@acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager, persist |
 | `@acrolls/cli` | validate, studio, integrate, init |
-| `@acrolls/sveltekit` | Kit helpers — **avoid `file:` install in hosts** (`workspace:*` deps) |
+| `@acrolls/sveltekit` | Internal bundled Kit helper exposed as `acrolls/sveltekit` |
+| `acrolls` | Public package, all supported `acrolls/*` entrypoints, and CLI |
 
 ## Commands
 
@@ -48,7 +49,8 @@ pnpm --filter @acrolls/example-kit dev
 ./packages/cli/dist/index.js studio examples/starter/article.md
 ```
 
-After SDK changes, hosts with `file:` deps need `pnpm build` here then reinstall/refresh in the host.
+External hosts install only `acrolls` from npm. Internal scoped packages are bundled
+implementation units, not consumer dependencies.
 
 ## Conventions
 
@@ -58,14 +60,14 @@ After SDK changes, hosts with `file:` deps need `pnpm build` here then reinstall
 - No default mdsvex layout that wraps every site `.md` — scope Publication to blog/docs routes  
 - Avoid frontmatter key `metadata` (clashes with mdsvex export); use `reading`  
 - Escape `{`/`}` in Shiki HTML for Svelte compile  
-- Do not add `@acrolls/sveltekit` to external hosts via `file:` until published  
+- Do not add direct `@acrolls/*`, workspace, clone, or `file:` dependencies to external hosts
 
 ## Boundaries
 
 - **Do not** couple product design to mandala or dharmalib conventions as hard requirements  
 - **Do not** require dharmalib commits for Acrolls progress  
 - **Do not** claim npm publish until packages are deliberately released  
-- Themes / acrolls.dev site / npm publish are **next** product work after self-serve docs  
+- Themes and the Acrolls site remain later product work
 
 ## Canonical docs for humans (and agents integrating hosts)
 

@@ -36,6 +36,57 @@ describe('content source', () => {
 		expect(docs.nav.sections[1]?.items.map((item) => item.title)).toEqual(['Welcome to Acrolls']);
 	});
 
+	it('supports root baseHref without protocol-relative nested routes', () => {
+		const docs = createDocsContentSource({
+			config: { title: 'Mandalarepo', baseHref: '/' },
+			documents: [
+				{ key: 'index.md', metadata: { title: 'Home' }, load: async () => 'home' },
+				{ key: 'guides/installation.md', metadata: { title: 'Install' }, load: async () => 'install' }
+			]
+		});
+
+		expect(docs.documents.map((document) => document.href)).toEqual(['/', '/guides/installation']);
+		expect(docs.entries()).toEqual(['/', '/guides/installation']);
+		expect(docs.get('/guides/installation')?.title).toBe('Install');
+		expect(docs.nav.sections[1]?.items[0]?.href).toBe('/guides/installation');
+	});
+
+	it('resolves root-base group landing overrides with normal paths', () => {
+		const docs = createDocsContentSource({
+			config: {
+				title: 'Mandalarepo',
+				baseHref: '/',
+				entries: {
+					handbook: { kind: 'group', title: 'Handbook', landing: 'guides/overview.md' }
+				}
+			},
+			documents: [
+				{ key: 'guides/overview.md', metadata: { title: 'Overview' }, load: async () => 'overview' },
+				{ key: 'guides/installation.md', metadata: { title: 'Install' }, load: async () => 'install' }
+			]
+		});
+
+		expect(docs.get('guides/overview')?.href).toBe('/handbook');
+		expect(docs.nav.sections.find((section) => section.title === 'Handbook')?.href).toBe('/handbook');
+	});
+
+	it('supports root-base folder landing overrides', () => {
+		const docs = createDocsContentSource({
+			config: {
+				title: 'Mandalarepo',
+				baseHref: '/',
+				folders: { guides: { index: 'overview' } }
+			},
+			documents: [
+				{ key: 'guides/overview.md', metadata: { title: 'Guides' }, load: async () => 'guides' },
+				{ key: 'guides/install.md', metadata: { title: 'Install' }, load: async () => 'install' }
+			]
+		});
+
+		expect(docs.get('guides/overview')?.href).toBe('/guides');
+		expect(docs.nav.sections[0]?.href).toBe('/guides');
+	});
+
 	it('keeps hidden pages routable while excluding them from navigation and pager inputs', () => {
 		const docs = source();
 		expect(docs.get('guides/hidden')?.hidden).toBe(true);

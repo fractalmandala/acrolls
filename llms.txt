@@ -1,62 +1,90 @@
 # Acrolls
 
-> Acrolls is an open-source SvelteKit publishing and documentation framework. It turns Markdown and mdsvex into publication-grade articles and a nested documentation shell while the host keeps ownership of routing, content storage, auth, and deployment.
+> Acrolls is a SvelteKit publishing and documentation framework. It turns Markdown into
+> publication pages and nested documentation while the host keeps ownership of its content,
+> routes, authentication, adapter, and deployment.
 
-Use this file as the shortest reliable path through the Acrolls documentation. Read the
-integration guide before changing a host. For a local clone, build Acrolls first and refresh
-the host's `file:` dependencies after package changes. Prefer the Markdown-safe preprocessor
-over calling `mdsvex(...)` directly. `.md` is prose; `.svx` may contain intentional Svelte.
+## Installation contract
 
-## Start here
+Install one public npm package from the SvelteKit host root:
 
-- [Documentation handbook](docs/README.md): Orientation, package boundaries, and the self-serve host path.
-- [Getting started](docs/getting-started.md): Build Acrolls and render the first article in an existing SvelteKit app.
-- [Integration checklist](docs/checklist.md): Verification gates for a host trial.
-- [Guided onboarding](docs/cli.md#onboard): Run `acrolls onboard` for exact file-by-file snippets, cautions, checkpoints, and deployment verification; use `--json` for a UI/modal client.
-- [Product definition](PRODUCT.md): What Acrolls owns and what remains the host's responsibility.
-- [Technical architecture](TECH.md): Runtime, package, and workspace assumptions.
+```bash
+pnpm add acrolls@latest
+pnpm exec acrolls --version
+pnpm exec acrolls onboard --docs-dir docs --base-href /docs
+```
 
-## Install and integrate
+Do not clone Acrolls into the host. Do not add `file:` links or direct `@acrolls/*`
+dependencies. All consumer imports use `acrolls/*`.
 
-- [Local installation](docs/local-install.md): Link built Acrolls packages into a host before npm publication.
-- [SvelteKit integration](docs/integrate-sveltekit.md): Configure the mdsvex preprocessor, extensions, styles, articles, and generated docs.
-- [SvelteKit config snippet](docs/snippets/svelte.config.js): Minimal host wiring using `createAcrollsMdsvexPreprocessor`.
-- [Docs shell](docs/docs-shell.md): Configure nested navigation, TOC, breadcrumbs, pager, and persistence.
-- [Docs source snippets](docs/snippets/docs-source.ts): Build a generated docs tree from Markdown globs.
-- [Document route snippets](docs/snippets/document-page.svelte): Render lazy docs entries through the shell.
+## Activation sequence
 
-## Author content
+1. Start in an existing SvelteKit 2.62+ or SvelteKit 3 application.
+2. Install `acrolls@latest` and run `pnpm exec acrolls onboard` from the host root.
+3. Write Markdown in the directory passed with `--docs-dir` (`docs` by default).
+4. Configure Acrolls in the `sveltekit({ ... })` options in `vite.config.ts`. Do not create
+   `svelte.config.js` for SvelteKit 3.
+5. Add the generated source and routes shown by onboarding. With the defaults, documents are
+   published at `/docs` and nested files map to nested URLs below `/docs`.
+6. Run `pnpm exec acrolls validate ./docs`, then the host's `pnpm check` and `pnpm build`.
+7. Test the docs root, a nested URL, direct refresh, an unknown slug, code highlighting,
+   tables, Mermaid, navigation, and the production deployment.
 
-- [Content authoring](docs/content-authoring.md): Frontmatter, Markdown, mdsvex, code fences, Mermaid, images, and components.
-- [Styles](docs/styles.md): Choose foundation or default CSS and bridge host tokens.
-- [Article layout snippets](docs/snippets/article-page.svelte): Wrap article content with `Publication`.
-- [Generated docs layout](docs/snippets/docs-generated-layout.svelte): Compose the docs shell around route content.
+## Public entrypoints
 
-## Packages and APIs
+- `acrolls/mdsvex`: Markdown/mdsvex preprocessing, GFM, headings, Shiki, Mermaid, and source safety.
+- `acrolls/svelte`: `Publication` and article components.
+- `acrolls/docs`: `DocsShell`, navigation, breadcrumbs, TOC, and pager components.
+- `acrolls/docs/content`: generated document-tree source helpers.
+- `acrolls/sveltekit`: SvelteKit preprocessor and generated-source helpers.
+- `acrolls/styles/foundation.css`: minimal article styles.
+- `acrolls/styles/default.css`: opinionated article styles.
+- `acrolls/docs/styles.css`: documentation shell styles.
+- `acrolls/styles/sass/tokens.sass` and `acrolls/styles/sass/index.sass`: Sass entrypoints.
 
-- [Packages reference](docs/packages.md): Responsibilities and public entrypoints for every Acrolls package.
-- [`@acrolls/mdsvex` README](packages/mdsvex/README.md): GFM, slugs, Shiki, Mermaid recovery, source safety, and HTML rendering.
-- [`@acrolls/svelte` README](packages/svelte/README.md): Publication components, article enhancers, and Mermaid behavior.
-- [`@acrolls/docs` README](packages/docs/README.md): Docs shell APIs and content helpers.
-- [CLI reference](docs/cli.md): `onboard`, `validate`, `studio`, `integrate`, and local package rebuild commands.
+## CLI behavior
 
-## Safety and verification
+- `acrolls onboard [--check|--json|--non-interactive]` is the recommended read-only activation guide.
+- `acrolls validate <file|directory>` checks Markdown/SVX; only `--report` writes a report.
+- `acrolls init` creates a content directory unless `--dry-run` is used.
+- `acrolls integrate` is conservative: dry-run reports a plan; `--yes` refuses non-SvelteKit
+  hosts and existing Vite configs.
+- `acrolls studio <file>` serves a loopback-only preview and may save the selected source file.
+- `--cwd <host>` may appear before a command to target another project directory.
 
-- [Troubleshooting](docs/troubleshooting.md): Stale local packages, Svelte compile failures, source-safety warnings, tables, TOC, and Studio boundaries.
-- [Source-safety implementation](packages/mdsvex/src/source-safety.ts): Narrow Markdown normalization before mdsvex parses prose.
-- [Source-safety tests](packages/mdsvex/src/source-safety.test.ts): Regression coverage for literals, fences, Mermaid, `.svx`, and source locations.
-- [Mermaid guard](packages/mdsvex/src/remark-mermaid-guard.ts): Recovery for unfenced Mermaid declarations in generated Markdown.
-- [Validation checklist](docs/checklist.md): Confirm package builds, host wiring, content rendering, and production build.
+## Content and route defaults
 
-## Deployment
+- Authors write documents in `<host>/docs` unless `--docs-dir` changes it.
+- The generated source reads that Markdown tree with matching lazy component and eager metadata globs.
+- The host adds `src/routes/docs/+layout.svelte`, `src/routes/docs/+page.*`, and
+  `src/routes/docs/[...slug]/+page.*` for the default `/docs` URL.
+- `docs/index.md` maps to `/docs`; `docs/guides/install.md` maps to `/docs/guides/install`.
+- `.md` is prose and receives source-safety normalization. `.svx` may contain intentional Svelte
+  and remains fail-fast.
 
-- [Getting started — deployment notes](docs/getting-started.md): Follow the host's SvelteKit adapter and deployment process after local validation.
-- [Troubleshooting — stale file packages](docs/troubleshooting.md): Rebuild Acrolls, reinstall the host link, and restart the dev server.
-- [CLI validation](docs/cli.md): Run `acrolls validate ./path/to/page.md` during development and `--strict` in CI when explicit literal-code authoring is required.
-- [Agent deployment handoff](docs/cli.md#agent-handoff): From the host root, render `acrolls onboard --non-interactive --docs-dir docs --base-href /docs --json`, follow each checkpoint, then let the host own its adapter, credentials, and deployment command.
+## Failure boundaries
 
-## Optional
+- Onboarding fails when run outside a package/SvelteKit host or when flags are invalid.
+- Integration refuses to overwrite an existing `vite.config.*` because plugin arrays and host
+  options need review.
+- Validation fails on unreadable paths, unsupported files, malformed frontmatter/Markdown/Svelte,
+  duplicate routes, or strict source-safety findings.
+- A build can still fail on host route/type errors, adapter configuration, missing environment
+  variables, or invalid executable `.svx`.
+- Acrolls does not choose an adapter, configure authentication, supply deployment credentials,
+  or prove that the deployed public URL works.
 
-- [Project vision](docs/VISION.md): Product direction and boundaries.
-- [Component extension research](docs/research/component-extension-models.md): Rationale for the component model.
-- [Example SvelteKit consumer](examples/kit-consumer/svelte.config.js): Workspace configuration example for local integration.
+## Documentation index
+
+- [Documentation handbook](docs/README.md)
+- [Install from npm](docs/local-install.md)
+- [CLI reference](docs/cli.md)
+- [Getting started](docs/getting-started.md)
+- [SvelteKit integration](docs/integrate-sveltekit.md)
+- [Content authoring](docs/content-authoring.md)
+- [Packages and public APIs](docs/packages.md)
+- [Release and registry test](docs/release.md)
+- [Integration checklist](docs/checklist.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Product definition](PRODUCT.md)
+- [Technical architecture](TECH.md)

@@ -14,9 +14,17 @@ export async function detectHost(root: string) {
     ...(pkg.devDependencies as Record<string, string> | undefined)
   };
   const hasKit = Boolean(deps['@sveltejs/kit']);
-  const hasMdsvex = Boolean(deps['mdsvex']);
+  const hasMdsvex = Boolean(deps.mdsvex || deps.acrolls);
   const hasSvelte = Boolean(deps['svelte']);
-  const hasAcrolls = Boolean(deps['@acrolls/svelte'] || deps['@acrolls/mdsvex']);
+  const hasAcrolls = Boolean(deps.acrolls);
+  const viteConfig = await firstExisting(root, [
+    'vite.config.ts',
+    'vite.config.js',
+    'vite.config.mts',
+    'vite.config.mjs',
+    'vite.config.cts',
+    'vite.config.cjs'
+  ]);
   return {
     kind: hasKit ? ('sveltekit' as const) : hasSvelte ? ('svelte' as const) : ('node' as const),
     pkg,
@@ -25,6 +33,7 @@ export async function detectHost(root: string) {
     hasMdsvex,
     hasSvelte,
     hasAcrolls,
+    viteConfig,
     svelteConfig: (await exists(join(root, 'svelte.config.js')))
       ? 'svelte.config.js'
       : (await exists(join(root, 'svelte.config.ts')))
@@ -39,28 +48,33 @@ export async function detectHost(root: string) {
   };
 }
 
-const SVELTE_CONFIG_SNIPPET = `import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { createAcrollsSvelteKitMdsvexPreprocessor } from '@acrolls/sveltekit';
-
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-  extensions: ['.svelte', '.svx', '.md'],
-  preprocess: [
-    vitePreprocess(),
-    createAcrollsSvelteKitMdsvexPreprocessor()
-  ],
-  kit: {
-    adapter: adapter()
+async function firstExisting(root: string, candidates: string[]): Promise<string | null> {
+  for (const candidate of candidates) {
+    if (await exists(join(root, candidate))) return candidate;
   }
-};
+  return null;
+}
 
-export default config;
+const VITE_CONFIG_SNIPPET = `import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
+import { defineConfig } from 'vite';
+
+const acrolls = createAcrollsMdsvexPreprocessor({ extensions: ['.md', '.svx'] });
+
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      extensions: ['.svelte', '.svx', '.md'],
+      preprocess: [vitePreprocess(), acrolls]
+    })
+  ]
+});
 `;
 
 function ensureStyleImport(source: string, mode: string): { next: string; changed: boolean } {
-  const importLine = `import '@acrolls/styles/${mode}.css';`;
-  if (source.includes('@acrolls/styles/')) {
+  const importLine = `import 'acrolls/styles/${mode}.css';`;
+  if (source.includes('acrolls/styles/')) {
     return { next: source, changed: false };
   }
   // Prefer after existing imports
@@ -80,12 +94,14 @@ function patchSvelteConfig(source: string): { next: string; changed: boolean; no
   let next = source;
   let changed = false;
 
-  const hasAcrollsPreprocessor = next.includes('createAcrollsSvelteKitMdsvexPreprocessor');
+  const hasAcrollsPreprocessor =
+    next.includes('createAcrollsMdsvexPreprocessor') ||
+    next.includes('createAcrollsSvelteKitMdsvexPreprocessor');
   if (!next.includes('mdsvex') && !hasAcrollsPreprocessor) {
     notes.push('add Acrolls mdsvex preprocessor (manual merge recommended if config is complex)');
   }
-  if (!next.includes('@acrolls/sveltekit') && !next.includes('createAcrolls')) {
-    notes.push('wire createAcrollsSvelteKitMdsvexPreprocessor()');
+  if (!next.includes('acrolls/sveltekit') && !next.includes('createAcrolls')) {
+    notes.push('wire createAcrollsMdsvexPreprocessor()');
   }
   if (!next.includes("'.svx'") && !next.includes('".svx"')) {
     if (next.includes('extensions:')) {
@@ -109,24 +125,11 @@ function patchSvelteConfig(source: string): { next: string; changed: boolean; no
     if (next.includes('preprocess: [')) {
       next = next.replace(
         /preprocess:\s*\[/,
-        `preprocess: [\n    createAcrollsSvelteKitMdsvexPreprocessor(),\n    `
+        `preprocess: [\n    createAcrollsMdsvexPreprocessor(),\n    `
       );
-      const hasPreprocessorImport = /createAcrollsSvelteKitMdsvexPreprocessor\s*[,}]/.test(next);
-      if (!hasPreprocessorImport && next.includes("from '@acrolls/sveltekit'")) {
-        next = next.replace(
-          /import\s*\{([^}]*)\}\s*from\s*'@acrolls\/sveltekit';/,
-          (_full, names: string) =>
-            `import {${names.trim()}, createAcrollsSvelteKitMdsvexPreprocessor} from '@acrolls/sveltekit';`
-        );
-      } else if (!hasPreprocessorImport && next.includes('from "@acrolls/sveltekit"')) {
-        next = next.replace(
-          /import\s*\{([^}]*)\}\s*from\s*"@acrolls\/sveltekit";/,
-          (_full, names: string) =>
-            `import {${names.trim()}, createAcrollsSvelteKitMdsvexPreprocessor} from "@acrolls/sveltekit";`
-        );
-      } else if (!hasPreprocessorImport) {
-        next =
-          `import { createAcrollsSvelteKitMdsvexPreprocessor } from '@acrolls/sveltekit';\n` + next;
+      const hasPreprocessorImport = /createAcrollsMdsvexPreprocessor\s*[,}]/.test(next);
+      if (!hasPreprocessorImport) {
+        next = `import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';\n` + next;
       }
       changed = true;
       notes.push('injected createAcrollsSvelteKitMdsvexPreprocessor() into preprocess');
@@ -150,10 +153,8 @@ export async function cmdIntegrate(args: Args) {
   console.log(`Host: ${host.kind}`);
   console.log(`Mode: ${mode}`);
   console.log('Plan:');
-  console.log('  1. Ensure packages: @acrolls/{svelte,styles,mdsvex,sveltekit} + mdsvex + @acrolls/cli');
-  console.log(
-    `  2. ${host.svelteConfig ? `Patch ${host.svelteConfig}` : 'Create svelte.config.js'}`
-  );
+  console.log('  1. Ensure package: acrolls');
+  console.log(`  2. ${host.viteConfig ? `Merge Acrolls into ${host.viteConfig}` : host.svelteConfig ? `Patch legacy ${host.svelteConfig}` : 'Create vite.config.ts'}`);
   console.log(
     `  3. ${host.layout ? `Import styles in ${host.layout}` : 'Create src/routes/+layout.svelte with styles'}`
   );
@@ -163,27 +164,39 @@ export async function cmdIntegrate(args: Args) {
     console.log('\n[dry-run] no files changed');
     if (!host.hasAcrolls) {
       console.log(
-        '\nInstall when ready:\n  pnpm add @acrolls/svelte @acrolls/styles @acrolls/mdsvex @acrolls/sveltekit\n  pnpm add -D @acrolls/cli mdsvex'
+        '\nInstall when ready:\n  pnpm add acrolls@latest'
       );
     }
     return 0;
   }
 
+  if (!('hasKit' in host) || !host.hasKit) {
+    console.error('\nAcrolls integration expects an existing SvelteKit host. No files were changed.');
+    return 1;
+  }
+
   if (!args.flags.yes) {
     console.log('\nRe-run with --yes to apply (reviewed non-interactive apply).');
     console.log(
-      'Packages:\n  pnpm add @acrolls/svelte @acrolls/styles @acrolls/mdsvex @acrolls/sveltekit\n  pnpm add -D @acrolls/cli mdsvex'
+      'Package:\n  pnpm add acrolls@latest'
     );
     return 0;
+  }
+
+  if (host.viteConfig) {
+    console.error(
+      `Automatic edits to ${host.viteConfig} are intentionally disabled until the CLI can preserve arbitrary Vite plugins and SvelteKit options. Run \`pnpm exec acrolls onboard\` and merge the printed sveltekit({ ... }) options instead.`
+    );
+    return 1;
   }
 
   const backupDir = join(root, '.acrolls/backup', String(Date.now()));
   await mkdir(backupDir, { recursive: true });
 
-  // svelte.config
+  // SvelteKit config: create the Vite-based shape for new hosts; patch only legacy hosts.
   if (!host.svelteConfig) {
-    const target = join(root, 'svelte.config.js');
-    await writeFile(target, SVELTE_CONFIG_SNIPPET, 'utf8');
+    const target = join(root, 'vite.config.ts');
+    await writeFile(target, VITE_CONFIG_SNIPPET, 'utf8');
     actions.push(`created ${relative(root, target)}`);
   } else {
     const path = join(root, host.svelteConfig);
@@ -220,7 +233,7 @@ export async function cmdIntegrate(args: Args) {
       const { next, changed } = ensureStyleImport(original, mode);
       if (changed) {
         await writeFile(layoutPath, next, 'utf8');
-        actions.push(`imported @acrolls/styles/${mode}.css in ${relative(root, layoutPath)}`);
+        actions.push(`imported acrolls/styles/${mode}.css in ${relative(root, layoutPath)}`);
       } else {
         actions.push(`styles already present in ${relative(root, layoutPath)}`);
       }
@@ -230,7 +243,7 @@ export async function cmdIntegrate(args: Args) {
   } else {
     await mkdir(join(root, 'src/routes'), { recursive: true });
     const content = `<script>
-\timport '@acrolls/styles/${mode}.css';
+\timport 'acrolls/styles/${mode}.css';
 \tlet { children } = $props();
 </script>
 
@@ -258,7 +271,7 @@ export async function cmdIntegrate(args: Args) {
   actions.forEach((a) => console.log(`  • ${a}`));
   console.log(`\nBackups: ${relative(root, backupDir)}`);
   console.log(
-    '\nInstall packages if missing:\n  pnpm add @acrolls/svelte @acrolls/styles @acrolls/mdsvex @acrolls/sveltekit\n  pnpm add -D @acrolls/cli mdsvex'
+    '\nInstall the package if missing:\n  pnpm add acrolls@latest'
   );
   return 0;
 }

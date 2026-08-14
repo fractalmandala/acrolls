@@ -1,76 +1,71 @@
-# Local / monorepo install
+---
+title: Install from npm
+description: Install and activate Acrolls in a SvelteKit host using the public npm package.
+tags:
+  - installation
+  - npm
+  - sveltekit
+---
 
-Until `@acrolls/*` is on npm, hosts link the built packages from your clone.
+## Install
 
-## Path form
-
-```bash
-ACROLLS=/Users/amrit/acrolls   # change me
-
-cd "$ACROLLS" && pnpm install && pnpm build
-
-cd /path/to/your-app
-pnpm add \
-  "file:$ACROLLS/packages/mdsvex" \
-  "file:$ACROLLS/packages/svelte" \
-  "file:$ACROLLS/packages/styles" \
-  "file:$ACROLLS/packages/docs"
-
-pnpm add -D mdsvex
-```
-
-In `package.json` this looks like:
-
-```json
-{
-  "dependencies": {
-    "@acrolls/docs": "file:../acrolls/packages/docs",
-    "@acrolls/mdsvex": "file:../acrolls/packages/mdsvex",
-    "@acrolls/styles": "file:../acrolls/packages/styles",
-    "@acrolls/svelte": "file:../acrolls/packages/svelte"
-  },
-  "devDependencies": {
-    "mdsvex": "^0.12.6"
-  }
-}
-```
-
-Relative `file:../acrolls/...` is fine if both repos are siblings.
-
-## After pulling Acrolls changes
+Acrolls is installed into a SvelteKit host as one npm package:
 
 ```bash
-cd /Users/amrit/acrolls && pnpm build
-cd /path/to/your-app && pnpm install   # refresh file: links if needed
+pnpm add acrolls@latest
+pnpm exec acrolls --version
 ```
 
-Restart the host dev server after this refresh. Package managers may cache a packed
-`file:` dependency, so rebuilding Acrolls alone is not always enough.
+Do not clone Acrolls into the host, add `file:` dependencies, or install `@acrolls/*`
+packages directly. Those scoped packages are implementation details of the published
+`acrolls` package.
 
-## Do not install (for now)
+## Activate docs
 
-| Package | Why |
-|---|---|
-| `@acrolls/sveltekit` via `file:` | Depends on `workspace:*` internals; use `@acrolls/mdsvex` APIs instead |
-| `@acrolls/cli` as dependency | Optional; run the built binary by absolute path |
-
-## CLI without installing
+Run the read-only onboarding guide from the SvelteKit application root:
 
 ```bash
-ACROLLS=/Users/amrit/acrolls
-"$ACROLLS/packages/cli/dist/index.js" --help
-"$ACROLLS/packages/cli/dist/index.js" onboard --non-interactive --docs-dir docs --base-href /docs
-"$ACROLLS/packages/cli/dist/index.js" validate ./path/to/article.md
-"$ACROLLS/packages/cli/dist/index.js" studio ./path/to/article.md
-"$ACROLLS/packages/cli/dist/index.js" integrate --dry-run
+pnpm exec acrolls onboard --docs-dir docs --base-href /docs
 ```
 
-## pnpm + file: tips
+The default command assumes authors write Markdown in the host's `docs/` directory and the
+host publishes it below `/docs`. Change both flags if the source directory or public URL is
+different.
 
-- Always `pnpm build` Acrolls before `pnpm add file:…`  
-- If types or modules go stale: rebuild Acrolls, run `pnpm install` in the host, then restart `pnpm dev`. Do not manually delete package folders from `node_modules`.
-- Do not publish the host app with `file:` deps — wait for registry versions  
+Public entrypoints include:
 
-## Multiple hosts
+```text
+acrolls/mdsvex
+acrolls/svelte
+acrolls/docs
+acrolls/docs/content
+acrolls/sveltekit
+acrolls/styles/foundation.css
+acrolls/styles/default.css
+acrolls/docs/styles.css
+acrolls/styles/sass/tokens.sass
+acrolls/styles/sass/index.sass
+```
 
-You can point several projects at the same Acrolls clone. They all share one `pnpm build` output.
+After following the generated checkpoints, run:
+
+```bash
+pnpm exec acrolls validate ./docs
+pnpm check
+pnpm build
+```
+
+## Update an installation
+
+```bash
+pnpm up acrolls@latest
+pnpm exec acrolls --version
+```
+
+Restart the host development server after updating.
+
+## Maintainer publication model
+
+The public `acrolls` tarball bundles its internal `@acrolls/*` runtime packages. Publish only
+`acrolls`; the scoped implementation packages do not need a registry scope and consumers do
+not resolve or install them separately.

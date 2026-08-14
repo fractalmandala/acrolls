@@ -49,7 +49,7 @@ CSS is first-class. SASS is an additional pack for token authoring, not a requir
 | `@acrolls/styles` | `foundation.css`, `default.css`, optional SASS tokens |
 | `@acrolls/docs` | Docs shell plus generated content records and `DocsNav` |
 | `@acrolls/sveltekit` | SvelteKit mdsvex glue plus Markdown content-source adapter |
-| `@acrolls/cli` | `init`, `integrate`, `validate`, `studio` |
+| `acrolls` / `@acrolls/cli` | Installable command plus `init`, `integrate`, `onboard`, `validate`, `studio` |
 
 ## v0 scope (A + B + C)
 
@@ -78,7 +78,7 @@ CSS is first-class. SASS is an additional pack for token authoring, not a requir
 ### Polish (0.1.1)
 
 - Studio: live Publication HTML preview (banner, tables, Shiki, mermaid) + copy/wrap enhancement
-- CLI `integrate --yes`: backup + patch svelte.config / layout CSS import
+- CLI `integrate --yes`: backup + safe Vite/legacy config handling + layout CSS import
 - Mermaid fences → lazy client render
 - Shared `renderAcrollsArticleHtml()` for Studio/validate parity
 - **`@acrolls/docs`**: docs shell templates — sidebar, collapsible accordion sections, breadcrumbs, pager, mobile drawer; config-driven `DocsNav`
@@ -305,47 +305,146 @@ which snippet belongs there, or which warning matters while wiring the docs rout
 
 ### Product position
 
-The first onboarding surface is terminal-first because it works in local repositories, remote
-agent sessions, and CI-like environments. It is read-only guidance: `integrate` remains the
-separate reviewed mutation command. The onboarding plan is versioned JSON so a future modal
-dialog can render the same steps without creating a second source of truth.
+The onboarding surface is a terminal-first, installable CLI because it works in local
+repositories, remote agent sessions, and CI-like environments. The unscoped `acrolls` package
+provides the command name; `@acrolls/cli` remains the versioned implementation package. A local
+clone remains usable before the registry release sequence is complete. Onboarding is read-only
+guidance: `integrate` remains the separate reviewed mutation command. The onboarding plan is
+versioned JSON so a future modal dialog can render the same steps without creating a second
+source of truth.
 
 ### Behavior
 
-37. `acrolls onboard` detects the current host and refuses to present a SvelteKit docs plan for
-    an unsupported host without explaining the prerequisite.
+37. A developer installs the product in an existing host with `pnpm add acrolls@latest`, then
+    invokes it with `pnpm exec acrolls`. The host declares only the public `acrolls` dependency;
+    scoped implementation packages are not part of the consumer contract.
 
-38. Each checkpoint names the exact file, gives the code or command to use, explains the reason,
-    calls out a project-specific caution, and states a concrete verification check.
+38. Every command can be run from the host root. A `--cwd <path>` option provides an equivalent
+    way to target a host without first changing the terminal's directory. Relative content,
+    route, and report paths resolve against the selected host directory.
 
-39. The walkthrough covers package installation, mdsvex preprocessor wiring, CSS, the first
+39. Invoking `acrolls` without a command reports the detected project state and points to help.
+    `--help` describes all commands and their flags; `--version` prints the CLI version without
+    inspecting or changing the host.
+
+40. `acrolls onboard` detects the current host and refuses to present a SvelteKit docs plan for
+    an unsupported host while explaining the prerequisite. It accepts a docs directory, public
+    base href, and style mode.
+
+41. Each onboarding checkpoint names the exact file, gives the code or command to use, explains
+    the reason, calls out a project-specific caution, and states a concrete verification check.
+    The checkpoints cover package installation, mdsvex preprocessor wiring, CSS, the first
     content file, generated docs source, docs shell, document renderer, root/catch-all routes,
     corpus preflight, local verification, production build, and deployment URL checks.
 
-40. Onboarding never silently overwrites host files. It distinguishes guidance from `integrate`
-    and tells the operator when an existing complex config needs a manual merge.
+42. In an interactive terminal, onboarding shows the header and then only the next incomplete
+    checkpoint. It waits for Enter, `next`, or `move to next` before showing the following
+    checkpoint. It never requires the operator to scroll through the entire plan before taking
+    the first action.
 
-41. `--check` rescans filesystem checkpoints and marks completed steps, allowing an interrupted
-    human or agent session to resume without repeating completed wiring.
+43. Each interactive checkpoint remains visible until the operator advances it. The operator
+    can type `q`, `quit`, or `exit` to pause. Pausing closes the prompt cleanly and explains how
+    to resume; it does not mark the current step complete or edit the host.
 
-42. `--json` emits a versioned onboarding plan containing steps, snippets, cautions, checks,
-    host detection, docs directory, base href, and style mode for a future modal or UI client.
+44. `--check` rescans filesystem checkpoints and marks completed config, content, and route
+    steps. An interrupted operator can rerun the command and continue from the remaining
+    checkpoints without repeating completed wiring. Manual verification checkpoints remain
+    explicitly pending until the operator performs them.
 
-43. The flow explicitly warns external hosts not to install the workspace-only
-    `@acrolls/sveltekit` through `file:` and explains the direct `@acrolls/mdsvex` integration.
+45. `--non-interactive` prints the complete ordered plan once and exits without prompting. It is
+    suitable for agents, CI logs, and terminals that are not attached to a TTY. `--interactive`
+    requests the one-checkpoint flow when a TTY is available; a non-TTY invocation remains
+    deterministic and does not block waiting for input.
 
-44. The final deployment checkpoint remains host-owned: Acrolls asks the operator to run the
-    host build/deploy command and verify root, nested, refresh, highlighting, Mermaid, 404, and
-    browser-console behavior. Acrolls does not assume an adapter, provider, or base path.
+46. `--json` emits a versioned onboarding plan containing host detection, docs directory, base
+    href, style mode, step status, file paths, snippets, commands, cautions, and verification
+    checks. JSON is a read-only handoff for an agent or future modal client, not an editor
+    protocol and not permission to mutate host files.
 
-### Success criteria
+47. The installation checkpoint uses `pnpm add acrolls@latest`. It explicitly tells external
+    hosts not to add direct scoped, clone, workspace, or `file:` dependencies and uses only
+    supported `acrolls/*` imports.
 
-10. A new operator can run `acrolls onboard` and receive a complete, ordered host-specific guide
-    without opening a second integration document.
-11. `acrolls onboard --check` identifies completed config/content/route checkpoints without
-    modifying the host.
-12. `acrolls onboard --json` contains enough information for a future modal to reproduce the
-    terminal walkthrough exactly.
+48. The preprocessor checkpoint tells the operator to merge into an existing SvelteKit config,
+    keep the host adapter and kit settings, use the Acrolls Markdown preprocessor, and replace
+    an existing `mdsvex(...)` call rather than stacking two Markdown preprocessors. The shown
+    extension configuration makes `.md` and `.svx` behavior explicit while leaving `.svelte`
+    under the host's normal SvelteKit configuration.
+
+49. The generated-source checkpoint shows matching lazy component and eager metadata globs,
+    matching prefixes, and typed metadata. Filesystem folders are discovered recursively by
+    default. A host may omit `folders` entirely; it is only for labels, ordering, or other
+    presentation overrides and does not need to mirror every content folder.
+
+50. Onboarding never silently overwrites host files. It distinguishes guidance from `integrate`
+    and tells the operator when an existing complex config or host-owned layout needs a manual
+    merge. A host-owned outer shell may use the sidebar composition without nesting a second
+    docs shell.
+
+51. The final deployment checkpoint remains host-owned. Acrolls asks the operator to run the
+    host build/deploy command and verify root, nested, direct refresh, highlighting, Mermaid,
+    navigation, 404, and browser-console behavior. Acrolls does not assume an adapter, provider,
+    credentials, environment variables, CDN rules, or base path.
+
+52. Unknown commands, missing command arguments, invalid enum values, and invalid paths produce
+    a concise error plus the relevant usage hint. Usage errors use exit code `2`; operational
+    failures use exit code `1`; successful commands use exit code `0`.
+
+53. `acrolls validate` accepts one supported Markdown/SVX file or a directory. Directory runs
+    inspect every supported document and report each document's diagnostics before printing one
+    aggregate summary; a single malformed document must not hide the rest of the corpus.
+
+54. Validation exposes authored and migration modes. Authored mode is strict for a controlled
+    corpus. Migration mode reports safe normalizations for an existing corpus. The operator can
+    choose `fail` or `error-page` for invalid Markdown; `.svx` remains executable Svelte and
+    remains fail-fast when it cannot compile.
+
+55. Validation diagnostics identify the source path and source location, use stable diagnostic
+    codes, explain the user action, and distinguish warnings, normalized documents, and rejected
+    documents. A report file is written only when the operator requests `--report`.
+
+56. `acrolls studio` previews one source file locally without changing its source. The preview
+    binds to localhost, keeps source as the authority, exposes the same article rendering
+    behavior as the host preview, and reports compilation failures inside the preview rather
+    than silently rendering an empty article.
+
+57. `acrolls init` creates only the requested empty content directory unless the operator asks
+    for a dry run. It does not generate an article, alter routes, or edit the host configuration.
+
+58. `acrolls integrate` is the only CLI surface that may edit host files. Dry-run is the default;
+    applying changes requires explicit confirmation and preserves recoverable backups. The
+    command reports exactly which files it will touch before applying changes.
+
+59. All read-only commands are safe to run repeatedly. They do not install packages, change
+    source files, start a deployment, or send telemetry. A report file, initialized directory,
+    or explicitly applied integration is the only user-visible write.
+
+60. If the terminal closes, loses focus, receives an interrupt, or the operator cancels an
+    interactive prompt, the CLI exits without treating the current checkpoint as complete. A
+    later `--check` run is the recovery path; no partial host edit is implied.
+
+61. The interactive flow is keyboard-first and plain-text readable. Prompts have an explicit
+    continuation and pause command, do not rely on color alone, and keep the current step title
+    and verification text visible while the operator decides what to do.
+
+62. An agent can consume `--json`, execute or delegate each command in order, preserve host-owned
+    settings, rerun `--check`, then finish with the host's own build and deployment commands.
+    Agents must not infer that a successful onboarding plan means the public site has deployed.
+
+63. CLI output, JSON field meaning, exit-code semantics, and checkpoint ordering are treated as
+    stable user-facing contracts. New checkpoints may be added only with a versioned plan or a
+    clear migration path for agents and future UI clients.
+
+64. The example SvelteKit host includes a dedicated `/acceptance` route that renders one
+    source-authoritative `.svx` fixture containing a highlighted code block, a Markdown table,
+    an Acrolls callout, and an Acrolls figure together. This route is the canonical smoke surface
+    for the complete publication stack; the individual component demos remain useful but do not
+    replace the combined acceptance surface.
+
+65. The combined acceptance route must remain host-level coverage: it is built through the same
+    SvelteKit/mdsvex wiring that a consumer uses, returns a successful response from the built
+    host, and exposes the expected code-frame, table-wrapper, callout, and figure output. The
+    fixture is not a production content requirement for Acrolls users.
 
 ### Deferred
 
@@ -360,7 +459,8 @@ dialog can render the same steps without creating a second source of truth.
 ## Success criteria
 
 1. `pnpm install && pnpm build` succeeds in the monorepo.
-2. `examples/kit-consumer` builds and renders the starter article with code, callout, table, figure.
+2. `examples/kit-consumer` builds and its `/acceptance` route renders one fixture with code,
+   callout, table, and figure together.
 3. `acrolls validate` compiles a sample article and exits 0.
 4. `acrolls studio` opens a local preview for one file.
 5. Host can import only foundation CSS and still get structure + behavior.

@@ -13,7 +13,10 @@
     "build:example": "pnpm --filter @acrolls/example-kit build",
     "check": "pnpm -r --filter './packages/*' run check",
     "test": "pnpm -r --if-present --filter './packages/*' run test",
-    "cli": "pnpm --filter @acrolls/cli exec node ./dist/index.js"
+    "release:pack": "pnpm --config.node-linker=hoisted --filter acrolls pack",
+    "release": "pnpm --config.node-linker=hoisted --filter acrolls publish --access public",
+    "cli": "pnpm --filter @acrolls/cli exec node ./dist/index.js",
+    "acrolls": "pnpm --filter @acrolls/cli exec node ./dist/index.js"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

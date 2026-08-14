@@ -1,10 +1,10 @@
-# @acrolls/svelte
+# acrolls/svelte
 
 Svelte 5 publication primitives for Acrolls.
 
 ```svelte
 <script>
-  import { Publication, Callout, Figure, Banner } from '@acrolls/svelte';
+  import { Publication, Callout, Figure, Banner } from 'acrolls/svelte';
 </script>
 
 <Publication>
@@ -13,7 +13,6 @@ Svelte 5 publication primitives for Acrolls.
 </Publication>
 ```
 
-`PublicationLayout` is the default mdsvex layout used by the workspace-only
-`@acrolls/sveltekit` helper. In an external local host, keep the compiler layout unset and
-wrap the docs/blog route explicitly with `<Publication>` so only article surfaces receive the
-publication UI.
+`PublicationLayout` is the default mdsvex layout used by the `acrolls/sveltekit` helper.
+Hosts can also keep the compiler layout unset and wrap docs/blog routes explicitly with
+`<Publication>` so only article surfaces receive the publication UI.

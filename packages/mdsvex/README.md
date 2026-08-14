@@ -1,4 +1,4 @@
-# @acrolls/mdsvex
+# acrolls/mdsvex
 
 Shared mdsvex options for Acrolls: GFM, heading slugs + anchors, table overflow wrap, Shiki dual-theme fences, Mermaid recovery, and fence metadata.
 
@@ -11,7 +11,7 @@ For host integrations, prefer the preprocessor wrapper so Markdown-only source s
 before mdsvex parses the file:
 
 ```js
-import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
 
 preprocess: [vitePreprocess(), createAcrollsMdsvexPreprocessor()]
 ```
@@ -38,12 +38,10 @@ directly when a host wants findings and source locations for its own lint comman
 
 ```js
 import { mdsvex } from 'mdsvex';
-import { createAcrollsMdsvexOptions } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexOptions } from 'acrolls/mdsvex';
 
 mdsvex(createAcrollsMdsvexOptions({ strict: false }));
 ```
 
-For an external host using a local Acrolls clone, import this function directly. Do not add
-`@acrolls/sveltekit` through `file:` yet: it has workspace-internal dependencies. That
-package is currently a monorepo convenience adapter and will become the higher-level option
-when published.
+Install `acrolls` and import this function from `acrolls/mdsvex`. The higher-level
+`acrolls/sveltekit` entrypoint is available from the same package.

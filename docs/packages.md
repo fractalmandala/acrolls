@@ -1,17 +1,27 @@
 # Packages reference
 
-| Package | Import | Role |
+| Public entrypoint | Main exports | Role |
 |---|---|---|
-| `@acrolls/mdsvex` | `createAcrollsMdsvexPreprocessor`, `createAcrollsMdsvexOptions`, `renderAcrollsArticleHtml`, … | Compile pipeline + source safety |
-| `@acrolls/svelte` | `Publication`, `Callout`, `Figure`, … | Article components |
-| `@acrolls/styles` | CSS / SASS entrypoints | Article styles |
-| `@acrolls/docs` | `DocsShell`, `DocsNav` types, helpers | Docs chrome |
-| `@acrolls/cli` | binary | onboard / validate / studio / integrate |
-| `@acrolls/sveltekit` | Kit helpers | Workspace-only for now; do **not** add through `file:` in an external host |
+| `acrolls/mdsvex` | `createAcrollsMdsvexPreprocessor`, `createAcrollsMdsvexOptions`, `renderAcrollsArticleHtml`, … | Compile pipeline + source safety |
+| `acrolls/svelte` | `Publication`, `Callout`, `Figure`, … | Article components |
+| `acrolls/styles/*` and `acrolls/sass/*` | CSS / SASS entrypoints | Article styles |
+| `acrolls/docs` | `DocsShell`, `DocsNav` types, helpers | Docs chrome |
+| `acrolls/docs/content` | `createDocsContentSource`, `defineDocsConfig` | Generated docs tree |
+| `acrolls/sveltekit` | SvelteKit preprocessor and generated-source helpers | Host integration |
+| `acrolls` binary | `onboard`, `validate`, `studio`, `integrate` | CLI workflow |
+
+Install all of these through one dependency:
+
+```bash
+pnpm add acrolls@latest
+```
+
+The scoped `@acrolls/*` packages are internal dependencies. Consumer projects should not add
+or import them directly.
 
 ---
 
-## `@acrolls/mdsvex`
+## `acrolls/mdsvex`
 
 ```ts
 import {
@@ -19,7 +29,7 @@ import {
   renderAcrollsArticleHtml,
   parseFenceMeta,
   createAcrollsHighlighter
-} from '@acrolls/mdsvex';
+} from 'acrolls/mdsvex';
 ```
 
 | Export | Use |
@@ -32,7 +42,7 @@ import {
 
 ---
 
-## `@acrolls/svelte`
+## `acrolls/svelte`
 
 ```ts
 import {
@@ -43,24 +53,24 @@ import {
   Video,
   ZoomableImage,
   PublicationLayout
-} from '@acrolls/svelte';
+} from 'acrolls/svelte';
 ```
 
 Wrap article content with **`Publication`** so code-frame enhancement + mermaid run.
 
 ---
 
-## `@acrolls/styles`
+## `acrolls/styles`
 
 ```
-@acrolls/styles/foundation.css
-@acrolls/styles/default.css
-@acrolls/styles/sass/tokens.sass
+acrolls/styles/foundation.css
+acrolls/styles/default.css
+acrolls/styles/sass/tokens.sass
 ```
 
 ---
 
-## `@acrolls/docs`
+## `acrolls/docs`
 
 ```ts
 import {
@@ -75,23 +85,15 @@ import {
   clearOpenState,
   type DocsNav,
   type DocsNavNode
-} from '@acrolls/docs';
+} from 'acrolls/docs';
 
-import '@acrolls/docs/styles.css';
+import 'acrolls/docs/styles.css';
 ```
 
 ---
 
-## Local-host compatibility
-
-For an external SvelteKit app using a local Acrolls clone, install only
-`@acrolls/mdsvex`, `@acrolls/svelte`, `@acrolls/styles`, and `@acrolls/docs`. Import the
-generated source API from `@acrolls/docs/content`. `@acrolls/sveltekit` is used by this
-monorepo's workspace example and cannot currently be consumed safely through a `file:`
-dependency because it declares `workspace:*` dependencies.
-
 ## Versioning
 
-Monorepo packages currently track independent alpha versions (for example docs `0.3.x` and
-SvelteKit helpers `0.2.x`). Pin local `file:` paths consciously, rebuild Acrolls before a
-host refresh, and expect API changes before 1.0.
+Install or update the public package with `pnpm add acrolls@latest` or
+`pnpm up acrolls@latest`. Acrolls is pre-1.0, so pin an exact version in production when a
+host needs repeatable builds and review release notes before upgrading.

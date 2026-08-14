@@ -5,7 +5,7 @@
 - **Node** ≥ 20.19
 - **pnpm** workspaces
 - **Svelte 5** (runes) for `@acrolls/svelte` and Studio UI
-- **SvelteKit 2** for the example and Studio shell
+- **SvelteKit 2.62+ / 3** for the example and Studio shell
 - **mdsvex** for Markdown / `.svx` compilation
 - **Shiki** for compile-time highlighting
 - **TypeScript** throughout packages
@@ -39,9 +39,10 @@ acrolls/
   → <article class="acrolls"> via Publication layout
 ```
 
-`@acrolls/mdsvex` exports `createAcrollsMdsvexOptions()` consumed by:
+The internal bundled `@acrolls/mdsvex` unit exposes its public API through `acrolls/mdsvex`,
+including `createAcrollsMdsvexOptions()`, consumed by:
 
-- host `svelte.config.js` via `@acrolls/mdsvex` (the SvelteKit helper is workspace-only until published)
+- host `vite.config.ts` via `acrolls/mdsvex` or `acrolls/sveltekit`
 - CLI `validate` / `studio` (same options object)
 
 ## Runtime model
@@ -73,24 +74,29 @@ acrolls/
 
 ## SvelteKit integration (host)
 
-```js
-// svelte.config.js
+```ts
+// vite.config.ts
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { sveltekit } from '@sveltejs/kit/vite';
 import adapter from '@sveltejs/adapter-auto';
-import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
+import { defineConfig } from 'vite';
 
-const config = {
-  extensions: ['.svelte', '.svx', '.md'],
-  preprocess: [vitePreprocess(), createAcrollsMdsvexPreprocessor()],
-  kit: { adapter: adapter() }
-};
-export default config;
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      extensions: ['.svelte', '.svx', '.md'],
+      preprocess: [vitePreprocess(), createAcrollsMdsvexPreprocessor()],
+      adapter: adapter()
+    })
+  ]
+});
 ```
 
 Layout imports:
 
 ```js
-import '@acrolls/styles/default.css';
+import 'acrolls/styles/default.css';
 ```
 
 Article routes import `.svx` / `.md` modules or load content via filesystem in `+page.ts`.
@@ -289,7 +295,7 @@ is safer than automated patching.
 
 ```text
 detect SvelteKit host
-  → install packages (local file: or published package form)
+  → install acrolls from npm
   → merge mdsvex preprocessor
   → import one Acrolls style preset
   → create/choose Markdown root
@@ -301,7 +307,7 @@ detect SvelteKit host
   → build, deploy, and verify public /docs + nested route + 404
 ```
 
-The manifest includes cautions for the known failure surfaces: workspace-only package wiring,
+The manifest includes cautions for the known failure surfaces: package/version mismatch,
 glob-prefix mismatch, nested DocsShell composition, frontmatter-free migration content,
 Markdown error-page versus executable SVX fail-fast behavior, and host-owned deployment adapters.
 

@@ -1,4 +1,10 @@
-# @acrolls/cli
+# Acrolls CLI
+
+Install the public package in a SvelteKit host:
+
+```bash
+pnpm add acrolls@latest
+```
 
 ```bash
 pnpm exec acrolls init
@@ -8,6 +14,13 @@ pnpm exec acrolls validate ./content/hello.md
 pnpm exec acrolls validate ./docs --mode migration --on-invalid error-page --report acrolls-report.json
 pnpm exec acrolls studio ./content/hello.md
 ```
+
+The recommended activation command is `onboard`. It is read-only and emits the complete host
+integration plan. SvelteKit 3 configuration belongs in the `sveltekit({ ... })` call in
+`vite.config.ts`; `integrate --yes` deliberately refuses to rewrite an existing Vite config.
+
+The `@acrolls/cli` package is an internal runtime dependency. Consumers install and invoke
+the unscoped `acrolls` package only.
 
 `validate` accepts a file or directory. Directory runs aggregate all diagnostics and print a
 summary such as `619 discovered · 590 ready · 20 normalized · 9 rejected`. Use `--mode authored`

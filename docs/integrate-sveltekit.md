@@ -4,14 +4,16 @@ Step-by-step host wiring. Assumes packages are already installed ([local-install
 
 ---
 
-## A. Compiler (`svelte.config.js`)
+## A. Compiler (`vite.config.ts`)
 
-Use **`createAcrollsMdsvexPreprocessor` from `@acrolls/mdsvex`** (not `@acrolls/sveltekit` until published). It normalizes unsafe Markdown before mdsvex parses it.
+Use **`createAcrollsMdsvexPreprocessor` from `acrolls/mdsvex`** (not `acrolls/sveltekit` until published). It normalizes unsafe Markdown before mdsvex parses it.
 
-```js
+```ts
 import adapter from '@sveltejs/adapter-auto'; // or adapter-vercel, etc.
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
+import { defineConfig } from 'vite';
 
 const acrolls = createAcrollsMdsvexPreprocessor({
   extensions: ['.md', '.svx'],
@@ -21,17 +23,30 @@ const acrolls = createAcrollsMdsvexPreprocessor({
   // strict: true  // fail on unknown fence languages
 });
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-  extensions: ['.svelte', '.md', '.svx'],
-  preprocess: [vitePreprocess(), acrolls],
-  kit: {
-    adapter: adapter()
-  }
-};
-
-export default config;
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      extensions: ['.svelte', '.md', '.svx'],
+      preprocess: [vitePreprocess(), acrolls],
+      adapter: adapter()
+    })
+  ]
+});
 ```
+
+This is the SvelteKit 3 configuration shape and is also supported by SvelteKit 2.62 and
+later. Preserve the host's existing adapter, Vite plugins, and SvelteKit options when merging
+it. When configuration is passed to `sveltekit()`, a legacy `svelte.config.js` is ignored.
+See the [official SvelteKit configuration reference](https://svelte.dev/docs/kit/configuration).
+
+SvelteKit 3 also changes two host conventions that affect copied route snippets:
+
+- `tsconfig.json` extends `$app/tsconfig` instead of `./.svelte-kit/tsconfig.json`.
+- The built-in `$lib` alias is removed in favor of package `imports` such as `#lib`.
+
+Acrolls' generated snippets use explicit relative imports, so the same docs files work in both
+SvelteKit 2.62+ and 3 without adding an alias. If the host migrates existing `$lib` imports,
+follow the SvelteKit migration guidance for that host before judging the Acrolls build.
 
 ### Options you care about
 
@@ -84,10 +99,10 @@ Pick **one** mode and import **once** per docs/blog surface (layout is ideal).
 
 ```ts
 // Full editorial preset (good for greenfield)
-import '@acrolls/styles/default.css';
+import 'acrolls/styles/default.css';
 
 // Or mechanics only (host already owns type scale / colors)
-import '@acrolls/styles/foundation.css';
+import 'acrolls/styles/foundation.css';
 ```
 
 Bridge host tokens (optional):
@@ -124,8 +139,8 @@ src/routes/notes/
 ```svelte
 <script lang="ts">
   import First from './first.md';
-  import { Publication } from '@acrolls/svelte';
-  import '@acrolls/styles/default.css';
+  import { Publication } from 'acrolls/svelte';
+  import 'acrolls/styles/default.css';
 </script>
 
 <Publication>
@@ -172,7 +187,7 @@ import {
   createDocsContentSource,
   defineDocsConfig,
   type DocsMetadata
-} from '@acrolls/docs/content';
+} from 'acrolls/docs/content';
 
 const contentPrefix = '../../docs/';
 const modules = import.meta.glob('../../docs/**/*.md', {
@@ -198,10 +213,10 @@ export const docs = createDocsContentSource({
 ```
 
 Use `docs.nav` in `DocsShell`, `docs.get(params.slug)` for validation, and
-`docs.entries()` for static route entries. The external local-install path supports Markdown
+`docs.entries()` for static route entries. The generated source supports Markdown
 sources (`.md`) here; `.svx` can still be imported through normal mdsvex routes, but automatic
-content discovery is Markdown-first. The workspace-only `@acrolls/sveltekit` adapter will
-offer the same source shape when it is published as an installable package.
+content discovery is Markdown-first. The `acrolls/sveltekit` entrypoint offers the same
+source shape from the installed `acrolls` package.
 
 Use a catch-all route for nested documents:
 
@@ -229,7 +244,7 @@ title: With callout
 ---
 
 <script>
-  import { Callout, Figure } from '@acrolls/svelte';
+  import { Callout, Figure } from 'acrolls/svelte';
 </script>
 
 <Callout variant="insight" title="Tip">
@@ -244,7 +259,7 @@ Open only trusted local SVX (it is executable).
 ## G. What **not** to do
 
 1. Import Acrolls CSS in root layout **and** docs layout twice (duplicated rules — pick one place).  
-2. Use `createAcrollsMdsvexPreprocessor` from `@acrolls/mdsvex` while the adapter package is only `workspace:*`; it includes the Markdown source-safety layer.
+2. Use `createAcrollsMdsvexPreprocessor` from `acrolls/mdsvex`; it includes the Markdown source-safety layer.
 3. Put non-article Markdown under the same extensions without wrapping (or they get Shiki transforms but no shell — usually fine).  
 4. Expect Studio to execute full SVX component trees (Studio HTML pipeline strips `<script>` for safety).  
 

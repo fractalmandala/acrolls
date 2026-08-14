@@ -2,9 +2,10 @@
 
 Print or keep open while wiring a host.
 
-For a guided terminal walkthrough with exact file paths, snippets, cautions, and deployment
-checks, run `acrolls onboard --docs-dir docs --base-href /docs`. Use `acrolls onboard --check`
-to rescan completed checkpoints or `--json` when another UI/agent will render the flow.
+Recommended first: use the CLI-led drop-in. From the existing host root, run
+`acrolls onboard --docs-dir docs --base-href /docs` for exact file paths, snippets, cautions,
+and deployment checks. Use `acrolls onboard --check` to rescan completed checkpoints or `--json`
+when another UI/agent will render the flow.
 
 ## Acrolls monorepo
 
@@ -14,15 +15,15 @@ to rescan completed checkpoints or `--json` when another UI/agent will render th
 
 ## Host app
 
-- [ ] SvelteKit 2 + Svelte 5
-- [ ] `pnpm add file:…/mdsvex file:…/svelte file:…/styles file:…/docs`
-- [ ] `pnpm add -D mdsvex`
-- [ ] **Not** adding `@acrolls/sveltekit` via file: for now
+- [ ] SvelteKit 2.62+ or 3 + Svelte 5
+- [ ] `pnpm add acrolls@latest`
+- [ ] `pnpm exec acrolls --version` resolves from the host
+- [ ] No direct `@acrolls/*`, `file:`, or cloned-source dependencies in the host
 - [ ] Host `pnpm install` finishes after package add
 
 ## Config
 
-- [ ] `svelte.config.js` → `createAcrollsMdsvexPreprocessor({…})` in `preprocess`
+- [ ] `vite.config.ts` → `createAcrollsMdsvexPreprocessor({…})` in the `sveltekit()` options
 - [ ] `extensions` includes `.svelte`, `.md`, `.svx`
 - [ ] Optional `*.md` / `*.svx` module declarations in `app.d.ts`
 
@@ -41,7 +42,7 @@ to rescan completed checkpoints or `--json` when another UI/agent will render th
 - [ ] `docs/index.md` has a root `src/routes/docs/+page` that renders slug `''`, or the host intentionally provides its own overview
 - [ ] Use a `[...slug]` catch-all route when nested folders are allowed
 - [ ] Catch-all `entries()` excludes the empty root slug
-- [ ] `docs/+layout.svelte` uses `DocsShell` + `@acrolls/docs/styles.css`
+- [ ] `docs/+layout.svelte` uses `DocsShell` + `acrolls/docs/styles.css`
 - [ ] Article pages still use `Publication`
 - [ ] Index disables TOC/pager if desired
 

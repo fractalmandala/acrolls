@@ -1,8 +1,12 @@
 {
   "name": "@acrolls/sveltekit",
+  "private": true,
   "version": "0.2.0",
   "description": "SvelteKit glue for Acrolls (source-safe mdsvex preprocessor + layout defaults).",
   "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/sveltekit" },
+  "bugs": "https://github.com/fractalmandala/Acrolls/issues",
+  "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

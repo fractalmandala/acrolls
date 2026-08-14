@@ -14,3 +14,7 @@ playwright-report
 test-results
 *.tsbuildinfo
 .pnpm-store
+
+# Local research and scratch artifacts
+ref/
+twreplace.css

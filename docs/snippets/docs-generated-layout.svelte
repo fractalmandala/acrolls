@@ -1,9 +1,9 @@
 <script lang="ts">
-	import '@acrolls/styles/default.css';
-	import '@acrolls/docs/styles.css';
+	import 'acrolls/styles/default.css';
+	import 'acrolls/docs/styles.css';
 	import { page } from '$app/state';
-	import { DocsShell } from '@acrolls/docs';
-	import { docs } from '$lib/docs/source';
+	import { DocsShell } from 'acrolls/docs';
+	import { docs } from '../../lib/docs/source';
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();

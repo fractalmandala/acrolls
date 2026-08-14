@@ -1,4 +1,4 @@
-import type { DocsNav } from '@acrolls/docs';
+import type { DocsNav } from 'acrolls/docs';
 
 /**
  * Copy into your app as src/lib/docs/nav.ts and edit.

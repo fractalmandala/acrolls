@@ -3,7 +3,7 @@ import {
 	createDocsContentSource,
 	defineDocsConfig,
 	type DocsMetadata
-} from '@acrolls/docs/content';
+} from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 const contentPrefix = '../../docs/';
@@ -26,10 +26,6 @@ export const docs = createDocsContentSource({
 	config: defineDocsConfig({
 		title: 'Documentation',
 		baseHref: '/docs',
-		subtitle: 'Generated from Markdown',
-		folders: {
-			guides: { title: 'Guides', order: 1 },
-			reference: { title: 'Reference', order: 2 }
-		}
+		subtitle: 'Generated from Markdown'
 	})
 });

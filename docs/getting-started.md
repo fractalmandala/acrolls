@@ -2,74 +2,89 @@
 
 Goal: in one existing SvelteKit app, render a Markdown page with Acrolls article styling, then (optionally) wrap a docs area with the shell.
 
-**Time:** ~15 minutes if the app already uses Svelte 5 + Kit 2.
+**Time:** ~15 minutes if the app already uses Svelte 5 + SvelteKit 2.62 or 3.
 
-If you are handing this installation to an agent, start with the terminal reference instead:
-run `acrolls onboard --docs-dir docs --base-href /docs --json` from the host root and follow
-the returned checkpoints. This guide is the human-readable version of the same wiring.
-
----
-
-## 0. Build Acrolls (once)
-
-```bash
-cd /Users/amrit/acrolls   # or your clone path
-pnpm install
-pnpm build
-```
-
-Confirm:
-
-```bash
-ls packages/mdsvex/dist/index.js
-ls packages/svelte/dist/index.js
-ls packages/docs/dist/index.js
-ls packages/styles/default.css
-```
+For the next drop-in trial, use the CLI-led path first. Run `acrolls onboard` from the host root,
+follow the returned checkpoints, and use this guide when you need the human-readable detail
+behind a generated file.
 
 ---
 
-## 1. Add packages to your app
+## Recommended: npm package installation
+
+Install the published package, then ask its CLI to inspect the existing SvelteKit host:
+
+```bash
+cd /path/to/your-sveltekit-app
+pnpm add acrolls@latest
+pnpm exec acrolls onboard --docs-dir docs --base-href /docs
+```
+
+For an agent or another UI, render the same plan as JSON:
+
+```bash
+pnpm exec acrolls onboard --non-interactive --docs-dir docs --base-href /docs --json
+```
+
+The walkthrough is read-only. It tells you what to add to `vite.config.ts`, the host layout,
+the generated docs source, the docs routes, and the document renderer. It also runs through
+corpus validation, local browser checks, production build, and deployment verification. Use the
+manual sections below only for the checkpoint you are currently completing.
+
+If the CLI reports `detected node`, you are not in an existing SvelteKit host; change into the
+host root before rerunning it.
+
+---
+
+## 0. Confirm the installed package
+
+```bash
+pnpm why acrolls
+pnpm exec acrolls --version
+```
+
+---
+
+## 1. Add Acrolls to your app
 
 From **your SvelteKit project root**:
 
 ```bash
-pnpm add \
-  file:/Users/amrit/acrolls/packages/mdsvex \
-  file:/Users/amrit/acrolls/packages/svelte \
-  file:/Users/amrit/acrolls/packages/styles \
-  file:/Users/amrit/acrolls/packages/docs
-
-pnpm add -D mdsvex
+pnpm add acrolls@latest
 ```
 
-If `pnpm` complains about `workspace:*` from a package, only add the four above — do **not** add `@acrolls/sveltekit` via `file:` until published (it has workspace deps). Import the mdsvex preprocessor from `@acrolls/mdsvex` instead.
+This is the only application dependency Acrolls asks you to add. All public imports below use
+supported `acrolls/*` entrypoints.
 
 ---
 
-## 2. Wire mdsvex in `svelte.config.js`
+## 2. Wire mdsvex in `vite.config.ts`
 
-```js
+```ts
 import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import { createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
+import { defineConfig } from 'vite';
 
 const acrolls = createAcrollsMdsvexPreprocessor({
   // no default layout — you wrap with Publication in the page/layout
   extensions: ['.md', '.svx']
 });
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-  extensions: ['.svelte', '.md', '.svx'],
-  preprocess: [vitePreprocess(), acrolls],
-  kit: { adapter: adapter() }
-};
-
-export default config;
+export default defineConfig({
+  plugins: [
+    sveltekit({
+      extensions: ['.svelte', '.md', '.svx'],
+      preprocess: [vitePreprocess(), acrolls],
+      adapter: adapter()
+    })
+  ]
+});
 ```
 
-Full file: [snippets/svelte.config.js](./snippets/svelte.config.js).
+This works in SvelteKit 3 and SvelteKit 2.62+. Full file:
+[snippets/vite.config.ts](./snippets/vite.config.ts).
 
 ---
 
@@ -97,8 +112,8 @@ export const hi = 'acrolls';
 ```svelte
 <script lang="ts">
   import Article from './hello.md';
-  import { Publication } from '@acrolls/svelte';
-  import '@acrolls/styles/default.css';
+  import { Publication } from 'acrolls/svelte';
+  import 'acrolls/styles/default.css';
 </script>
 
 <main class="wrap">
@@ -188,7 +203,7 @@ import {
   createDocsContentSource,
   defineDocsConfig,
   type DocsMetadata
-} from '@acrolls/docs/content';
+} from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 const contentPrefix = '../../docs/';
@@ -211,16 +226,13 @@ export const docs = createDocsContentSource({
   config: defineDocsConfig({
     title: 'Documentation',
     baseHref: '/docs',
-    subtitle: 'Generated from Markdown',
-    folders: {
-      guides: { title: 'Guides', order: 1 },
-      reference: { title: 'Reference', order: 2 }
-    }
+    subtitle: 'Generated from Markdown'
   })
 });
 ```
 
-The source interprets the filesystem tree as navigation:
+The source interprets the filesystem tree as navigation automatically. You do **not** need to
+list every directory in `folders`:
 
 - The first directory level becomes a top-level `DocsNav` section.
 - Markdown files directly inside that directory become section items.
@@ -235,22 +247,33 @@ The source provides:
 - `docs.entries()` — route entries for prerendering
 
 Titles come from frontmatter. Folder names are humanized by default and can be overridden
-in `folders`. Set `hidden: true` in frontmatter or configuration to remove a page from
+selectively in `folders`; omit `folders` entirely when the natural filesystem structure is what
+you want. For example, `docs/foo/bar.md` becomes `/docs/foo/bar`, while `docs/foo/index.md`
+becomes `/docs/foo`. Set `hidden: true` in frontmatter or configuration to remove a page from
 navigation while keeping it routable; it is not an access-control mechanism.
 
-`@acrolls/sveltekit` contains a convenience adapter used by this monorepo's workspace
-example. When working from the local Acrolls packages, use the pure `@acrolls/docs/content`
-source shown above: the SvelteKit adapter is not yet safe to install through `file:`.
+Use `folders` only for presentation overrides such as a human-friendly title, ordering, badge,
+hidden state, default-open state, or a custom landing filename:
+
+```ts
+folders: {
+  api: { title: 'API', order: 1 },
+  // Other directories continue to be discovered automatically.
+}
+```
+
+`acrolls/sveltekit` contains the optional SvelteKit convenience adapter. The simpler external
+host path shown above uses `acrolls/mdsvex` and `acrolls/docs/content` directly.
 
 Add a docs layout using the generated nav:
 
 ```svelte
 <script lang="ts">
-  import '@acrolls/styles/default.css';
-  import '@acrolls/docs/styles.css';
+  import 'acrolls/styles/default.css';
+  import 'acrolls/docs/styles.css';
   import { page } from '$app/state';
-  import { DocsShell } from '@acrolls/docs';
-  import { docs } from '$lib/docs/source';
+  import { DocsShell } from 'acrolls/docs';
+  import { docs } from '../../lib/docs/source';
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -277,7 +300,7 @@ export const load: PageLoad = () => ({ slug: '' });
 ```svelte
 <!-- src/routes/docs/+page.svelte -->
 <script lang="ts">
-  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+  import DocumentPage from '../../lib/docs/DocumentPage.svelte';
 </script>
 
 <DocumentPage slug="" />
@@ -290,7 +313,7 @@ omit the root `+page.ts`; do not add `docs/index.md` for that route.
 // src/routes/docs/[...slug]/+page.ts
 import { error } from '@sveltejs/kit';
 import type { EntryGenerator, PageLoad } from './$types';
-import { docs } from '$lib/docs/source';
+import { docs } from '../../../lib/docs/source';
 
 export const entries: EntryGenerator = () =>
   docs.documents
@@ -307,7 +330,7 @@ export const load: PageLoad = ({ params }) => {
 ```svelte
 <!-- src/routes/docs/[...slug]/+page.svelte -->
 <script lang="ts">
-  import DocumentPage from '$lib/docs/DocumentPage.svelte';
+  import DocumentPage from '../../../lib/docs/DocumentPage.svelte';
   let { data }: { data: { slug: string } } = $props();
 </script>
 
@@ -319,8 +342,8 @@ article presentation:
 
 ```svelte
 <script lang="ts">
-  import { docs } from '$lib/docs/source';
-  import { Publication } from '@acrolls/svelte';
+  import { docs } from './source';
+  import { Publication } from 'acrolls/svelte';
   let { slug }: { slug: string } = $props();
   const document = $derived(docs.get(slug));
 </script>
@@ -341,14 +364,14 @@ Copy-ready versions live in [snippets/docs-source.ts](./snippets/docs-source.ts)
 [snippets/docs-root-page.svelte](./snippets/docs-root-page.svelte),
 [snippets/page-load.ts](./snippets/page-load.ts), and
 [snippets/document-page.svelte](./snippets/document-page.svelte). The working workspace
-example is in [`examples/kit-consumer`](../examples/kit-consumer/); it intentionally uses
-the workspace-only SvelteKit adapter and is not the external `file:` install path.
+example is in [`examples/kit-consumer`](../examples/kit-consumer/) and consumes the same
+`acrolls/*` public entrypoints documented here.
 
 ## 7. Validate content from the CLI
 
 ```bash
-/Users/amrit/acrolls/packages/cli/dist/index.js validate ./src/routes/blog/hello.md
-/Users/amrit/acrolls/packages/cli/dist/index.js studio ./src/routes/blog/hello.md
+pnpm exec acrolls validate ./src/routes/blog/hello.md
+pnpm exec acrolls studio ./src/routes/blog/hello.md
 ```
 
 ---
@@ -356,8 +379,8 @@ the workspace-only SvelteKit adapter and is not the external `file:` install pat
 ## Checklist
 
 - [ ] `pnpm build` succeeded in acrolls monorepo  
-- [ ] Host has `mdsvex` + four `@acrolls/*` packages  
-- [ ] `svelte.config.js` uses `createAcrollsMdsvexOptions`  
+- [ ] Host has one direct `acrolls` dependency and no direct `@acrolls/*` dependencies
+- [ ] `vite.config.ts` passes the Acrolls preprocessor and Markdown extensions to `sveltekit()`
 - [ ] Extensions include `.md` / `.svx`  
 - [ ] CSS imported once (`default` or `foundation`)  
 - [ ] Body wrapped in `Publication`  

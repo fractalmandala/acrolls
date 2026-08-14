@@ -35,12 +35,23 @@ export async function resolvePackageDir(name: string): Promise<string | null> {
 }
 
 export type Args = {
-  _: string[];
-  flags: Record<string, string | boolean>;
+	_: string[];
+	flags: Record<string, string | boolean>;
 };
 
+const VALUE_FLAGS = new Set([
+	'content-dir',
+	'mode',
+	'base-href',
+	'docs-dir',
+	'report',
+	'port',
+	'cwd',
+	'on-invalid'
+]);
+
 export function parseArgs(argv: string[]): Args {
-  const out: Args = { _: [], flags: {} };
+	const out: Args = { _: [], flags: {} };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--') continue;
@@ -49,11 +60,11 @@ export function parseArgs(argv: string[]): Args {
       if (body.includes('=')) {
         const [k, v] = body.split('=');
         out.flags[k!] = v ?? true;
-      } else {
-        const next = argv[i + 1];
-        if (next && !next.startsWith('-')) {
-          out.flags[body] = next;
-          i++;
+		} else {
+			const next = argv[i + 1];
+			if (VALUE_FLAGS.has(body) && next && !next.startsWith('-')) {
+				out.flags[body] = next;
+				i++;
         } else {
           out.flags[body] = true;
         }

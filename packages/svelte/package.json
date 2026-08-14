@@ -1,8 +1,12 @@
 {
   "name": "@acrolls/svelte",
+  "private": true,
   "version": "0.1.1",
   "description": "Svelte 5 publication primitives for Acrolls.",
   "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/svelte" },
+  "bugs": "https://github.com/fractalmandala/Acrolls/issues",
+  "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,11 +15,11 @@
       "types": "./dist/index.d.ts",
       "svelte": "./dist/index.js",
       "import": "./dist/index.js"
-    }
+    },
+    "./PublicationLayout.svelte": "./dist/PublicationLayout.svelte"
   },
   "files": [
     "dist",
-    "src",
     "README.md",
     "LICENSE"
   ],

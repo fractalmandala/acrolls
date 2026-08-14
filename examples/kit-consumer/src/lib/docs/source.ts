@@ -3,7 +3,7 @@ import {
 	createAcrollsDocsSource,
 	defineDocsConfig,
 	type DocsMetadata
-} from '@acrolls/sveltekit';
+} from 'acrolls/sveltekit';
 
 type DocsArticle = Component;
 

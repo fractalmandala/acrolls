@@ -77,9 +77,10 @@ function removeGlobRoot(key: string, root: string): string {
 }
 
 function resolvePublicationLayout(): string {
-	// Keep the public entry browser-safe; hosts can provide an explicit layout when
-	// their package manager needs a filesystem-resolved path.
-	return '@acrolls/svelte/src/lib/PublicationLayout.svelte';
+	const pathname = decodeURIComponent(
+		new URL(import.meta.resolve('@acrolls/svelte/PublicationLayout.svelte')).pathname
+	);
+	return /^\/[A-Za-z]:\//.test(pathname) ? pathname.slice(1) : pathname;
 }
 
 /**

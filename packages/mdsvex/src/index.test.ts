@@ -8,7 +8,8 @@ describe('createAcrollsMdsvexPreprocessor', () => {
 		const result = await processor.markup({ content: '# Plain document', filename: 'plain.md' });
 
 		expect(result?.code).toContain('export const metadata = {};');
-	});
+		expect(result?.code).not.toMatch(/acrolls-heading-anchor[^>]*>#/);
+});
 
 	it('preserves metadata generated from frontmatter', async () => {
 		const processor = createAcrollsMdsvexPreprocessor();

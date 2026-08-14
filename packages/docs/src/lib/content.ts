@@ -238,7 +238,7 @@ function resolveRouteOverrides<TDocument>(
 			throw new DocsContentError(`Docs entry "${key}" references missing landing source "${entry.landing}".`);
 		}
 
-		const groupHref = entry.href ?? (sourceKey ? `${baseHref}/${key}` : `${baseHref}/${key}`);
+		const groupHref = entry.href ?? joinBaseHref(baseHref, key);
 		setRouteOverride(overrides, landingKey, groupHref, baseHref, key);
 	}
 
@@ -254,7 +254,7 @@ function resolveRouteOverrides<TDocument>(
 			throw new DocsContentError(`Configured landing source "${landingKey}.md" was not discovered.`);
 		}
 		if (!overrides.has(`${landingKey}.md`)) {
-			setRouteOverride(overrides, landingKey, folder ? `${baseHref}/${folder}` : baseHref, baseHref, folder || '<root>');
+			setRouteOverride(overrides, landingKey, folder ? joinBaseHref(baseHref, folder) : baseHref, baseHref, folder || '<root>');
 		}
 	}
 
@@ -308,7 +308,7 @@ function toSourceRecord<TDocument>(
 	return {
 		key,
 		slug,
-		href: routeOverride ?? (slug ? `${baseHref}/${slug}` : baseHref),
+		href: routeOverride ?? joinBaseHref(baseHref, slug),
 		title,
 		description,
 		metadata,
@@ -608,10 +608,11 @@ function normalizeEntryKey(value: string): string {
 function routeSlug(href: string, baseHref: string): string {
 	const path = normalizePath(href);
 	if (path === baseHref) return '';
-	if (!path.startsWith(`${baseHref}/`)) {
+	const prefix = baseHref === '/' ? '/' : `${baseHref}/`;
+	if (!path.startsWith(prefix)) {
 		throw new DocsContentError(`Docs route "${href}" must be inside baseHref "${baseHref}".`);
 	}
-	return path.slice(baseHref.length + 1);
+	return path.slice(prefix.length);
 }
 
 function buildNav<TDocument>(
@@ -793,10 +794,16 @@ function absolutePath(value: string): string {
 	return normalized.startsWith('/') ? normalized : `/${normalized}`;
 }
 
+function joinBaseHref(baseHref: string, slug: string): string {
+	if (!slug) return baseHref;
+	return baseHref === '/' ? `/${slug}` : `${baseHref}/${slug}`;
+}
+
 function normalizeLookup(value: string, baseHref: string): string {
 	const path = normalizePath(value);
 	if (path === baseHref) return '';
-	if (path.startsWith(`${baseHref}/`)) return path.slice(baseHref.length + 1);
+	const prefix = baseHref === '/' ? '/' : `${baseHref}/`;
+	if (path.startsWith(prefix)) return path.slice(prefix.length);
 	return path.replace(/^\/+/, '');
 }
 

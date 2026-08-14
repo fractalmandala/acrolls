@@ -1,18 +1,18 @@
-# @acrolls/styles
+# acrolls/styles
 
 Scoped publishing CSS for Acrolls.
 
 ## Modes
 
 ```js
-import '@acrolls/styles/foundation.css'; // mechanics only
-import '@acrolls/styles/default.css';    // foundation + editorial scale
+import 'acrolls/styles/foundation.css'; // mechanics only
+import 'acrolls/styles/default.css';    // foundation + editorial scale
 ```
 
 ## Optional SASS tokens
 
 ```sass
-@use '@acrolls/styles/sass/tokens' as *
+@use 'acrolls/styles/sass/tokens' as *
 @include acrolls-tokens()
 ```
 

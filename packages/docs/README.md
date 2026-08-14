@@ -1,48 +1,36 @@
-# @acrolls/docs
+# acrolls/docs
 
 **Fumadocs-class documentation shell for SvelteKit.**
 
-Config-driven navigation, nested accordions, on-page TOC, breadcrumbs, prev/next pager, and persisted open state — without owning your content pipeline. Pair with `@acrolls/mdsvex` + `@acrolls/svelte` `Publication` for article bodies.
+Config-driven navigation, nested accordions, on-page TOC, breadcrumbs, prev/next pager, and persisted open state — without owning your content pipeline. Pair with `acrolls/mdsvex` + `acrolls/svelte` `Publication` for article bodies.
 
 ## Install
 
-Until the packages are published, install supported packages from a built local Acrolls clone:
+Install the public package:
 
 ```bash
-pnpm add \
-  file:/path/to/acrolls/packages/docs \
-  file:/path/to/acrolls/packages/svelte \
-  file:/path/to/acrolls/packages/styles \
-  file:/path/to/acrolls/packages/mdsvex
-pnpm add -D mdsvex
+pnpm add acrolls@latest
 ```
 
-Do not install `@acrolls/sveltekit` through `file:` yet: it has workspace-internal
-dependencies. Rebuild Acrolls, run `pnpm install` in the host, and restart the host dev
-server after a local package update.
-
 ```js
-import '@acrolls/docs/styles.css';
-import '@acrolls/styles/foundation.css'; // or default.css
-import { DocsShell, type DocsNav } from '@acrolls/docs';
+import 'acrolls/docs/styles.css';
+import 'acrolls/styles/foundation.css'; // or default.css
+import { DocsShell, type DocsNav } from 'acrolls/docs';
 ```
 
 ## Generated content source
 
-For a Markdown-first external host, use the pure source entry from `@acrolls/docs/content`.
+For a Markdown-first external host, use the pure source entry from `acrolls/docs/content`.
 The generated source owns the document records, routes, metadata, `DocsNav`, breadcrumbs,
 pager order, and static route entries together:
 
 ```ts
-import { createDocsContentSource, defineDocsConfig } from '@acrolls/docs/content';
+import { createDocsContentSource, defineDocsConfig } from 'acrolls/docs/content';
 
 const docs = createDocsContentSource({
   config: defineDocsConfig({
     title: 'Documentation',
-    baseHref: '/docs',
-    folders: {
-      guides: { title: 'Guides', order: 1 }
-    }
+    baseHref: '/docs'
   }),
   documents: [
     {
@@ -54,9 +42,19 @@ const docs = createDocsContentSource({
 });
 ```
 
-Folder names are humanized by default. Typed configuration can override folder labels,
-ordering, visibility, and document metadata. `hidden: true` means unlisted from docs
-navigation; it does not make a page private.
+Folder names are humanized by default, so `guides/advanced` becomes nested `Guides` →
+`Advanced` navigation without any folder configuration. You can omit `folders` entirely.
+Typed configuration is only for presentation overrides such as folder labels, ordering,
+visibility, badges, and landing filenames. `hidden: true` means unlisted from docs navigation;
+it does not make a page private.
+
+For example, this overrides one folder while all other folders remain automatic:
+
+```ts
+folders: {
+  guides: { title: 'Guides & tutorials', order: 1 }
+}
+```
 
 When the host owns a different information architecture from the filesystem, use `entries`
 to define links, levels, page/group roles, landing pages, and route overrides. Acrolls uses
@@ -81,9 +79,8 @@ used from SvelteKit configuration and build-time source code without evaluating 
 components.
 
 The current automatic source contract discovers `.md` files. Normal mdsvex routes may use
-`.svx`; automatic `.svx` discovery is deliberately deferred. The workspace-only
-`@acrolls/sveltekit` adapter accepts source globs directly and is used by
-`examples/kit-consumer`, but it is not the external local-install path.
+`.svx`; automatic `.svx` discovery is deliberately deferred. The `acrolls/sveltekit`
+entrypoint accepts source globs directly and is used by `examples/kit-consumer`.
 
 ## Nested nav
 
@@ -119,9 +116,9 @@ export const developerNav: DocsNav = {
 ```svelte
 <script>
   import { page } from '$app/state';
-  import { DocsShell } from '@acrolls/docs';
+  import { DocsShell } from 'acrolls/docs';
   import { developerNav } from '$lib/docs/developer-nav';
-  import '@acrolls/docs/styles.css';
+  import 'acrolls/docs/styles.css';
   let { children } = $props();
 </script>
 
@@ -143,7 +140,7 @@ existing sidebar:
 ```svelte
 <script>
   import { page } from '$app/state';
-  import { DocsSidebar } from '@acrolls/docs';
+  import { DocsSidebar } from 'acrolls/docs';
   import { developerNav } from '$lib/docs/developer-nav';
 </script>
 

@@ -3,7 +3,8 @@ import { visit } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
 
 /**
- * Inject accessible heading anchors. Works with rehype-slug ids.
+ * Inject accessible heading anchors without adding a visible Markdown marker.
+ * Works with rehype-slug ids.
  */
 export function rehypeAcrollsHeadingAnchors() {
   return (tree: Root) => {
@@ -34,7 +35,10 @@ export function rehypeAcrollsHeadingAnchors() {
           href: `#${id}`,
           ariaLabel: `Link to ${label}`
         },
-        children: [{ type: 'text', value: '#' } satisfies Text]
+        // The heading's `#` is Markdown syntax and must not be rendered as
+        // visible content. The aria-label keeps the deep-link control named
+        // for assistive technology while the heading id remains linkable.
+        children: [] as Text[]
       };
       node.children.unshift(anchor);
     });

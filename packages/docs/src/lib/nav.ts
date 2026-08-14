@@ -149,16 +149,15 @@ export function buildDocsCrumbs(
 	options: { homeHref?: string; homeLabel?: string; includeSection?: boolean } = {}
 ): DocsCrumb[] {
 	const { homeHref = '/', homeLabel = 'Home', includeSection = true } = options;
-	const crumbs: DocsCrumb[] = [
-		{ label: homeLabel, href: homeHref },
-		{ label: nav.title, href: nav.baseHref }
-	];
+	const crumbs: DocsCrumb[] = [];
+	appendCrumb(crumbs, { label: homeLabel, href: homeHref });
+	appendCrumb(crumbs, { label: nav.title, href: nav.baseHref });
 
 	const trail = findActiveTrail(nav, pathname);
 	if (!trail) return crumbs;
 
 	if (includeSection) {
-		crumbs.push({ label: trail.section.title });
+		appendCrumb(crumbs, { label: trail.section.title });
 	}
 
 	// intermediate groups (all but last) as labels; last is page
@@ -167,14 +166,26 @@ export function buildDocsCrumbs(
 		const n = nodes[i]!;
 		const isLast = i === nodes.length - 1;
 		if (isLast) {
-			crumbs.push({ label: n.title });
+			appendCrumb(crumbs, { label: n.title });
 		} else if (n.href) {
-			crumbs.push({ label: n.title, href: n.href });
+			appendCrumb(crumbs, { label: n.title, href: n.href });
 		} else {
-			crumbs.push({ label: n.title });
+			appendCrumb(crumbs, { label: n.title });
 		}
 	}
 	return crumbs;
+}
+
+/** Keep a breadcrumb trail readable when a section and its landing page share a title. */
+function appendCrumb(crumbs: DocsCrumb[], crumb: DocsCrumb): void {
+	const previous = crumbs.at(-1);
+	if (previous?.label === crumb.label) {
+		// The later crumb is closer to the current page and therefore owns the final state
+		// (including aria-current rendering and linkability).
+		crumbs[crumbs.length - 1] = crumb;
+		return;
+	}
+	crumbs.push(crumb);
 }
 
 export function sectionShouldOpen(

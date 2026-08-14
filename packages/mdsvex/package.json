@@ -1,8 +1,12 @@
 {
   "name": "@acrolls/mdsvex",
+  "private": true,
   "version": "0.1.1",
   "description": "Shared mdsvex compile and Markdown source-safety pipeline for Acrolls (slugs, tables, Shiki, Mermaid, fence meta).",
   "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/mdsvex" },
+  "bugs": "https://github.com/fractalmandala/Acrolls/issues",
+  "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

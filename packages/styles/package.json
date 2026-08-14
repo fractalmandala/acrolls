@@ -1,8 +1,12 @@
 {
   "name": "@acrolls/styles",
+  "private": true,
   "version": "0.1.1",
   "description": "Scoped publishing CSS and optional SASS tokens for Acrolls.",
   "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/styles" },
+  "bugs": "https://github.com/fractalmandala/Acrolls/issues",
+  "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "files": [
     "foundation.css",

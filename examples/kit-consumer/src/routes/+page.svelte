@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Article from '../content/index.md';
-	import { Callout, Figure } from '@acrolls/svelte';
+	import { Callout, Figure } from 'acrolls/svelte';
 </script>
 
 <svelte:head>

@@ -1,8 +1,12 @@
 {
   "name": "@acrolls/docs",
+  "private": true,
   "version": "0.3.0",
   "description": "Fumadocs-class docs shell for SvelteKit: nested nav, TOC, breadcrumbs, pager, persisted state.",
   "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/docs" },
+  "bugs": "https://github.com/fractalmandala/Acrolls/issues",
+  "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,7 +24,7 @@
   },
   "files": [
     "dist",
-    "src",
+    "!dist/**/*.test.*",
     "styles.css",
     "README.md",
     "LICENSE"

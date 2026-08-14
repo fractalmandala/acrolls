@@ -14,10 +14,17 @@ For the next independent host trial, begin with the [third-host setup path](./do
 For coding agents, start with [`llms.txt`](./llms.txt), then follow the linked integration and
 validation guides in order.
 
+Install the published package in the SvelteKit host, then use the CLI-led onboarding flow:
+
+```bash
+pnpm add acrolls@latest
+pnpm exec acrolls onboard --docs-dir docs --base-href /docs
+```
+
 | Guide | Topic |
 |---|---|
 | [Getting started](./docs/getting-started.md) | First integration |
-| [Local install](./docs/local-install.md) | `file:` packages before npm |
+| [Install from npm](./docs/local-install.md) | Published package installation and verification |
 | [Integrate SvelteKit](./docs/integrate-sveltekit.md) | Config + route patterns |
 | [Content authoring](./docs/content-authoring.md) | Markdown / SVX / fences |
 | [Docs shell](./docs/docs-shell.md) | Sidebar, TOC, nav, persistence |
@@ -25,6 +32,7 @@ validation guides in order.
 | [CLI reference](./docs/cli.md) | onboard · validate · studio · integrate |
 | [Troubleshooting](./docs/troubleshooting.md) | Common failures |
 | [Checklist](./docs/checklist.md) | Printable integration list |
+| [Release](./docs/release.md) | Publish order and package-only registry test |
 
 Copy-paste: [docs/snippets/](./docs/snippets/).
 
@@ -32,20 +40,18 @@ Copy-paste: [docs/snippets/](./docs/snippets/).
 
 | Package | Purpose |
 |---|---|
-| `@acrolls/mdsvex` | mdsvex pipeline (GFM, slugs, tables, Shiki, fence meta) |
-| `@acrolls/svelte` | `Publication`, Banner, Callout, Figure, Video, Mermaid |
-| `@acrolls/styles` | `foundation.css`, `default.css`, SASS tokens |
-| `@acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager |
-| `@acrolls/cli` | `init`, `integrate`, `validate`, `studio` |
+| `acrolls/mdsvex` | mdsvex pipeline (GFM, slugs, tables, Shiki, fence meta) |
+| `acrolls/svelte` | `Publication`, Banner, Callout, Figure, Video, Mermaid |
+| `acrolls/styles/*` | `foundation.css`, `default.css`, SASS tokens |
+| `acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager |
+| `acrolls` | Public npm package, runtime entrypoints, and CLI |
 
-`@acrolls/sveltekit` is intentionally not listed for external `file:` installation yet: it
-uses workspace-internal dependencies. External hosts should use `@acrolls/mdsvex` and
-`@acrolls/docs/content` directly until registry packages are available.
+Applications install only `acrolls`. The scoped `@acrolls/*` packages are bundled implementation
+units exposed to applications through the supported `acrolls/*` subpaths above.
 
 ## Develop this monorepo
 
 ```bash
-cd /Users/amrit/acrolls
 pnpm install
 pnpm build
 pnpm --filter @acrolls/example-kit dev
@@ -54,7 +60,9 @@ pnpm --filter @acrolls/example-kit dev
 
 ## Status
 
-Alpha. Not on npm yet — install via `file:` from this repo ([local-install.md](./docs/local-install.md)). Roadmap: [docs/VISION.md](./docs/VISION.md).
+Alpha. The public installation contract is `pnpm add acrolls@latest`; applications should not
+install workspace paths or scoped implementation packages directly.
+Roadmap: [docs/VISION.md](./docs/VISION.md).
 
 ## License
 

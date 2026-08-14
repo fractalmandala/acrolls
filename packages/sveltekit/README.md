@@ -1,20 +1,17 @@
-# @acrolls/sveltekit
+# acrolls/sveltekit
 
-> Workspace-only adapter for now. It declares `workspace:*` dependencies and must not be
-> installed through `file:` in an external SvelteKit app. For the supported local-host path,
-> use `@acrolls/mdsvex` and `@acrolls/docs/content`; see [`../../docs/getting-started.md`](../../docs/getting-started.md).
+Install `acrolls` and use the public `acrolls/sveltekit` entrypoint:
 
 ```js
-import { createAcrollsSvelteKitMdsvexPreprocessor } from '@acrolls/sveltekit';
+import { createAcrollsSvelteKitMdsvexPreprocessor } from 'acrolls/sveltekit';
 
 preprocess: [vitePreprocess(), createAcrollsSvelteKitMdsvexPreprocessor()]
 ```
 
-Also re-exports `createAcrollsMdsvexPreprocessor` from `@acrolls/mdsvex`. The preprocessor
+Also re-exports `createAcrollsMdsvexPreprocessor` from `acrolls/mdsvex`. The preprocessor
 normalizes narrow Svelte-shaped literals in Markdown before parsing while leaving `.svx`
 components untouched. The lower-level options API is exercised by
-`examples/kit-consumer` inside the Acrolls workspace and documents the intended published
-adapter shape; it is not the current external installation contract.
+`examples/kit-consumer` inside the Acrolls workspace.
 
 ## Generated Markdown docs
 
@@ -35,7 +32,7 @@ containing directory.
 ```ts
 // src/lib/docs/source.ts
 import type { Component } from 'svelte';
-import { createAcrollsDocsSource, defineDocsConfig, type DocsMetadata } from '@acrolls/sveltekit';
+import { createAcrollsDocsSource, defineDocsConfig, type DocsMetadata } from 'acrolls/sveltekit';
 
 const modules = import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
   string,

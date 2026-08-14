@@ -4,19 +4,19 @@
 
 | Import | When |
 |---|---|
-| `@acrolls/styles/default.css` | Greenfield articles; want full editorial scale |
-| `@acrolls/styles/foundation.css` | Host already owns fonts, rhythm, colors |
+| `acrolls/styles/default.css` | Greenfield articles; want full editorial scale |
+| `acrolls/styles/foundation.css` | Host already owns fonts, rhythm, colors |
 
 ```ts
-import '@acrolls/styles/default.css';
+import 'acrolls/styles/default.css';
 // or
-import '@acrolls/styles/foundation.css';
+import 'acrolls/styles/foundation.css';
 ```
 
 Docs shell has its own sheet (always import if you use DocsShell):
 
 ```ts
-import '@acrolls/docs/styles.css';
+import 'acrolls/docs/styles.css';
 ```
 
 ---
@@ -58,7 +58,7 @@ Override Acrolls tokens directly on `.acrolls` or `.acrolls-docs-shell`:
 ## SASS (optional)
 
 ```sass
-@use '@acrolls/styles/sass/tokens' as *
+@use 'acrolls/styles/sass/tokens' as *
 @include acrolls-tokens()
 ```
 

@@ -100,6 +100,22 @@ describe('nested nav', () => {
 		expect(docsPager(nav, '/docs/guides/install').previous?.title).toBe('Guides');
 	});
 
+	it('does not repeat a root section title for its index page', () => {
+		const nav: DocsNav = {
+			title: 'Fractalsvelte',
+			baseHref: '/docs',
+			sections: [{
+				id: 'docs',
+				title: 'Docs',
+				items: [{ title: 'Docs', href: '/docs' }]
+			}]
+		};
+
+		const crumbs = buildDocsCrumbs(nav, '/docs');
+		expect(crumbs.map((crumb) => crumb.label)).toEqual(['Home', 'Fractalsvelte', 'Docs']);
+		expect(crumbs.at(-1)?.href).toBeUndefined();
+	});
+
 	it('isolates duplicate host ids before keyed rendering', () => {
 		const nav: DocsNav = {
 			title: 'Docs',

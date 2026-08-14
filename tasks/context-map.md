@@ -31,7 +31,7 @@
 | `packages/docs/src/lib/DocsSidebar.svelte` | Assumes `section.items` and recursively `node.children`; generated output must satisfy this runtime contract. |
 | `packages/docs/src/lib/DocsNavTree.svelte` | Renders recursive groups; no `items` alias should be introduced without an explicit normalization boundary. |
 | `packages/sveltekit/src/index.ts` | Existing SvelteKit-only package and natural home for `import.meta.glob` consumer helpers. |
-| `examples/kit-consumer/svelte.config.js` | Existing mdsvex host configuration. |
+| `examples/kit-consumer/vite.config.ts` | Existing mdsvex host configuration. |
 | `sites/mandalarepo/src/routes/docs/[...slug]/+page.ts` | Current consumer catch-all route; will become the real-world integration target after the example API stabilizes. |
 | `sites/mandalarepo/docs/` | Large existing corpus; current build has invalid legacy Markdown and must not be used as the only correctness fixture. |
 
@@ -63,4 +63,4 @@
 - [x] Route collisions — Markdown source keys can map to the same URL; detect deterministically.
 - [x] Static hosting behavior — generated route entries must be available for prerendering.
 - [x] Scope risk — search, SEO, i18n, CMS sources, and OpenAPI rendering are deferred from this slice.
-- [ ] Database migrations needed.
+- ] Database migrations needed.

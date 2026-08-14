@@ -305,7 +305,7 @@ docs/snippets/page-load.ts                    reusable route snippet
 ## Code Style
 
 ```ts
-import type { DocsNav } from '@acrolls/docs';
+import type { DocsNav } from 'acrolls/docs';
 
 export const docsNav = buildDocsNav(documents, {
 	baseHref: '/docs',

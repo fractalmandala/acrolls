@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { docs } from '$lib/docs/source';
+	import { docs } from './source';
 
 	let { slug }: { slug: string } = $props();
 	const document = $derived(docs.get(slug));

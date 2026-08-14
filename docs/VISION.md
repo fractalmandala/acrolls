@@ -6,12 +6,12 @@ Acrolls is the **SvelteKit equivalent** of Fumadocs / Starlight / Astro starligh
 
 | Layer | Package | Role |
 |---|---|---|
-| Compile | `@acrolls/mdsvex` | Markdown / `.svx` → slugs, Shiki, tables, validation |
-| Article UI | `@acrolls/svelte` | `Publication`, callouts, figures, mermaid |
-| Styles | `@acrolls/styles` | Foundation / default CSS + SASS tokens |
-| **Docs source + shell** | **`@acrolls/docs`** | Markdown tree, generated nav, TOC, crumbs, pager, persistence |
-| Kit glue | `@acrolls/sveltekit` | Host config and Markdown source adapter |
-| CLI | `@acrolls/cli` | onboard, integrate, validate, studio |
+| Compile | `acrolls/mdsvex` | Markdown / `.svx` → slugs, Shiki, tables, validation |
+| Article UI | `acrolls/svelte` | `Publication`, callouts, figures, mermaid |
+| Styles | `acrolls/styles` | Foundation / default CSS + SASS tokens |
+| **Docs source + shell** | **`acrolls/docs`** | Markdown tree, generated nav, TOC, crumbs, pager, persistence |
+| Kit glue | `acrolls/sveltekit` | Host config and Markdown source adapter |
+| CLI | `acrolls` binary | onboard, integrate, validate, studio |
 
 ## Docs shell (current)
 
@@ -30,8 +30,8 @@ follow custom CSS and pure indented SASS aligned with CUBE CSS; Tailwind is not 
 
 1. **Themes** — polished light/dark docs themes (Fumadocs-grade density)
 2. **`sites/acrolls`** — marketing + full docs of Acrolls itself
-3. **npm publish** — stable `0.x` packages under `@acrolls/*`
+3. **npm releases** — one public `acrolls` install with supported `acrolls/*` entrypoints
 4. **CLI** — `acrolls docs init` scaffold for a docs area
 5. **Search** — optional client/index search plug-in (later)
 
-Consumers (e.g. Dharmalib) stay optional demos; the product is the packages + docs site.
+Consumers (e.g. Dharmalib) stay optional demos; the product is the `acrolls` npm package and docs site.

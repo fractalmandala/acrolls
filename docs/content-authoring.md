@@ -150,7 +150,7 @@ content with fail-fast behavior; only open local `.svx` files that you intend to
 
 ```svx
 <script>
-  import { Callout, Figure, Banner } from '@acrolls/svelte';
+  import { Callout, Figure, Banner } from 'acrolls/svelte';
 </script>
 
 <Banner title="Release notes" description="What changed" />
@@ -184,8 +184,8 @@ Those stay host responsibilities.
 ## Validate before shipping
 
 ```bash
-/Users/amrit/acrolls/packages/cli/dist/index.js validate ./path/to/page.md
-/Users/amrit/acrolls/packages/cli/dist/index.js validate ./path/to/page.md --strict
+pnpm exec acrolls validate ./path/to/page.md
+pnpm exec acrolls validate ./path/to/page.md --strict
 ```
 
 Strict mode fails on unsupported languages and hard errors.
@@ -195,7 +195,7 @@ Strict mode fails on unsupported languages and hard errors.
 ## Studio (local authoring)
 
 ```bash
-/Users/amrit/acrolls/packages/cli/dist/index.js studio ./path/to/page.md --mode default
+pnpm exec acrolls studio ./path/to/page.md --mode default
 ```
 
 - Source is truth (atomic Save)  

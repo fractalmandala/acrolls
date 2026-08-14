@@ -1,23 +1,29 @@
 # Troubleshooting
 
-## Local `file:` package is stale
+## Installed package is stale
 
-Rebuild the provider, refresh the host package manager state, and restart the dev server:
+Update the public package from the host root and restart the development server:
 
 ```bash
-cd /Users/amrit/acrolls && pnpm build
-cd /path/to/host && pnpm install
+pnpm up acrolls@latest
+pnpm exec acrolls --version
 pnpm dev
 ```
 
-Confirm `node_modules/@acrolls/mdsvex/package.json` exists in the host. Do not delete
-individual `node_modules/@acrolls` folders manually.
+Confirm the host declares only `acrolls`, not direct `@acrolls/*` or `file:` dependencies.
 
 ---
 
 ## `workspace:*` / `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`
 
-You linked `@acrolls/sveltekit` (or another package) that expects the Acrolls pnpm workspace. **Remove it** from the host and import from `@acrolls/mdsvex` instead.
+The host installed an internal package or local source manifest. Remove direct `@acrolls/*`
+and `file:` dependencies, then install the public package:
+
+```bash
+pnpm add acrolls@latest
+```
+
+Use only `acrolls/*` imports.
 
 ---
 
@@ -33,7 +39,7 @@ custom overview instead, omit `docs/index.md` and build that overview directly i
 
 ## Navigation key warning or duplicate keyed item
 
-Rebuild and refresh the local packages using the routine above. If it remains, confirm two
+Update `acrolls` using the routine above. If it remains, confirm two
 Markdown sources do not resolve to the same route (for example both a folder landing and an
 explicit entry pointing at the same public URL). `createDocsContentSource` reports duplicate
 routes with both source keys.
@@ -42,18 +48,18 @@ routes with both source keys.
 
 ## `Logical expressions and coalesce expressions cannot be mixed`
 
-Stale build of `@acrolls/docs`. Rebuild Acrolls and reinstall the host `file:` link.
+The host is using an older Acrolls release. Update the package and restart the dev server.
 
 ```bash
-cd /Users/amrit/acrolls && pnpm build
-cd /path/to/host && pnpm install
+pnpm up acrolls@latest
+pnpm dev
 ```
 
 ---
 
 ## Code blocks break Svelte compile (`Unexpected token` near `{`)
 
-Fixed in current highlighters by escaping `{` / `}` for Svelte. Rebuild `@acrolls/mdsvex`.
+Fixed in current highlighters by escaping `{` / `}` for Svelte. Rebuild `acrolls/mdsvex`.
 
 ## Markdown examples break Svelte compile (`<svelte:head>`, `Result<T, String>`, or `{ name: string }`)
 
@@ -124,10 +130,19 @@ You ran the CLI outside a SvelteKit app (e.g. Acrolls monorepo root). `cd` into 
 
 ---
 
+## Host has no `svelte.config.js`
+
+That is expected in SvelteKit 3 and supported from SvelteKit 2.62 onward. Pass the Acrolls
+extensions and preprocessor to `sveltekit()` in `vite.config.ts` as described in
+[Integrate into SvelteKit](./integrate-sveltekit.md). Use `acrolls onboard` for the merge;
+`integrate --yes` will refuse to rewrite an existing Vite config.
+
+---
+
 ## Styles look unstyled / double fonts
 
 - Import **one** of foundation/default.  
-- Import `@acrolls/docs/styles.css` if using the shell.  
+- Import `acrolls/docs/styles.css` if using the shell.
 - Avoid importing Acrolls CSS twice.  
 - For foundation mode, set host tokens (`--foreground`, etc.).  
 
@@ -136,6 +151,13 @@ You ran the CLI outside a SvelteKit app (e.g. Acrolls monorepo root). `cd` into 
 ## Tables: a11y warning on `tabindex`
 
 Known Svelte a11y warning on scroll regions with `role="region"`. Harmless for v0; scroll keyboard access is intentional.
+
+## Deprecated `<slot>` warning in `PublicationLayout`
+
+`PublicationLayout.svelte` still uses the classic `<slot />` contract because mdsvex injects
+compiled article content through it. Svelte 5 reports this as a deprecation warning, not a
+compile failure. Keep the wrapper until mdsvex exposes an equivalent snippet contract; the
+warning does not indicate malformed Markdown or a deployment blocker.
 
 ---
 
@@ -155,4 +177,4 @@ Studio HTML pipeline strips `<script>` blocks. Use `pnpm dev` for full SVX compo
 
 1. Minimal repro: one route + one `.md` + `Publication` + `default.css`  
 2. `validate` that file  
-3. Compare with `/Users/amrit/acrolls/examples/kit-consumer` and dharmalib `/docs/user` (local trial)  
+3. Rerun `pnpm exec acrolls onboard --check` and compare each generated checkpoint with the host

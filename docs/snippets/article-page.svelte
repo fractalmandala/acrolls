@@ -3,7 +3,7 @@
 	 * Copy to src/routes/docs/[slug]/+page.svelte
 	 * Pair with +page.ts that loads the matching .md module.
 	 */
-	import { Publication } from '@acrolls/svelte';
+	import { Publication } from 'acrolls/svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

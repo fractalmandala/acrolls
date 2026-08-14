@@ -18,9 +18,10 @@ function help() {
 
 Usage:
   acrolls                        Show project state
+  acrolls --cwd <path> <command> Run against a host without changing directories
   acrolls init [--content-dir <path>] [--dry-run]
   acrolls integrate [--dry-run] [--mode foundation|default] [--yes]
-  acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--acrolls-root <path>] [--check] [--non-interactive|--interactive] [--json]
+  acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--check] [--non-interactive|--interactive] [--json]
   acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]
   acrolls studio <file.md|file.svx> [--port <n>] [--no-open] [--mode foundation|default]
   acrolls --help
@@ -102,7 +103,8 @@ async function cmdStatus() {
     console.log(`sveltekit: ${host.hasKit}`);
     console.log(`mdsvex: ${host.hasMdsvex}`);
     console.log(`acrolls deps: ${host.hasAcrolls}`);
-    console.log(`svelte config: ${host.svelteConfig ?? 'none'}`);
+    console.log(`vite config: ${host.viteConfig ?? 'none'}`);
+    console.log(`legacy svelte config: ${host.svelteConfig ?? 'none'}`);
     console.log(`layout: ${host.layout ?? 'none'}`);
   }
   console.log('Run `acrolls --help` for commands.');
@@ -118,6 +120,19 @@ async function main() {
   if (args.flags.version || args.flags.v) {
     console.log(VERSION);
     process.exit(0);
+  }
+
+  if (args.flags.cwd !== undefined) {
+    if (typeof args.flags.cwd !== 'string' || !args.flags.cwd.trim()) {
+      console.error('Invalid --cwd. Provide a host project directory.');
+      process.exit(2);
+    }
+    try {
+      process.chdir(resolve(String(args.flags.cwd)));
+    } catch {
+      console.error(`Directory not found: ${args.flags.cwd}`);
+      process.exit(2);
+    }
   }
 
   const cmd = args._[0];
