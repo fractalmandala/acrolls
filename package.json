@@ -9,11 +9,13 @@
   "scripts": {
     "build": "pnpm -r --filter './packages/*' run build",
     "build:docs": "pnpm --filter @acrolls/docs build",
+    "dev:docs": "pnpm --parallel --stream --filter @acrolls/docs --filter @acrolls/example-kit run dev",
     "dev:example": "pnpm --filter @acrolls/example-kit dev",
     "build:example": "pnpm --filter @acrolls/example-kit build",
     "check": "pnpm -r --filter './packages/*' run check",
     "test": "pnpm -r --if-present --filter './packages/*' run test",
     "release:pack": "pnpm --config.node-linker=hoisted --filter acrolls pack",
+    "verify:packed-consumer": "node ./scripts/verify-packed-consumer.mjs",
     "release": "pnpm --config.node-linker=hoisted --filter acrolls publish --access public",
     "cli": "pnpm --filter @acrolls/cli exec node ./dist/index.js",
     "acrolls": "pnpm --filter @acrolls/cli exec node ./dist/index.js"

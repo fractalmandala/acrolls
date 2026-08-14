@@ -12,12 +12,12 @@ tags:
 Consumers install one package:
 
 ```bash
-pnpm add acrolls@0.1.1
+pnpm add acrolls@0.1.3
 ```
 
-The public tarball bundles its internal `@acrolls/*` runtime packages. Publish only `acrolls`;
-the scoped implementation units do not need separate registry releases. Do not test the obsolete
-`acrolls@0.0.1` artifact.
+The public tarball bundles its internal `@acrolls/*` runtime packages and the unist visitor
+closure required by the compiled mdsvex path. Publish only `acrolls`; the scoped implementation
+units do not need separate registry releases. Do not test the obsolete `acrolls@0.0.1` artifact.
 
 ## Verify from a clean checkout
 
@@ -30,6 +30,7 @@ pnpm check
 pnpm test
 pnpm --filter @acrolls/example-kit check
 pnpm --filter @acrolls/example-kit build
+pnpm verify:packed-consumer
 ```
 
 Create and inspect the public tarball with:
@@ -61,11 +62,11 @@ If npm accepts the version, it cannot be published again. Fix any later problem,
 
 ## Test the registry package in a new site
 
-After npm shows `acrolls@0.1.1`, create or open an unrelated SvelteKit site and install only the
+After npm shows `acrolls@0.1.3`, create or open an unrelated SvelteKit site and install only the
 public package:
 
 ```bash
-pnpm add acrolls@0.1.1
+pnpm add acrolls@0.1.3
 pnpm exec acrolls --version
 pnpm exec acrolls onboard --docs-dir docs --base-href /docs
 ```

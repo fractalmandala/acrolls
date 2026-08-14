@@ -1,6 +1,6 @@
 {
   "name": "acrolls",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Acrolls publishing and documentation framework for SvelteKit.",
   "license": "Apache-2.0",
   "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/acrolls" },
@@ -76,7 +76,9 @@
     "remark-rehype": "^11.1.2",
     "shiki": "^3.12.2",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-is": "^6.0.0",
+    "unist-util-visit": "^5.0.0",
+    "unist-util-visit-parents": "^6.0.0"
   },
   "bundledDependencies": [
     "@acrolls/cli",
@@ -84,7 +86,10 @@
     "@acrolls/mdsvex",
     "@acrolls/styles",
     "@acrolls/svelte",
-    "@acrolls/sveltekit"
+    "@acrolls/sveltekit",
+    "unist-util-is",
+    "unist-util-visit",
+    "unist-util-visit-parents"
   ],
   "peerDependencies": {
     "svelte": "^5.0.0"

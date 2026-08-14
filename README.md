@@ -54,9 +54,14 @@ units exposed to applications through the supported `acrolls/*` subpaths above.
 ```bash
 pnpm install
 pnpm build
-pnpm --filter @acrolls/example-kit dev
+pnpm dev:docs
 ./packages/cli/dist/index.js validate examples/starter/article.md
 ```
+
+`pnpm dev:docs` runs the `@acrolls/docs` package watcher and the SvelteKit example together.
+Open `http://127.0.0.1:5173/docs` to preview component, layout, and CSS-token changes without
+publishing. The example includes persisted Paper, Midnight, and Moss theme presets; edit the
+Docs package under `packages/docs` and the shared theme styles under `packages/styles`.
 
 ## Status
 

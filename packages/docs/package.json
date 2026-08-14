@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "build": "svelte-package -i src/lib -o dist && cp styles.css dist/styles.css",
+    "dev": "svelte-package -i src/lib -o dist --watch",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run"
   },
