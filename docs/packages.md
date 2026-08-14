@@ -4,7 +4,7 @@
 |---|---|---|
 | `acrolls/mdsvex` | `createAcrollsMdsvexPreprocessor`, `createAcrollsMdsvexOptions`, `renderAcrollsArticleHtml`, … | Compile pipeline + source safety |
 | `acrolls/svelte` | `Publication`, `Callout`, `Figure`, … | Article components |
-| `acrolls/styles/*` and `acrolls/sass/*` | CSS / SASS entrypoints | Article styles |
+| `acrolls/styles/*` | CSS / Sass entrypoints | Article styles |
 | `acrolls/docs` | `DocsShell`, `DocsNav` types, helpers | Docs chrome |
 | `acrolls/docs/content` | `createDocsContentSource`, `defineDocsConfig` | Generated docs tree |
 | `acrolls/sveltekit` | SvelteKit preprocessor and generated-source helpers | Host integration |
@@ -65,7 +65,9 @@ Wrap article content with **`Publication`** so code-frame enhancement + mermaid 
 ```
 acrolls/styles/foundation.css
 acrolls/styles/default.css
-acrolls/styles/sass/tokens.sass
+acrolls/styles/foundation
+acrolls/styles/default
+acrolls/styles/tokens
 ```
 
 ---
@@ -89,6 +91,9 @@ import {
 
 import 'acrolls/docs/styles.css';
 ```
+
+For Sass layouts, use `import 'acrolls/docs/styles.sass'` in the layout script. A host global
+Sass file can instead use `@use 'acrolls/docs/styles'`.
 
 ---
 

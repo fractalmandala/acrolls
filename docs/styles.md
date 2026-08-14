@@ -2,10 +2,10 @@
 
 ## Modes
 
-| Import | When |
+| CSS import | Sass layout import | When |
 |---|---|
-| `acrolls/styles/default.css` | Greenfield articles; want full editorial scale |
-| `acrolls/styles/foundation.css` | Host already owns fonts, rhythm, colors |
+| `acrolls/styles/default.css` | `acrolls/styles/default.sass` | Greenfield articles; want full editorial scale |
+| `acrolls/styles/foundation.css` | `acrolls/styles/foundation.sass` | Host already owns fonts, rhythm, colors |
 
 ```ts
 import 'acrolls/styles/default.css';
@@ -13,10 +13,24 @@ import 'acrolls/styles/default.css';
 import 'acrolls/styles/foundation.css';
 ```
 
+Or, in a layout script in a host that uses Sass:
+
+```svelte
+<script>
+  import 'acrolls/styles/default.sass';
+</script>
+```
+
 Docs shell has its own sheet (always import if you use DocsShell):
 
 ```ts
 import 'acrolls/docs/styles.css';
+```
+
+```svelte
+<script>
+  import 'acrolls/docs/styles.sass';
+</script>
 ```
 
 ---
@@ -55,14 +69,17 @@ Override Acrolls tokens directly on `.acrolls` or `.acrolls-docs-shell`:
 
 ---
 
-## SASS (optional)
+## Sass tokens
 
 ```sass
-@use 'acrolls/styles/sass/tokens' as *
+@use 'acrolls/styles/tokens' as *
 @include acrolls-tokens()
 ```
 
-Still ship a CSS entry for mechanics (`foundation` / `default`). SASS is for hosts that author tokens in indented SASS.
+Choose one format for each entrypoint: CSS imports or Sass layout imports. The Sass presets include
+the same compiled style rules as their CSS counterparts; no separate CSS mechanics import is needed.
+For a host-authored global Sass file, `@use 'acrolls/styles/default'` and
+`@use 'acrolls/docs/styles'` are also supported.
 
 ---
 

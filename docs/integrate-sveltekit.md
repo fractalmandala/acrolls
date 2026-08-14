@@ -105,6 +105,14 @@ import 'acrolls/styles/default.css';
 import 'acrolls/styles/foundation.css';
 ```
 
+For Sass layouts, import the matching Sass entrypoint from the layout script:
+
+```svelte
+<script>
+  import 'acrolls/styles/default.sass';
+</script>
+```
+
 Bridge host tokens (optional):
 
 ```css

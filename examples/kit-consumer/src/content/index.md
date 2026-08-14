@@ -1,9 +1,6 @@
 ---
-title: Welcome to the example docs
 description: A generated documentation source for the Acrolls SvelteKit example.
 ---
-
-# Welcome
 
 This page is loaded through the generated Acrolls content source.
 

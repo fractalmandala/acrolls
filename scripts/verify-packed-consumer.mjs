@@ -68,6 +68,19 @@ for (const dependency of ['unist-util-is', 'unist-util-visit', 'unist-util-visit
 		throw new Error(`Bundled dependency is missing from the tarball: ${packagePath}`);
 	}
 }
+for (const styleEntry of [
+  'styles/foundation.css',
+  'styles/default.css',
+  'styles/docs.css',
+  'styles/foundation.sass',
+  'styles/default.sass',
+  'styles/docs.sass',
+  'styles/tokens.sass'
+]) {
+  if (!packedPaths.has(styleEntry)) {
+    throw new Error(`Public style entrypoint is missing from the tarball: ${styleEntry}`);
+  }
+}
 
 writeFileSync(
 	join(consumerDirectory, 'package.json'),
@@ -82,6 +95,9 @@ writeFileSync(
 				'@sveltejs/vite-plugin-svelte': '^6.1.3',
 				svelte: '^5.38.1',
 				vite: '^7.1.3'
+			},
+			devDependencies: {
+				sass: '^1.102.0'
 			}
 		},
 		null,
@@ -140,10 +156,20 @@ writeFileSync(
 
 writeFileSync(
 	join(consumerDirectory, 'src/main.js'),
-	`import { mount } from 'svelte';
+	`import 'acrolls/styles/default.css';
+import 'acrolls/docs/styles.css';
+import { mount } from 'svelte';
 import App from './App.svelte';
 
 mount(App, { target: document.getElementById('app') });
+`
+);
+
+writeFileSync(
+	join(consumerDirectory, 'src/styles.sass'),
+	`@use 'acrolls/styles/default'
+@use 'acrolls/docs/styles'
+@use 'acrolls/styles/tokens'
 `
 );
 
@@ -204,6 +230,7 @@ console.log(JSON.stringify({ labels, documentSlug: docs.documents[0].slug, compi
 
 run('pnpm', ['install', '--config.node-linker=isolated', '--ignore-scripts', '--no-frozen-lockfile'], consumerDirectory);
 run('node', ['probe.mjs'], consumerDirectory);
+run('pnpm', ['exec', 'sass', '--load-path=node_modules', 'src/styles.sass', 'dist/styles.css', '--no-source-map'], consumerDirectory);
 run('pnpm', ['exec', 'vite', 'build'], consumerDirectory);
 
 console.log(

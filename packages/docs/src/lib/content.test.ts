@@ -27,6 +27,84 @@ function source() {
 }
 
 describe('content source', () => {
+	it('admits only authored documents with frontmatter titles and keeps invalid files out of every source surface', () => {
+		const docs = createDocsContentSource({
+			config: {
+				title: 'Docs',
+				baseHref: '/docs',
+				convention: { mode: 'authored' },
+				folders: { guides: { title: 'Guides' } }
+			},
+			documents: [
+				{
+					key: 'guides/index.md',
+					metadata: { title: 'Ignored title', description: 'Overview' },
+					facts: { hasFrontmatter: true, leadingH1: 'Guides' },
+					load: async () => 'guides'
+				},
+				{
+					key: 'guides/valid.md',
+					metadata: { title: 'Valid' },
+					facts: { hasFrontmatter: true, links: ['./missing.md'] },
+					load: async () => 'valid'
+				},
+				{
+					key: 'guides/missing.md',
+					metadata: {},
+					facts: { hasFrontmatter: false },
+					load: async () => 'missing'
+				}
+			]
+		});
+
+		expect(docs.documents.map((document) => document.key)).toEqual(['guides/index.md', 'guides/valid.md']);
+		expect(docs.get('guides/missing')).toBeUndefined();
+		expect(docs.entries()).not.toContain('/docs/guides/missing');
+		expect(JSON.stringify(docs.nav)).not.toContain('missing');
+		expect(docs.get('guides')?.title).toBe('Guides');
+		expect(docs.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+			'ACROLLS_INDEX_TITLE_IGNORED',
+			'ACROLLS_FRONTMATTER_REQUIRED',
+			'ACROLLS_TITLE_REQUIRED',
+			'ACROLLS_LINK_TO_REJECTED_DOCUMENT'
+		]);
+	});
+
+	it('warns when an authored initial H1 differs from the effective title', () => {
+		const docs = createDocsContentSource({
+			config: { title: 'Docs', baseHref: '/docs', convention: { mode: 'authored' } },
+			documents: [{
+				key: 'guide.md',
+				metadata: { title: 'Frontmatter title' },
+				facts: { hasFrontmatter: true, leadingH1: 'Body title' },
+				load: async () => 'guide'
+			}]
+		});
+
+		expect(docs.diagnostics).toContainEqual(expect.objectContaining({
+			code: 'ACROLLS_LEADING_H1_MISMATCH',
+			severity: 'warning'
+		}));
+	});
+
+	it('does not let hidden waive authored admission requirements', () => {
+		const docs = createDocsContentSource({
+			config: { title: 'Docs', baseHref: '/docs', convention: { mode: 'authored' } },
+			documents: [{
+				key: 'hidden.md',
+				metadata: { hidden: true },
+				facts: { hasFrontmatter: false },
+				load: async () => 'hidden'
+			}]
+		});
+
+		expect(docs.documents).toHaveLength(0);
+		expect(docs.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+			'ACROLLS_FRONTMATTER_REQUIRED',
+			'ACROLLS_TITLE_REQUIRED'
+		]);
+	});
+
 	it('maps markdown paths to routes and typed DocsNav sections', () => {
 		const docs = source();
 		expect(docs.nav.sections.map((section) => section.title)).toEqual(['Guides', 'Docs']);

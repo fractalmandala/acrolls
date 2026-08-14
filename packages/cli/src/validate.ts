@@ -1,11 +1,12 @@
 import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { extname, relative, resolve } from 'node:path';
+import { dirname, extname, relative, resolve } from 'node:path';
 import { compile } from 'mdsvex';
 import { compile as compileSvelte } from 'svelte/compiler';
 import {
 	compileDiagnostic,
 	createAcrollsMdsvexOptions,
 	normalizeAcrollsMarkdown,
+	inspectAcrollsDocument,
 	renderAcrollsArticleHtml,
 	safetyFindingDiagnostic,
 	type AcrollsDocumentDiagnostic,
@@ -40,14 +41,23 @@ export type CorpusValidationResult = {
 	};
 };
 
+type ValidatedDocument = DocumentValidationResult & {
+	links: readonly string[];
+};
+
 export async function validateCorpus(options: CorpusValidationOptions): Promise<CorpusValidationResult> {
 	const root = resolve(options.root);
 	const files = options.files?.map((file) => resolve(file)) ?? (await discoverMarkdownFiles(root));
-	const documents: DocumentValidationResult[] = [];
+	const detailedDocuments: ValidatedDocument[] = [];
 
 	for (const file of files) {
-		documents.push(await validateDocument(file, root, options));
+		detailedDocuments.push(await validateDocument(file, root, options));
 	}
+	if (options.mode === 'authored') addRejectedDocumentLinkDiagnostics(detailedDocuments, root);
+	for (const document of detailedDocuments) {
+		document.status = documentStatus(document.diagnostics, document.status);
+	}
+	const documents: DocumentValidationResult[] = detailedDocuments.map(({ links: _links, ...document }) => document);
 
 	const summary = {
 		discovered: documents.length,
@@ -94,8 +104,9 @@ async function validateDocument(
 	file: string,
 	root: string,
 	options: CorpusValidationOptions
-): Promise<DocumentValidationResult> {
+): Promise<ValidatedDocument> {
 	const source = await readFile(file, 'utf8');
+	const facts = inspectAcrollsDocument(source);
 	const normalized = normalizeAcrollsMarkdown(source, { filename: file });
 	const diagnostics = normalized.findings.map((finding) => {
 		const diagnostic = safetyFindingDiagnostic(finding, file);
@@ -104,6 +115,7 @@ async function validateDocument(
 			: diagnostic;
 	});
 
+	let metadata: Record<string, unknown> = {};
 	try {
 		const result = await compile(normalized.source, {
 			filename: file,
@@ -115,6 +127,7 @@ async function validateDocument(
 		if (!result?.code) {
 			throw new Error('mdsvex returned an empty compile result');
 		}
+		metadata = compiledMetadata(result.code);
 		try {
 			compileSvelte(result.code, { filename: file });
 		} catch (error) {
@@ -130,16 +143,135 @@ async function validateDocument(
 	} catch (error) {
 		diagnostics.push(compileDiagnostic(error, file));
 	}
+	if (options.mode === 'authored') {
+		diagnostics.push(...authoredFrontmatterDiagnostics(file, root, facts, metadata));
+	}
 
 	return {
 		file,
-		status: diagnostics.some((diagnostic) => diagnostic.severity === 'error')
-			? 'rejected'
-			: normalized.findings.length > 0
-				? 'normalized'
-				: 'ready',
-		diagnostics
+		status: documentStatus(diagnostics, normalized.findings.length > 0 ? 'normalized' : 'ready'),
+		diagnostics,
+		links: facts.links
 	};
+}
+
+function authoredFrontmatterDiagnostics(
+	file: string,
+	root: string,
+	facts: ReturnType<typeof inspectAcrollsDocument>,
+	metadata: Record<string, unknown>
+): AcrollsDocumentDiagnostic[] {
+	const relativeFile = relative(root, file).replaceAll('\\', '/');
+	const isIndex = relativeFile.split('/').at(-1) === 'index.md';
+	const diagnostics: AcrollsDocumentDiagnostic[] = [];
+	if (!isIndex && !facts.hasFrontmatter) {
+		diagnostics.push(metadataDiagnostic(
+			'ACROLLS_FRONTMATTER_REQUIRED',
+			file,
+			'Ordinary authored docs pages require a YAML frontmatter block.',
+			'Add YAML frontmatter with a non-empty string title.'
+		));
+	}
+	if (!isIndex) {
+		const title = metadata.title;
+		if (title === undefined || title === null || (typeof title === 'string' && !title.trim())) {
+			diagnostics.push(metadataDiagnostic(
+				'ACROLLS_TITLE_REQUIRED',
+				file,
+				'Ordinary authored docs pages require a non-empty frontmatter title.',
+				'Add title: Your page title to the YAML frontmatter.'
+			));
+		} else if (typeof title !== 'string') {
+			diagnostics.push(metadataDiagnostic(
+				'ACROLLS_TITLE_INVALID',
+				file,
+				'Frontmatter title must be a string.',
+				'Replace title with a non-empty YAML string.'
+			));
+		}
+	} else if (metadata.title !== undefined) {
+		diagnostics.push({
+			...metadataDiagnostic(
+				'ACROLLS_INDEX_TITLE_IGNORED',
+				file,
+				'Index page title is derived from its folder/group and the frontmatter title is ignored.',
+				'Remove title from this index page or configure its folder/group title.'
+			),
+			severity: 'warning'
+		});
+	}
+	if (!isIndex && facts.leadingH1 && typeof metadata.title === 'string' &&
+		normalizeTitle(facts.leadingH1) !== normalizeTitle(metadata.title)) {
+		diagnostics.push({
+			...metadataDiagnostic(
+				'ACROLLS_LEADING_H1_MISMATCH',
+				file,
+				`Initial Markdown H1 "${facts.leadingH1}" differs from frontmatter title "${metadata.title}".`,
+				'Use the frontmatter title as the page title, or remove the initial H1.'
+			),
+			severity: 'warning'
+		});
+	}
+	return diagnostics;
+}
+
+function addRejectedDocumentLinkDiagnostics(documents: ValidatedDocument[], root: string): void {
+	const rejected = new Set(
+		documents.filter((document) => document.status === 'rejected').map((document) => document.file)
+	);
+	for (const document of documents) {
+		if (document.status === 'rejected') continue;
+		for (const link of document.links) {
+			const target = resolveMarkdownLink(document.file, link);
+			if (!target || !rejected.has(target)) continue;
+			document.diagnostics.push(metadataDiagnostic(
+				'ACROLLS_LINK_TO_REJECTED_DOCUMENT',
+				document.file,
+				`Markdown link "${link}" targets rejected document "${relative(root, target)}".`,
+				'Fix the target document frontmatter or remove the link.'
+			));
+		}
+	}
+}
+
+function resolveMarkdownLink(file: string, link: string): string | undefined {
+	const target = link.split('#', 1)[0] ?? '';
+	if (!target || target.startsWith('/') || target.startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(target)) return undefined;
+	const resolved = resolve(dirname(file), target);
+	return extname(resolved) ? resolved : `${resolved}.md`;
+}
+
+function compiledMetadata(code: string): Record<string, unknown> {
+	const match = /export const metadata\s*=\s*(\{[\s\S]*?\});/.exec(code);
+	if (!match) return {};
+	try {
+		const value: unknown = JSON.parse(match[1] ?? '{}');
+		return value && typeof value === 'object' && !Array.isArray(value)
+			? value as Record<string, unknown>
+			: {};
+	} catch {
+		return {};
+	}
+}
+
+function metadataDiagnostic(
+	code: string,
+	file: string,
+	message: string,
+	remediation: string
+): AcrollsDocumentDiagnostic {
+	return { code, severity: 'error', phase: 'metadata', file, message, remediation };
+}
+
+function documentStatus(
+	diagnostics: readonly AcrollsDocumentDiagnostic[],
+	fallback: AcrollsDocumentStatus
+): AcrollsDocumentStatus {
+	return diagnostics.some((diagnostic) => diagnostic.severity === 'error') ? 'rejected' : fallback;
+}
+
+function normalizeTitle(value: string): string {
+	return value.replaceAll(/\s+/g, ' ').trim().toLocaleLowerCase();
 }
 
 async function discoverMarkdownFiles(root: string): Promise<string[]> {

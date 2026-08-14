@@ -72,8 +72,12 @@ export default defineConfig({
 });
 `;
 
-function ensureStyleImport(source: string, mode: string): { next: string; changed: boolean } {
-  const importLine = `import 'acrolls/styles/${mode}.css';`;
+function ensureStyleImport(
+  source: string,
+  mode: string,
+  style: 'css' | 'sass'
+): { next: string; changed: boolean } {
+  const importLine = `import 'acrolls/styles/${mode}.${style}';`;
   if (source.includes('acrolls/styles/')) {
     return { next: source, changed: false };
   }
@@ -146,12 +150,18 @@ export async function cmdIntegrate(args: Args) {
     console.error('Invalid --mode. Use foundation or default.');
     return 2;
   }
+  const style = String(args.flags.style ?? 'css');
+  if (style !== 'css' && style !== 'sass') {
+    console.error('Invalid --style. Use css or sass.');
+    return 2;
+  }
   const root = process.cwd();
   const host = await detectHost(root);
   const actions: string[] = [];
 
   console.log(`Host: ${host.kind}`);
   console.log(`Mode: ${mode}`);
+  console.log(`Style: ${style}`);
   console.log('Plan:');
   console.log('  1. Ensure package: acrolls');
   console.log(`  2. ${host.viteConfig ? `Merge Acrolls into ${host.viteConfig}` : host.svelteConfig ? `Patch legacy ${host.svelteConfig}` : 'Create vite.config.ts'}`);
@@ -230,10 +240,10 @@ export async function cmdIntegrate(args: Args) {
       'utf8'
     );
     if (layoutPath.endsWith('.svelte')) {
-      const { next, changed } = ensureStyleImport(original, mode);
+      const { next, changed } = ensureStyleImport(original, mode, style as 'css' | 'sass');
       if (changed) {
         await writeFile(layoutPath, next, 'utf8');
-        actions.push(`imported acrolls/styles/${mode}.css in ${relative(root, layoutPath)}`);
+        actions.push(`added Acrolls ${style} styles in ${relative(root, layoutPath)}`);
       } else {
         actions.push(`styles already present in ${relative(root, layoutPath)}`);
       }
@@ -243,7 +253,7 @@ export async function cmdIntegrate(args: Args) {
   } else {
     await mkdir(join(root, 'src/routes'), { recursive: true });
     const content = `<script>
-\timport 'acrolls/styles/${mode}.css';
+\timport 'acrolls/styles/${mode}.${style}';
 \tlet { children } = $props();
 </script>
 

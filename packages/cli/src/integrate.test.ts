@@ -79,4 +79,23 @@ describe('integrate', () => {
     expect(config).toContain('createAcrollsMdsvexPreprocessor');
     expect(config).not.toContain('adapter-auto');
   });
+
+  it('adds the Sass entrypoint to a generated layout when requested', async () => {
+    const root = await host({ devDependencies: { '@sveltejs/kit': '^3.0.0' } });
+    await mkdir(join(root, 'src/routes'), { recursive: true });
+    const previous = process.cwd();
+    process.chdir(root);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      await expect(
+        cmdIntegrate({ _: ['integrate'], flags: { yes: true, style: 'sass', mode: 'default' } })
+      ).resolves.toBe(0);
+    } finally {
+      process.chdir(previous);
+    }
+
+    expect(await readFile(join(root, 'src/routes/+layout.svelte'), 'utf8')).toContain(
+      "import 'acrolls/styles/default.sass';"
+    );
+  });
 });

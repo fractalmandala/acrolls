@@ -20,6 +20,10 @@ import 'acrolls/styles/default.css';
 import 'acrolls/docs/styles.css';
 ```
 
+Sass layouts can import `acrolls/styles/default.sass` or `acrolls/docs/styles.sass` from their
+layout script. A host-authored global Sass entry can instead use `@use 'acrolls/styles/default'`
+or `@use 'acrolls/docs/styles'`.
+
 Do not install or import `@acrolls/*` packages directly. They are bundled implementation units
 behind the `acrolls/*` public entrypoints. The interactive onboarding flow shows one checkpoint
 at a time; use `--non-interactive` or `--json` for agents and CI.

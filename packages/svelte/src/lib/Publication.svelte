@@ -7,7 +7,7 @@
 	type Props = {
 		theme?: 'light' | 'dark' | 'auto';
 		class?: string;
-		children: Snippet;
+		children?: Snippet;
 		[key: string]: unknown;
 	};
 
@@ -37,5 +37,5 @@
 	data-theme={theme === 'auto' ? undefined : theme}
 	{...rest}
 >
-	{@render children()}
+	{@render children?.()}
 </article>

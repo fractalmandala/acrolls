@@ -47,7 +47,8 @@ const VALUE_FLAGS = new Set([
 	'report',
 	'port',
 	'cwd',
-	'on-invalid'
+	'on-invalid',
+	'style'
 ]);
 
 export function parseArgs(argv: string[]): Args {

@@ -9,6 +9,7 @@ export type OnboardingOptions = {
 	docsDir: string;
 	baseHref: string;
 	mode: 'foundation' | 'default';
+	style: 'css' | 'sass';
 };
 
 export type OnboardingStep = {
@@ -37,6 +38,7 @@ export type OnboardingPlan = {
 	docsDir: string;
 	baseHref: string;
 	mode: 'foundation' | 'default';
+	style: 'css' | 'sass';
 	steps: OnboardingStep[];
 };
 
@@ -59,6 +61,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	const docsDir = options.docsDir.replace(/^\.?\//, '').replace(/\\/g, '/').replace(/\/$/, '') || 'docs';
 	const baseHref = normalizeBaseHref(options.baseHref);
 	const mode = options.mode;
+	const style = options.style;
 	const docsAbsolute = resolve(root, docsDir);
 	const sourceDirectory = resolve(root, 'src/lib/docs');
 	const globRoot = toPosix(relative(sourceDirectory, docsAbsolute));
@@ -97,9 +100,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			(sourceSource.includes('modules') && sourceSource.includes('metadata')));
 	const docsLayoutReady =
 		/(DocsShell|DocsSidebar)/.test(docsLayoutSourceForCheck) &&
-		docsLayoutSourceForCheck.includes('docs.nav') &&
-		(layoutSource.includes('acrolls/docs/styles.css') ||
-			docsLayoutSourceForCheck.includes('acrolls/docs/styles.css'));
+		docsLayoutSourceForCheck.includes('docs.nav');
 	const documentPageReady =
 		documentPageSource.includes('docs.get') &&
 		documentPageSource.includes('loader') &&
@@ -158,14 +159,14 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			id: 'styles',
 			title: 'Add the Acrolls style preset',
 			file: docsLayoutFile,
-			action: `Add this import once to the docs surface. The recommended location is ${docsLayoutFile}; choose the ${mode} preset and do not load both presets.`,
-			code: `import 'acrolls/styles/${mode}.css';`,
+			action: `Add this style entrypoint once to the docs surface. The recommended location is ${docsLayoutFile}; choose the ${mode} preset and do not load both presets.`,
+			code: `import 'acrolls/styles/${mode}.${style}';`,
 			caution:
-				'Import one Acrolls style preset exactly once per docs/blog surface. If the root layout already owns the preset, leave this line out of the docs layout instead of importing it twice.',
-			verify: `The chosen acrolls/styles/${mode}.css import appears exactly once in the docs surface.`,
+				'Load one Acrolls style preset exactly once per docs/blog surface. Sass imports belong in a layout script or another global Sass entry, not a component style block; make sure the host has sass installed. If the root layout already owns the preset, leave this line out of the docs layout instead of loading it twice.',
+			verify: `The chosen acrolls/styles/${mode}.${style} import appears exactly once in the docs surface.`,
 			completed:
-				layoutSource.includes(`acrolls/styles/${mode}.css`) ||
-				docsLayoutSource.includes(`acrolls/styles/${mode}.css`)
+				layoutSource.includes(`acrolls/styles/${mode}.${style}`) ||
+				docsLayoutSource.includes(`acrolls/styles/${mode}.${style}`)
 		},
 		{
 			id: 'content',
@@ -268,6 +269,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 		docsDir,
 		baseHref,
 		mode,
+		style,
 		steps
 	};
 }
@@ -327,12 +329,18 @@ export async function cmdOnboard(args: Args): Promise<number> {
 		console.error('Invalid --mode. Use foundation or default.');
 		return 2;
 	}
+	const styleValue = String(args.flags.style ?? 'css');
+	if (styleValue !== 'css' && styleValue !== 'sass') {
+		console.error('Invalid --style. Use css or sass.');
+		return 2;
+	}
 	const root = process.cwd();
 	const plan = await buildOnboardingPlan({
 		root,
 		docsDir: String(args.flags['docs-dir'] ?? 'docs'),
 		baseHref: String(args.flags['base-href'] ?? '/docs'),
-		mode: modeValue
+		mode: modeValue,
+		style: styleValue
 	});
 
 	if (!plan.host.hasKit) {

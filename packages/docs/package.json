@@ -4,7 +4,11 @@
   "version": "0.3.0",
   "description": "Fumadocs-class docs shell for SvelteKit: nested nav, TOC, breadcrumbs, pager, persisted state.",
   "license": "Apache-2.0",
-  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/docs" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fractalmandala/Acrolls.git",
+    "directory": "packages/docs"
+  },
   "bugs": "https://github.com/fractalmandala/Acrolls/issues",
   "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
@@ -20,17 +24,20 @@
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
     },
-    "./styles.css": "./styles.css"
+    "./styles.css": "./styles.css",
+    "./styles": "./styles.sass",
+    "./styles.sass": "./styles.sass"
   },
   "files": [
     "dist",
     "!dist/**/*.test.*",
     "styles.css",
+    "styles.sass",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "svelte-package -i src/lib -o dist && cp styles.css dist/styles.css",
+    "build": "svelte-package -i src/lib -o dist && cp styles.css dist/styles.css && cp styles.sass dist/styles.sass",
     "dev": "svelte-package -i src/lib -o dist --watch",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run"
@@ -38,8 +45,12 @@
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
+  "dependencies": {
+    "@acrolls/styles": "workspace:^"
+  },
   "devDependencies": {
     "@sveltejs/package": "^2.5.0",
+    "sass": "^1.102.0",
     "svelte": "^5.38.1",
     "svelte-check": "^4.3.1",
     "typescript": "^5.9.2",

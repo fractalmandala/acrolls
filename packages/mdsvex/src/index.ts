@@ -10,6 +10,11 @@ import { rehypeAcrollsHeadingAnchors } from './rehype-heading-anchors.js';
 import { remarkAcrollsMermaidGuard } from './remark-mermaid-guard.js';
 import { normalizeAcrollsMarkdown } from './source-safety.js';
 import {
+	inspectAcrollsDocument,
+	suppressInitialMarkdownH1,
+	type AcrollsDocumentFacts
+} from './document-facts.js';
+import {
 	compileDiagnostic,
 	diagnosticError,
 	renderInvalidDocumentModule,
@@ -48,6 +53,8 @@ export { renderAcrollsArticleHtml } from './render-html.js';
 export type { RenderHtmlResult } from './render-html.js';
 export { splitFrontmatter, renderBannerHtml } from './frontmatter.js';
 export type { Frontmatter } from './frontmatter.js';
+export { inspectAcrollsDocument, suppressInitialMarkdownH1 } from './document-facts.js';
+export type { AcrollsDocumentFacts } from './document-facts.js';
 
 export type AcrollsMdsvexOptions = HighlightOptions & {
   /** Path to Publication layout (host or package). */
@@ -57,6 +64,11 @@ export type AcrollsMdsvexOptions = HighlightOptions & {
 	onInvalidDocument?: AcrollsInvalidDocumentPolicy;
 	/** Receive source and compiler diagnostics without changing the default behavior. */
 	onDiagnostic?: (diagnostic: AcrollsDocumentDiagnostic) => void;
+	/** Opt-in contract for a generated authored Markdown docs corpus. */
+	docs?: {
+		mode?: 'authored' | 'migration';
+		leadingH1?: 'suppress-and-warn' | 'preserve';
+	};
 };
 
 /**
@@ -92,7 +104,12 @@ export function createAcrollsMdsvexPreprocessor(options: AcrollsMdsvexOptions = 
 	return {
 		name: 'acrolls-mdsvex',
 		async markup(args: { content: string; filename?: string }) {
-			const normalized = normalizeAcrollsMarkdown(args.content, { filename: args.filename });
+			const facts = inspectAcrollsDocument(args.content);
+			const authoredDocs = options.docs?.mode === 'authored';
+			const source = authoredDocs && options.docs?.leadingH1 !== 'preserve'
+				? suppressInitialMarkdownH1(args.content)
+				: args.content;
+			const normalized = normalizeAcrollsMarkdown(source, { filename: args.filename });
 			for (const finding of normalized.findings) {
 				options.onDiagnostic?.(safetyFindingDiagnostic(finding, args.filename));
 			}
@@ -118,7 +135,7 @@ export function createAcrollsMdsvexPreprocessor(options: AcrollsMdsvexOptions = 
 			try {
 				output = {
 					...result,
-					code: ensureMetadataExport(result.code)
+					code: ensureAcrollsDocumentExport(ensureMetadataExport(result.code), facts)
 				};
 			} catch (error) {
 				return handleInvalid(error);
@@ -149,12 +166,20 @@ function isMarkdownDocument(filename?: string): boolean {
  * the generated module script while leaving real or author-defined metadata alone.
  */
 function ensureMetadataExport(code: string): string {
+	return ensureNamedExport(code, 'metadata', '{}');
+}
+
+function ensureAcrollsDocumentExport(code: string, facts: AcrollsDocumentFacts): string {
+	return ensureNamedExport(code, '__acrollsDocument', JSON.stringify(facts));
+}
+
+function ensureNamedExport(code: string, name: string, value: string): string {
 	const moduleScriptPattern =
 		/<script\b(?=[^>]*(?:\scontext\s*=\s*["']module["']|\smodule(?:\s|(?=>))))[^>]*>/i;
 	const moduleScript = moduleScriptPattern.exec(code);
 
 	if (!moduleScript) {
-		return `<script context="module">\n\texport const metadata = {};\n</script>\n\n${code}`;
+		return `<script context="module">\n\texport const ${name} = ${value};\n</script>\n\n${code}`;
 	}
 
 	const bodyStart = moduleScript.index + moduleScript[0].length;
@@ -162,12 +187,12 @@ function ensureMetadataExport(code: string): string {
 	if (bodyEnd === -1) return code;
 
 	const moduleBody = code.slice(bodyStart, bodyEnd);
-	const metadata = analyzeMetadataBinding(moduleBody);
-	if (metadata.exported) return code;
+	const binding = analyzeBinding(moduleBody, name);
+	if (binding.exported) return code;
 
-	const declaration = metadata.bound
-		? '\n\texport { metadata };'
-		: '\n\texport const metadata = {};';
+	const declaration = binding.bound
+		? `\n\texport { ${name} };`
+		: `\n\texport const ${name} = ${value};`;
 
 	return `${code.slice(0, bodyEnd)}${declaration}${code.slice(bodyEnd)}`;
 }
@@ -194,7 +219,7 @@ type AstProgram = { body: AstStatement[] };
 
 const TypeScriptModuleParser = Parser.extend(tsPlugin());
 
-function analyzeMetadataBinding(source: string): { bound: boolean; exported: boolean } {
+function analyzeBinding(source: string, name: string): { bound: boolean; exported: boolean } {
 	const program = TypeScriptModuleParser.parse(source, {
 		ecmaVersion: 'latest',
 		sourceType: 'module'
@@ -204,54 +229,54 @@ function analyzeMetadataBinding(source: string): { bound: boolean; exported: boo
 	let exported = false;
 
 	for (const statement of program.body) {
-		if (statementBindsMetadata(statement)) bound = true;
-		if (statementExportsMetadata(statement)) exported = true;
+		if (statementBindsName(statement, name)) bound = true;
+		if (statementExportsName(statement, name)) exported = true;
 	}
 
 	return { bound, exported };
 }
 
-function statementBindsMetadata(statement: AstStatement): boolean {
+function statementBindsName(statement: AstStatement, name: string): boolean {
 	if (statement.type === 'ExportNamedDeclaration' && statement.declaration) {
-		return statementBindsMetadata(statement.declaration);
+		return statementBindsName(statement.declaration, name);
 	}
 
 	if (statement.type === 'VariableDeclaration') {
-		return statement.declarations?.some(({ id }) => patternBindsMetadata(id)) === true;
+		return statement.declarations?.some(({ id }) => patternBindsName(id, name)) === true;
 	}
 
 	if (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') {
-		return statement.id?.name === 'metadata';
+		return statement.id?.name === name;
 	}
 
 	if (statement.type === 'ImportDeclaration') {
-		return statement.specifiers?.some(({ local }) => local?.name === 'metadata') === true;
+		return statement.specifiers?.some(({ local }) => local?.name === name) === true;
 	}
 
 	return false;
 }
 
-function statementExportsMetadata(statement: AstStatement): boolean {
+function statementExportsName(statement: AstStatement, name: string): boolean {
 	if (statement.type !== 'ExportNamedDeclaration') return false;
 
-	if (statement.declaration && statementBindsMetadata(statement.declaration)) return true;
+	if (statement.declaration && statementBindsName(statement.declaration, name)) return true;
 
-	return statement.specifiers?.some(({ exported }) => astName(exported) === 'metadata') === true;
+	return statement.specifiers?.some(({ exported }) => astName(exported) === name) === true;
 }
 
-function patternBindsMetadata(pattern: AstName | undefined): boolean {
+function patternBindsName(pattern: AstName | undefined, name: string): boolean {
 	if (!pattern) return false;
-	if (pattern.type === 'Identifier') return pattern.name === 'metadata';
-	if (pattern.type === 'AssignmentPattern') return patternBindsMetadata(pattern.left);
-	if (pattern.type === 'RestElement') return patternBindsMetadata(pattern.argument);
+	if (pattern.type === 'Identifier') return pattern.name === name;
+	if (pattern.type === 'AssignmentPattern') return patternBindsName(pattern.left, name);
+	if (pattern.type === 'RestElement') return patternBindsName(pattern.argument, name);
 	if (pattern.type === 'ArrayPattern') {
-		return pattern.elements?.some((element) => patternBindsMetadata(element ?? undefined)) === true;
+		return pattern.elements?.some((element) => patternBindsName(element ?? undefined, name)) === true;
 	}
 	if (pattern.type === 'ObjectPattern') {
 		return pattern.properties?.some((property) =>
 			property.type === 'RestElement'
-				? patternBindsMetadata(property.argument)
-				: patternBindsMetadata(property.value)
+				? patternBindsName(property.argument, name)
+				: patternBindsName(property.value, name)
 		) === true;
 	}
 	return false;

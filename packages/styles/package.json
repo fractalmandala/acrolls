@@ -2,32 +2,49 @@
   "name": "@acrolls/styles",
   "private": true,
   "version": "0.1.1",
-  "description": "Scoped publishing CSS and optional SASS tokens for Acrolls.",
+  "description": "Canonical CSS and indented Sass styles for Acrolls.",
   "license": "Apache-2.0",
-  "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/styles" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fractalmandala/Acrolls.git",
+    "directory": "packages/styles"
+  },
   "bugs": "https://github.com/fractalmandala/Acrolls/issues",
   "homepage": "https://github.com/fractalmandala/Acrolls#readme",
   "type": "module",
   "files": [
     "foundation.css",
     "default.css",
-    "sass",
+    "docs.css",
+    "foundation.sass",
+    "default.sass",
+    "docs.sass",
+    "tokens.sass",
+    "src",
     "README.md",
     "LICENSE"
   ],
   "exports": {
     "./foundation.css": "./foundation.css",
     "./default.css": "./default.css",
-    "./sass/tokens.sass": "./sass/tokens.sass",
-    "./sass/index.sass": "./sass/index.sass"
+    "./docs.css": "./docs.css",
+    "./foundation": "./foundation.sass",
+    "./default": "./default.sass",
+    "./docs": "./docs.sass",
+    "./tokens": "./tokens.sass",
+    "./foundation.sass": "./foundation.sass",
+    "./default.sass": "./default.sass",
+    "./docs.sass": "./docs.sass",
+    "./tokens.sass": "./tokens.sass"
   },
   "sideEffects": [
     "./foundation.css",
-    "./default.css"
+    "./default.css",
+    "./docs.css"
   ],
   "scripts": {
-    "build": "node -e \"console.log('@acrolls/styles: css-first, no build step')\"",
-    "check": "node -e \"require('fs').accessSync('foundation.css'); require('fs').accessSync('default.css')\""
+    "build": "node ./scripts/build.mjs",
+    "check": "node ./scripts/check.mjs"
   },
   "keywords": [
     "acrolls",
@@ -35,5 +52,8 @@
     "sass",
     "publishing",
     "sveltekit"
-  ]
+  ],
+  "devDependencies": {
+    "sass": "^1.102.0"
+  }
 }

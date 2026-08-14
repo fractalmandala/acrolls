@@ -40,7 +40,8 @@ dependencies. All consumer imports use `acrolls/*`.
 - `acrolls/styles/foundation.css`: minimal article styles.
 - `acrolls/styles/default.css`: opinionated article styles.
 - `acrolls/docs/styles.css`: documentation shell styles.
-- `acrolls/styles/sass/tokens.sass` and `acrolls/styles/sass/index.sass`: Sass entrypoints.
+- `acrolls/styles/{foundation,default,docs,tokens}.sass`: Sass entrypoints; plain Sass module
+  specifiers without the extension are also supported from global Sass source files.
 
 ## CLI behavior
 

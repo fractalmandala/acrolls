@@ -74,7 +74,11 @@ editing host files:
 pnpm exec acrolls onboard --docs-dir docs --base-href /docs
 pnpm exec acrolls onboard --docs-dir docs --base-href /docs --check
 pnpm exec acrolls onboard --docs-dir docs --base-href /docs --json
+pnpm exec acrolls onboard --docs-dir docs --base-href /docs --style sass
 ```
+
+Use `--style css` (the default) for JavaScript CSS imports, or `--style sass` when the host
+uses `<style lang="sass">` blocks. `integrate` accepts the same flag when it edits a layout.
 
 Each checkpoint tells the operator which file to open, what code to add, which command to run,
 what can go wrong, and how to verify the result. The walkthrough covers package installation,
@@ -301,6 +305,16 @@ scanning the directory so an operator can fix several documents in one pass.
 invalid `.svx` remains executable and fail-fast, and the CLI still reports rejected documents.
 The CLI also does not promise that arbitrary frontmatter or arbitrary Svelte-shaped text is
 valid; use `validate` before a production build.
+
+For a controlled generated docs corpus, use authored mode:
+
+```bash
+acrolls validate src/content --mode authored --on-invalid fail --report acrolls-docs-report.json
+```
+
+It requires YAML frontmatter and a string `title` for every non-`index.md` file. Index titles are
+derived from their folder/group. The report also identifies frontmatter-less pages, title errors,
+leading-H1 mismatches, compiler failures, and author-written Markdown links to rejected docs.
 
 ---
 

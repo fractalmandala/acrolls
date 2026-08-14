@@ -15,11 +15,14 @@ export {
 } from './content.js';
 export type {
 	DocsContentConfig,
+	DocsContentDiagnostic,
 	DocsContentEntryConfig,
 	DocsContentDocument,
 	DocsContentInput,
 	DocsContentLoader,
 	DocsContentSource,
+	DocsConvention,
+	DocsDocumentFacts,
 	DocsDocumentConfig,
 	DocsFolderConfig,
 	DocsMetadata
@@ -53,3 +56,4 @@ export { default as DocsNavTree } from './DocsNavTree.svelte';
 export { default as DocsBreadcrumbs } from './DocsBreadcrumbs.svelte';
 export { default as DocsPager } from './DocsPager.svelte';
 export { default as DocsToc } from './DocsToc.svelte';
+export { default as DocsPageHeader } from './DocsPageHeader.svelte';

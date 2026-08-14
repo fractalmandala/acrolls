@@ -3,6 +3,31 @@ import { normalizePath, slugify, stableId } from './nav-path.js';
 
 export type DocsMetadata = Readonly<Record<string, unknown>>;
 
+/** Static facts exported by the Acrolls mdsvex preprocessor for a Markdown module. */
+export type DocsDocumentFacts = Readonly<{
+	hasFrontmatter: boolean;
+	leadingH1?: string;
+	links?: readonly string[];
+}>;
+
+export type DocsContentDiagnostic = Readonly<{
+	code: string;
+	severity: 'warning' | 'error';
+	file: string;
+	message: string;
+	remediation?: string;
+}>;
+
+export type DocsConvention = Readonly<{
+	mode?: 'migration' | 'authored';
+	frontmatter?: Readonly<{
+		ordinaryPageTitle?: 'required';
+		indexTitle?: 'folder';
+		description?: 'optional';
+		leadingH1?: 'suppress-and-warn' | 'preserve';
+	}>;
+}>;
+
 export type DocsContentLoader<TDocument> = () => Promise<TDocument>;
 
 export type DocsFolderConfig = {
@@ -56,11 +81,14 @@ export type DocsContentConfig = {
 	documents?: Record<string, DocsDocumentConfig>;
 	/** Host-owned information architecture overrides and virtual groups. */
 	entries?: Record<string, DocsContentEntryConfig>;
+	/** Opt-in authored-document admission rules. Existing sources remain migration-compatible. */
+	convention?: DocsConvention;
 };
 
 export type DocsContentInput<TDocument> = {
 	key: string;
 	metadata?: DocsMetadata;
+	facts?: DocsDocumentFacts;
 	load: DocsContentLoader<TDocument>;
 };
 
@@ -71,6 +99,7 @@ export type DocsContentDocument<TDocument> = {
 	title: string;
 	description?: string;
 	metadata: DocsMetadata;
+	facts?: DocsDocumentFacts;
 	hidden: boolean;
 	order?: number;
 	loader: DocsContentLoader<TDocument>;
@@ -79,6 +108,7 @@ export type DocsContentDocument<TDocument> = {
 export type DocsContentSource<TDocument> = {
 	nav: DocsNav;
 	documents: readonly DocsContentDocument<TDocument>[];
+	diagnostics: readonly DocsContentDiagnostic[];
 	get(value: string): DocsContentDocument<TDocument> | undefined;
 	load(value: string): Promise<TDocument> | undefined;
 	entries(): string[];
@@ -137,9 +167,10 @@ export function createDocsContentSource<TDocument>(options: {
 }): DocsContentSource<TDocument> {
 	const baseHref = absolutePath(options.config.baseHref);
 	const config = normalizeConfig(options.config);
-	const routeOverrides = resolveRouteOverrides(options.documents, baseHref, config);
+	const admission = admitDocuments(options.documents, config);
+	const routeOverrides = resolveRouteOverrides(admission.documents, baseHref, config);
 	const landingEntryConfigs = resolveLandingEntryConfigs(config);
-	const records = options.documents.map((input) =>
+	const records = admission.documents.map((input) =>
 		toSourceRecord(
 			input,
 			baseHref,
@@ -170,6 +201,11 @@ export function createDocsContentSource<TDocument>(options: {
 		? buildDefinedNav(records, config, baseHref)
 		: buildNav(root, records, config, baseHref);
 	const documents = [...records].sort(compareDocuments);
+	const diagnostics = [
+		...admission.diagnostics,
+		...leadingH1Diagnostics(records, config),
+		...rejectedDocumentLinkDiagnostics(admission, baseHref)
+	];
 	const aliases = new Map<string, SourceRecord<TDocument>>();
 	for (const document of documents) {
 		aliases.set(document.key, document);
@@ -185,6 +221,7 @@ export function createDocsContentSource<TDocument>(options: {
 	return {
 		nav,
 		documents,
+		diagnostics,
 		get,
 		load(value) {
 			return get(value)?.loader();
@@ -193,6 +230,162 @@ export function createDocsContentSource<TDocument>(options: {
 			return documents.map((document) => document.href);
 		}
 	};
+}
+
+type AdmissionResult<TDocument> = {
+	documents: DocsContentInput<TDocument>[];
+	rejected: DocsContentInput<TDocument>[];
+	diagnostics: DocsContentDiagnostic[];
+};
+
+function admitDocuments<TDocument>(
+	inputs: readonly DocsContentInput<TDocument>[],
+	config: DocsContentConfig
+): AdmissionResult<TDocument> {
+	if (!isAuthoredConvention(config)) {
+		return { documents: [...inputs], rejected: [], diagnostics: [] };
+	}
+
+	const documents: DocsContentInput<TDocument>[] = [];
+	const rejected: DocsContentInput<TDocument>[] = [];
+	const diagnostics: DocsContentDiagnostic[] = [];
+
+	for (const input of inputs) {
+		const key = normalizeSourceKey(input.key);
+		const isIndex = key.replace(/\.md$/, '').split('/').at(-1) === 'index';
+		const metadata = input.metadata ?? {};
+		const errors: DocsContentDiagnostic[] = [];
+
+		if (!isIndex && input.facts?.hasFrontmatter !== true) {
+			errors.push(contentDiagnostic(
+				'ACROLLS_FRONTMATTER_REQUIRED',
+				'error',
+				key,
+				'Ordinary authored docs pages require a YAML frontmatter block.',
+				'Add YAML frontmatter with a non-empty string title.'
+			));
+		}
+
+		if (!isIndex) {
+			const title = metadata.title;
+			if (title === undefined || title === null || (typeof title === 'string' && !title.trim())) {
+				errors.push(contentDiagnostic(
+					'ACROLLS_TITLE_REQUIRED',
+					'error',
+					key,
+					'Ordinary authored docs pages require a non-empty frontmatter title.',
+					'Add title: Your page title to the YAML frontmatter.'
+				));
+			} else if (typeof title !== 'string') {
+				errors.push(contentDiagnostic(
+					'ACROLLS_TITLE_INVALID',
+					'error',
+					key,
+					'Frontmatter title must be a string.',
+					'Replace title with a non-empty YAML string.'
+				));
+			}
+		} else if (metadata.title !== undefined) {
+			diagnostics.push(contentDiagnostic(
+				'ACROLLS_INDEX_TITLE_IGNORED',
+				'warning',
+				key,
+				'Index page title is derived from its host folder/group and the frontmatter title is ignored.',
+				'Remove title from this index page or configure its folder/group title.'
+			));
+		}
+
+		diagnostics.push(...errors);
+		if (errors.length > 0) rejected.push(input);
+		else documents.push(input);
+	}
+
+	return { documents, rejected, diagnostics };
+}
+
+
+function leadingH1Diagnostics<TDocument>(
+	records: readonly SourceRecord<TDocument>[],
+	config: DocsContentConfig
+): DocsContentDiagnostic[] {
+	if (!isAuthoredConvention(config)) return [];
+	return records.flatMap((record) => {
+		if (!record.facts?.leadingH1) return [];
+		if (normalizeHeading(record.facts.leadingH1) === normalizeHeading(record.title)) return [];
+		return [contentDiagnostic(
+			'ACROLLS_LEADING_H1_MISMATCH',
+			'warning',
+			record.key,
+			`Initial Markdown H1 "${record.facts.leadingH1}" was removed because it differs from the effective title "${record.title}".`,
+			'Use the frontmatter title as the page title, or remove the initial H1.'
+		)];
+	});
+}
+
+function rejectedDocumentLinkDiagnostics<TDocument>(
+	admission: AdmissionResult<TDocument>,
+	baseHref: string
+): DocsContentDiagnostic[] {
+	if (admission.rejected.length === 0) return [];
+	const rejected = new Set(admission.rejected.map((input) => sourceStem(input.key)));
+	const diagnostics: DocsContentDiagnostic[] = [];
+	for (const input of admission.documents) {
+		for (const link of input.facts?.links ?? []) {
+			const target = resolveMarkdownDocLink(input.key, link, baseHref);
+			if (!target || !rejected.has(target)) continue;
+			diagnostics.push(contentDiagnostic(
+				'ACROLLS_LINK_TO_REJECTED_DOCUMENT',
+				'error',
+				normalizeSourceKey(input.key),
+				`Markdown link "${link}" targets rejected document "${target}.md".`,
+				'Fix the target document frontmatter or remove the link.'
+			));
+		}
+	}
+	return diagnostics;
+}
+
+function isAuthoredConvention(config: DocsContentConfig): boolean {
+	return config.convention?.mode === 'authored';
+}
+
+function contentDiagnostic(
+	code: string,
+	severity: DocsContentDiagnostic['severity'],
+	file: string,
+	message: string,
+	remediation?: string
+): DocsContentDiagnostic {
+	return { code, severity, file, message, remediation };
+}
+
+function normalizeHeading(value: string): string {
+	return value.replaceAll(/\s+/g, ' ').trim().toLocaleLowerCase();
+}
+
+function sourceStem(key: string): string {
+	return normalizeSourceKey(key).replace(/\.md$/, '');
+}
+
+function resolveMarkdownDocLink(sourceKey: string, link: string, baseHref: string): string | undefined {
+	const destination = link.split('#', 1)[0] ?? '';
+	if (!destination || destination.startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(destination)) return undefined;
+	if (destination.startsWith('/')) {
+		const slug = normalizeLookup(destination, baseHref);
+		return slug || 'index';
+	}
+	const sourceFolder = sourceStem(sourceKey).split('/').slice(0, -1);
+	const segments = [...sourceFolder, ...destination.split('/')];
+	const resolved: string[] = [];
+	for (const segment of segments) {
+		if (!segment || segment === '.') continue;
+		if (segment === '..') {
+			resolved.pop();
+			continue;
+		}
+		resolved.push(segment);
+	}
+	return resolved.join('/').replace(/\.md$/, '');
 }
 
 function normalizeConfig(config: DocsContentConfig): DocsContentConfig {
@@ -301,7 +494,9 @@ function toSourceRecord<TDocument>(
 	const entryConfig = config.entries?.[withoutExtension];
 	const inheritedHidden = folderHidden(config, folderPath);
 	const hidden = entryConfig?.hidden ?? documentConfig?.hidden ?? booleanMetadata(metadata, 'hidden') ?? inheritedHidden;
-	const title = entryConfig?.title ?? landingEntryConfig?.title ?? documentConfig?.title ?? stringMetadata(metadata, 'title') ?? fallbackTitle(routeSegments, config.title);
+	const title = isAuthoredConvention(config) && isIndex
+		? indexTitle(routeSegments, folderPath, config, landingEntryConfig)
+		: entryConfig?.title ?? landingEntryConfig?.title ?? documentConfig?.title ?? stringMetadata(metadata, 'title') ?? fallbackTitle(routeSegments, config.title);
 	const description = entryConfig?.description ?? landingEntryConfig?.description ?? documentConfig?.description ?? stringMetadata(metadata, 'description') ?? stringMetadata(metadata, 'brief');
 	const order = entryConfig?.order ?? documentConfig?.order ?? numberMetadata(metadata, 'order');
 
@@ -312,6 +507,7 @@ function toSourceRecord<TDocument>(
 		title,
 		description,
 		metadata,
+		facts: input.facts,
 		hidden,
 		order,
 		loader: input.load,
@@ -319,6 +515,16 @@ function toSourceRecord<TDocument>(
 		folderPath,
 		routeSegments
 	};
+}
+
+function indexTitle(
+	routeSegments: readonly string[],
+	folderPath: string,
+	config: DocsContentConfig,
+	landingEntryConfig?: DocsContentEntryConfig
+): string {
+	if (!folderPath) return config.title;
+	return landingEntryConfig?.title ?? config.folders?.[folderPath]?.title ?? fallbackTitle(routeSegments, config.title);
 }
 
 function resolveLandingEntryConfigs(config: DocsContentConfig): Map<string, DocsContentEntryConfig> {

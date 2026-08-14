@@ -16,7 +16,8 @@ describe('Acrolls onboarding plan', () => {
 			root: exampleRoot,
 			docsDir: 'src/content',
 			baseHref: '/handbook',
-			mode: 'foundation'
+			mode: 'foundation',
+			style: 'css'
 		});
 
 		expect(plan.host.kind).toBe('sveltekit');
@@ -60,7 +61,8 @@ describe('Acrolls onboarding plan', () => {
 			root: exampleRoot,
 			docsDir: 'src/content',
 			baseHref: '/docs',
-			mode: 'default'
+			mode: 'default',
+			style: 'css'
 		});
 		expect(completePlan.steps.find((step) => step.id === 'source')?.completed).toBe(true);
 		expect(completePlan.steps.find((step) => step.id === 'docs-layout')?.completed).toBe(true);
@@ -73,7 +75,8 @@ describe('Acrolls onboarding plan', () => {
 			root: exampleRoot,
 			docsDir: 'src/content',
 			baseHref: '/docs',
-			mode: 'default'
+			mode: 'default',
+			style: 'css'
 		});
 		const output = renderOnboardingPlan(plan);
 
@@ -93,7 +96,8 @@ describe('Acrolls onboarding plan', () => {
 			root: exampleRoot,
 			docsDir: 'src/content',
 			baseHref: '/docs',
-			mode: 'default'
+			mode: 'default',
+			style: 'css'
 		});
 		const step = plan.steps[1]!;
 		const output = renderOnboardingStep(plan, 1, step);
@@ -112,7 +116,8 @@ describe('Acrolls onboarding plan', () => {
 			root: exampleRoot,
 			docsDir: 'src/content',
 			baseHref: '/',
-			mode: 'default'
+			mode: 'default',
+			style: 'css'
 		});
 
 		expect(plan.baseHref).toBe('/');

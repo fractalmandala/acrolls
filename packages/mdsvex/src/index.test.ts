@@ -8,6 +8,7 @@ describe('createAcrollsMdsvexPreprocessor', () => {
 		const result = await processor.markup({ content: '# Plain document', filename: 'plain.md' });
 
 		expect(result?.code).toContain('export const metadata = {};');
+		expect(result?.code).toContain('export const __acrollsDocument = {"hasFrontmatter":false,"leadingH1":"Plain document","links":[]};');
 		expect(result?.code).not.toMatch(/acrolls-heading-anchor[^>]*>#/);
 });
 
@@ -20,6 +21,21 @@ describe('createAcrollsMdsvexPreprocessor', () => {
 
 		expect(result?.code).toContain('export const metadata = {"title":"Frontmatter title"};');
 		expect(result?.code.match(/export const metadata/g)).toHaveLength(1);
+	});
+
+	it('marks authored document facts and suppresses only an initial H1', async () => {
+		const processor = createAcrollsMdsvexPreprocessor({ docs: { mode: 'authored' } });
+		const result = await processor.markup({
+			content: '---\ntitle: Guide\n---\n\n# Guide\n\n[Missing](./missing.md)\n\n## Keep this heading',
+			filename: 'guide.md'
+		});
+
+		expect(result?.code).toContain('"hasFrontmatter":true');
+		expect(result?.code).toContain('"leadingH1":"Guide"');
+		expect(result?.code).toContain('"links":["./missing.md"]');
+		expect(result?.code).not.toMatch(/<h1[^>]*>Guide<\/h1>/);
+		expect(result?.code).toContain('<h2 id="keep-this-heading">');
+		expect(result?.code).toContain('>Keep this heading</h2>');
 	});
 
 	it('adds metadata to an existing module script without duplicating the script', async () => {

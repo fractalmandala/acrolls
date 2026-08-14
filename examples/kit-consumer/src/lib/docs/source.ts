@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 import {
 	createAcrollsDocsSource,
 	defineDocsConfig,
+	type DocsDocumentFacts,
 	type DocsMetadata
 } from 'acrolls/sveltekit';
 
@@ -16,13 +17,28 @@ const metadata = import.meta.glob('../../content/**/*.md', {
 	import: 'metadata'
 }) as Record<string, DocsMetadata>;
 
+const facts = import.meta.glob('../../content/**/*.md', {
+	eager: true,
+	import: '__acrollsDocument'
+}) as Record<string, DocsDocumentFacts>;
+
 export const docs = createAcrollsDocsSource({
 	modules,
 	metadata,
+	facts,
 	contentRoot: '../../content',
 	config: defineDocsConfig({
 		title: 'Example docs',
 		baseHref: '/docs',
+		convention: {
+			mode: 'authored',
+			frontmatter: {
+				ordinaryPageTitle: 'required',
+				indexTitle: 'folder',
+				description: 'optional',
+				leadingH1: 'suppress-and-warn'
+			}
+		},
 		subtitle: 'Generated from Markdown',
 		section: {
 			title: 'Reference',

@@ -20,8 +20,8 @@ Usage:
   acrolls                        Show project state
   acrolls --cwd <path> <command> Run against a host without changing directories
   acrolls init [--content-dir <path>] [--dry-run]
-  acrolls integrate [--dry-run] [--mode foundation|default] [--yes]
-  acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--check] [--non-interactive|--interactive] [--json]
+  acrolls integrate [--dry-run] [--mode foundation|default] [--style css|sass] [--yes]
+  acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--style css|sass] [--check] [--non-interactive|--interactive] [--json]
   acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]
   acrolls studio <file.md|file.svx> [--port <n>] [--no-open] [--mode foundation|default]
   acrolls --help

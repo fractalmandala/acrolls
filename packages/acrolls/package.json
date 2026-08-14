@@ -1,6 +1,6 @@
 {
   "name": "acrolls",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Acrolls publishing and documentation framework for SvelteKit.",
   "license": "Apache-2.0",
   "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/acrolls" },
@@ -37,16 +37,19 @@
     "./styles/foundation.css": "./styles/foundation.css",
     "./styles/default.css": "./styles/default.css",
     "./docs/styles.css": "./styles/docs.css",
-    "./styles/sass/tokens.sass": "./styles/sass/tokens.sass",
-    "./styles/sass/index.sass": "./styles/sass/index.sass",
-    "./sass/tokens.sass": "./sass/tokens.sass",
-    "./sass/index.sass": "./sass/index.sass"
+    "./styles/foundation": "./styles/foundation.sass",
+    "./styles/default": "./styles/default.sass",
+    "./docs/styles": "./styles/docs.sass",
+    "./styles/tokens": "./styles/tokens.sass",
+    "./styles/foundation.sass": "./styles/foundation.sass",
+    "./styles/default.sass": "./styles/default.sass",
+    "./docs/styles.sass": "./styles/docs.sass",
+    "./styles/tokens.sass": "./styles/tokens.sass"
   },
   "files": [
     "bin",
     "exports",
     "styles",
-    "sass",
     "README.md",
     "LICENSE"
   ],

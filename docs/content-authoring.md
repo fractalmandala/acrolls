@@ -20,6 +20,39 @@ empty `metadata` export so eager metadata globs remain build-safe. Docs navigati
 falls back to the configured entry title or a humanized filename. A body `# Heading`
 still renders normally, but it is not used as navigation metadata.
 
+### Authored generated docs contract
+
+Set `convention: { mode: 'authored' }` on a generated docs source when its Markdown corpus is
+owned and should be validated. Every non-`index.md` page must have YAML frontmatter with a
+non-empty string `title`; `description` is optional. Invalid pages are excluded from the source,
+generated navigation, routes, pager entries, and Acrolls link helpers.
+
+`index.md` is the exception: its visible title comes from the host folder/group name (or the docs
+title at the root), so it needs no frontmatter title. A supplied index title is ignored and emits
+an author warning. Acrolls renders the resolved title and optional description through
+`DocsPageHeader`; an initial Markdown H1 is removed. A different initial H1 emits an author
+warning in `acrolls validate`, CI output, and `docs.diagnostics`, never to documentation readers.
+
+Use the same named-export glob for static document facts as in the kit example:
+
+```ts
+const facts = import.meta.glob('../../content/**/*.md', {
+  eager: true,
+  import: '__acrollsDocument'
+});
+
+const docs = createAcrollsDocsSource({ modules, metadata, facts, contentRoot: '../../content', config });
+```
+
+Configure the matching mdsvex preprocessor with `docs: { mode: 'authored' }`. Before a production
+build or in CI, run `acrolls validate <content-directory> --mode authored --on-invalid fail`.
+That command aggregates invalid frontmatter, compile failures, leading-H1 warnings, and Markdown
+links to rejected Acrolls-resolvable documents.
+
+`DocsPageHeader` is the single heading owner for this surface. Point mdsvex at a docs article
+layout that wraps only `<Publication><slot /></Publication>`; do not use `PublicationLayout`,
+which intentionally renders its own frontmatter banner for standalone articles.
+
 ```md
 ---
 title: Getting started

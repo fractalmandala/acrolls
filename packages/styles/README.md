@@ -1,6 +1,6 @@
 # acrolls/styles
 
-Scoped publishing CSS for Acrolls.
+Canonical CSS and indented Sass styles for Acrolls.
 
 ## Modes
 
@@ -9,14 +9,17 @@ import 'acrolls/styles/foundation.css'; // mechanics only
 import 'acrolls/styles/default.css';    // foundation + editorial scale
 ```
 
-## Optional SASS tokens
+## Sass
 
 ```sass
-@use 'acrolls/styles/sass/tokens' as *
+@use 'acrolls/styles/default'
+@use 'acrolls/styles/tokens' as *
 @include acrolls-tokens()
 ```
 
-Still load a CSS entry for mechanics, or compile your bridge onto `.acrolls`.
+Import the Sass preset from a Svelte layout script as `import 'acrolls/styles/default.sass'`.
+In a host-authored global Sass entry, use `@use 'acrolls/styles/default'`. Do not also import the
+matching CSS preset.
 
 ## Tokens
 

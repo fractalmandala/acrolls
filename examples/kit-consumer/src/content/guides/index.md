@@ -1,5 +1,4 @@
 ---
-title: Guides
 description: Practical guides for the example integration.
 ---
 

@@ -43,8 +43,10 @@ acrolls/sveltekit
 acrolls/styles/foundation.css
 acrolls/styles/default.css
 acrolls/docs/styles.css
-acrolls/styles/sass/tokens.sass
-acrolls/styles/sass/index.sass
+acrolls/styles/foundation
+acrolls/styles/default
+acrolls/styles/tokens
+acrolls/docs/styles
 ```
 
 After following the generated checkpoints, run:

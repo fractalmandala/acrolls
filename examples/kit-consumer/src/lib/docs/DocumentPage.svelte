@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { docs } from './source';
+	import { DocsPageHeader } from 'acrolls/docs';
 
 	let { slug }: { slug: string } = $props();
 	const document = $derived(docs.get(slug));
@@ -12,6 +13,7 @@
 
 {#if document}
 	{#await document.loader() then Article}
+		<DocsPageHeader title={document.title} description={document.description} />
 		<Article />
 	{:catch error}
 		<p>Could not load this documentation page: {error instanceof Error ? error.message : String(error)}</p>

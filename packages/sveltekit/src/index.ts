@@ -7,6 +7,7 @@ import {
 	createDocsContentSource,
 	type DocsContentConfig,
 	type DocsContentSource,
+	type DocsDocumentFacts,
 	type DocsMetadata
 } from '@acrolls/docs/content';
 
@@ -21,17 +22,21 @@ export type {
 	DocsContentLoader,
 	DocsContentSource,
 	DocsDocumentConfig,
+	DocsDocumentFacts,
 	DocsFolderConfig,
 	DocsMetadata
 } from '@acrolls/docs/content';
 
 export type AcrollsDocsGlob<TDocument> = Record<string, () => Promise<TDocument>>;
+export type AcrollsDocsFactsGlob = Record<string, DocsDocumentFacts>;
 
 export type AcrollsDocsSourceOptions<TDocument> = {
 	/** The lazy default-component glob returned by import.meta.glob(). */
 	modules: AcrollsDocsGlob<TDocument>;
 	/** The eager metadata glob, keyed exactly like modules. */
 	metadata?: Record<string, DocsMetadata>;
+	/** Eager compile-time facts glob for the Acrolls-owned `__acrollsDocument` export. */
+	facts?: AcrollsDocsFactsGlob;
 	/** The directory prefix removed from each Vite glob key. */
 	contentRoot: string;
 	config: DocsContentConfig;
@@ -57,6 +62,7 @@ export function createAcrollsDocsSource<TDocument>(
 	const documents = Object.entries(options.modules).map(([key, load]) => ({
 		key: removeGlobRoot(key, root),
 		metadata: options.metadata?.[key],
+		facts: options.facts?.[key],
 		load
 	}));
 

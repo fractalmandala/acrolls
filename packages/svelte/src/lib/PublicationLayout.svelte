@@ -1,7 +1,8 @@
 <script lang="ts">
 	/**
-	 * Default mdsvex layout — mdsvex injects frontmatter as props and content via slot.
+	 * Default mdsvex layout — mdsvex injects frontmatter as props and content as a snippet.
 	 */
+	import type { Snippet } from 'svelte';
 	import Publication from './Publication.svelte';
 
 	interface Props {
@@ -14,6 +15,7 @@
 		reading?: string;
 		image?: string;
 		imageAlt?: string;
+		children?: Snippet;
 		// mdsvex / host may pass extra frontmatter
 		[key: string]: unknown;
 	}
@@ -28,6 +30,7 @@
 		reading,
 		image,
 		imageAlt,
+		children,
 		...rest
 	}: Props = $props();
 
@@ -57,7 +60,5 @@
 			{/if}
 		</header>
 	{/if}
-	<!-- mdsvex still injects content via classic slot -->
-	<slot />
+	{@render children?.()}
 </Publication>
-
