@@ -99,8 +99,8 @@ the docs shell, lazy loading, and the 404 route. An existing file with unrelated
 pending for manual correction.
 
 Important onboarding cautions are deliberate: install only the `acrolls` package and use its
-public `acrolls/*` entrypoints. Keep the lazy component glob and eager metadata glob identical.
-The generated source discovers every
+public `acrolls/*` entrypoints. Keep the lazy `body` glob and the eager `modules` glob on the
+identical pattern string. The generated source discovers every
 folder automatically; leave `folders` out unless you need a label/order/presentation override.
 Use `error-page` only as an explicit Markdown migration policy; `.svx` remains executable and
 fail-fast. Acrolls does not choose the host adapter or deployment provider.

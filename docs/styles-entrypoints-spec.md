@@ -25,11 +25,20 @@ package remains the only documented consumer import surface.
 | Mechanics only | `acrolls/styles/foundation.css` | `@use 'acrolls/styles/foundation'` |
 | Editorial article defaults | `acrolls/styles/default.css` | `@use 'acrolls/styles/default'` |
 | Docs shell | `acrolls/docs/styles.css` | `@use 'acrolls/docs/styles'` |
+| Theming kit (fractalthemer) | `acrolls/styles/theme.css` | `@use 'acrolls/styles/theme'` |
 | Tokens/mixins only | n/a | `@use 'acrolls/styles/tokens'` |
 
 Sass users may name the extension explicitly (`default.sass`); extensionless `@use` is the
 documented form. CSS users import the explicit `.css` file. A host chooses one entrypoint per
 surface and must not import both CSS and its Sass counterpart.
+
+The `theme` surface forwards [fractalthemer](https://www.npmjs.com/package/fractalthemer)'s
+`themes`, `auras`, and `theme-picker` partials via `pkg:` URLs. `fractalthemer` is therefore a
+runtime dependency of both `@acrolls/styles` and the public `acrolls` package. Sass consumers of
+`acrolls/styles/theme` must register a Node package importer (e.g. Vite's
+`css.preprocessorOptions.sass.importers: [new NodePackageImporter()]`); the precompiled
+`theme.css` requires no importer. The `@acrolls/styles` build and check scripts pass
+`--pkg-importer=node` to dart-sass for this reason.
 
 ## Project structure
 
@@ -38,14 +47,19 @@ packages/styles/src/
   foundation.sass     canonical mechanics source
   default.sass        canonical editorial source; uses foundation
   docs.sass           canonical DocsShell source
+  theme.sass          canonical theming source; forwards fractalthemer + bridge
+  _colors.sass        Acrolls color/background/border :root baseline (theme)
+  _palette.sass       internal Open Color fallbacks (theme)
   _tokens.sass        canonical token map and mixin
 packages/styles/
   foundation.css      generated CSS artifact
   default.css         generated CSS artifact
   docs.css            generated CSS artifact
+  theme.css           generated CSS artifact (fractalthemer inlined)
   foundation.sass     Sass forwarding entrypoint
   default.sass        Sass forwarding entrypoint
   docs.sass           Sass forwarding entrypoint
+  theme.sass          Sass forwarding entrypoint
   tokens.sass         Sass forwarding entrypoint
 packages/acrolls/
   styles/*            generated public-package CSS/Sass relays

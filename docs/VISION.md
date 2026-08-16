@@ -28,7 +28,7 @@ follow custom CSS and pure indented SASS aligned with CUBE CSS; Tailwind is not 
 
 ## Next (framework finish)
 
-1. **Themes** — polished light/dark docs themes (Fumadocs-grade density)
+1. **Themes** — ✅ shipped via the fractalthemer theming kit (`acrolls/styles/theme`): 40+ light/dark themes, auras, theme picker. See [styles.md](styles.md#theming-kit).
 2. **`sites/acrolls`** — marketing + full docs of Acrolls itself
 3. **npm releases** — one public `acrolls` install with supported `acrolls/*` entrypoints
 4. **CLI** — `acrolls docs init` scaffold for a docs area

@@ -38,13 +38,16 @@ Public entrypoints include:
 acrolls/mdsvex
 acrolls/svelte
 acrolls/docs
+acrolls/content
 acrolls/docs/content
 acrolls/sveltekit
 acrolls/styles/foundation.css
 acrolls/styles/default.css
+acrolls/styles/theme.css
 acrolls/docs/styles.css
 acrolls/styles/foundation
 acrolls/styles/default
+acrolls/styles/theme
 acrolls/styles/tokens
 acrolls/docs/styles
 ```

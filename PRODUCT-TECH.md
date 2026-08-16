@@ -212,7 +212,10 @@ provides a viewport breakout; the host should remove ancestor clipping where pos
 
 The Vite adapter in `packages/sveltekit/src/index.ts` should remain a thin key-normalizing
 layer. Update its exported types and documentation only as needed for the widened config.
-Keep lazy default-component globs and eager metadata globs separate.
+Keep the lazy default-component glob and the eager module glob separate: Vite needs the
+separate lazy glob to keep document bodies out of the eager module graph. Both use the identical
+pattern string, and `markdownGlob` reads frontmatter and static document facts off the one eager
+module.
 
 Update `examples/kit-consumer` to exercise all of the following from one generated source:
 

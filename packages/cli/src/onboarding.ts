@@ -24,8 +24,15 @@ export type OnboardingStep = {
 	completed: boolean;
 };
 
+/**
+ * Plan version 2: the generated-source checkpoint emits the `content({ loader: markdownGlob() })`
+ * two-glob form instead of the legacy three-glob `createDocsContentSource` snippet. Checkpoint
+ * ids, ordering, and every JSON field name are unchanged; only the `source` step's `code` and
+ * `caution` text changed shape, which PRODUCT.md behavior 63 requires be versioned rather than
+ * silently altered.
+ */
 export type OnboardingPlan = {
-	version: 1;
+	version: 2;
 	root: string;
 	host: {
 		kind: string;
@@ -89,15 +96,30 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	const rootRouteSource = await readOptional(resolve(root, rootRouteFile));
 	const catchAllLoadSource = await readOptional(resolve(root, catchAllLoadFile));
 	const catchAllSvelteSource = await readOptional(resolve(root, catchAllSvelteFile));
-	const sourceReady =
+	// A migrated host uses `content({ loader: markdownGlob({ body, modules, root }) })`; a host that
+	// has not migrated still uses `createDocsContentSource`/`createAcrollsDocsSource` with an eager
+	// `import: 'metadata'` glob. Both must be recognized as complete — `--check` must never regress
+	// an un-migrated host.
+	// `[(<]` so an explicitly parameterized call — `markdownGlob<DocsArticle>({ ... })` — still matches.
+	const collectionSourceReady =
+		/\bcontent\s*[(<]/.test(sourceSource) &&
+		/\bmarkdownGlob\s*[(<]/.test(sourceSource) &&
+		sourceSource.includes('body') &&
+		sourceSource.includes('modules') &&
+		sourceSource.includes('eager: true');
+	const legacySourceReady =
 		(sourceSource.includes('createDocsContentSource') || sourceSource.includes('createAcrollsDocsSource')) &&
-		sourceSource.includes('import.meta.glob') &&
 		sourceSource.includes("import: 'metadata'") &&
 		sourceSource.includes('metadata') &&
-		sourceSource.includes(contentGlob) &&
-		(sourceSource.includes(contentPrefix) || sourceSource.includes('contentRoot')) &&
 		((sourceSource.includes('key:') && sourceSource.includes('load')) ||
 			(sourceSource.includes('modules') && sourceSource.includes('metadata')));
+	const sourceReady =
+		(collectionSourceReady || legacySourceReady) &&
+		sourceSource.includes('import.meta.glob') &&
+		sourceSource.includes(contentGlob) &&
+		(sourceSource.includes(contentPrefix) ||
+			sourceSource.includes('contentRoot') ||
+			sourceSource.includes('root:'));
 	const docsLayoutReady =
 		/(DocsShell|DocsSidebar)/.test(docsLayoutSourceForCheck) &&
 		docsLayoutSourceForCheck.includes('docs.nav');
@@ -115,12 +137,12 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 		catchAllSvelteSource.includes('DocumentPage') &&
 		catchAllSvelteSource.includes('data.slug');
 
-	const sourceCode = docsSourceSnippet({ contentGlob, contentPrefix, baseHref });
+	const sourceCode = docsSourceSnippet({ contentGlob, baseHref });
 	const docsSourceImport = relativeImport(routeDirectory, sourceFile);
 	const documentPageImport = relativeImport(routeDirectory, documentPageFile);
 	const nestedDocumentPageImport = relativeImport(`${routeDirectory}/[...slug]`, documentPageFile);
 	const nestedDocsSourceImport = relativeImport(`${routeDirectory}/[...slug]`, sourceFile);
-	const docsLayoutCode = docsLayoutSnippet({ baseHref, docsSourceImport });
+	const docsLayoutCode = docsLayoutSnippet({ docsSourceImport });
 	const documentPageCode = documentPageSnippet();
 	const catchAllLoadCode = catchAllLoadSnippet(nestedDocsSourceImport);
 	const catchAllSvelteCode = catchAllSvelteSnippet(nestedDocumentPageImport);
@@ -186,8 +208,9 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			action: `Create this file. It maps the ${docsDir}/ corpus into a serializable Acrolls page tree.`,
 			code: sourceCode,
 			caution:
-				'The lazy component glob and eager metadata glob must use the identical pattern. The contentPrefix must match that pattern or every route key will be wrong. Filesystem folders are discovered automatically; add folders only for label/order/presentation overrides. This starter discovers .md only; .svx is intentionally explicit.',
-			verify: 'The source exports docs and the two glob patterns are identical.',
+				'The lazy body glob and the eager modules glob must use the identical pattern, and root must match that same pattern or every route key will be wrong. Do not collapse the eager glob into the lazy one (or drop body and read .default off the eager modules): Vite needs the separate lazy glob to keep document bodies out of the eager module graph, and merging them pulls the entire corpus into the initial bundle. Filesystem folders are discovered automatically; add folders only for label/order/presentation overrides. This starter discovers .md only; .svx is intentionally explicit.',
+			verify:
+				'The source exports docs, the two glob patterns are identical, and root matches that pattern.',
 			completed: sourceReady
 		},
 		{
@@ -256,7 +279,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	];
 
 	return {
-		version: 1,
+		version: 2,
 		root,
 		host: {
 			kind: host.kind,
@@ -442,52 +465,39 @@ export default defineConfig({
 });`;
 }
 
-function docsSourceSnippet({
-	contentGlob,
-	contentPrefix,
-	baseHref
-}: {
-	contentGlob: string;
-	contentPrefix: string;
-	baseHref: string;
-}): string {
+function docsSourceSnippet({ contentGlob, baseHref }: { contentGlob: string; baseHref: string }): string {
 	return `import type { Component } from 'svelte';
-import {
-  createDocsContentSource,
-  defineDocsConfig,
-  type DocsMetadata
-} from 'acrolls/docs/content';
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig, type DocsMetadata } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
-const contentPrefix = '${contentPrefix}';
-const modules = import.meta.glob('${contentGlob}/**/*.md', { import: 'default' }) as Record<
+
+const body = import.meta.glob('${contentGlob}/**/*.md', { import: 'default' }) as Record<
   string,
   () => Promise<DocsArticle>
 >;
-const metadata = import.meta.glob('${contentGlob}/**/*.md', {
-  eager: true,
-  import: 'metadata'
-}) as Record<string, DocsMetadata>;
+const modules = import.meta.glob('${contentGlob}/**/*.md', { eager: true }) as Record<
+  string,
+  { metadata?: DocsMetadata }
+>;
 
-export const docs = createDocsContentSource({
-  documents: Object.entries(modules).map(([key, load]) => ({
-    key: key.slice(contentPrefix.length),
-    metadata: metadata[key],
-    load
-  })),
+export const docs = content({
+  loader: markdownGlob({
+    body,
+    modules,
+    root: '${contentGlob}'
+  }),
   config: defineDocsConfig({
     title: 'Documentation',
     baseHref: '${baseHref}',
     subtitle: 'Generated from Markdown'
   })
-});`;
+}).sourceSync();`;
 }
 
 function docsLayoutSnippet({
-	baseHref,
 	docsSourceImport
 }: {
-	baseHref: string;
 	docsSourceImport: string;
 }): string {
 	return `<script lang="ts">
@@ -498,7 +508,9 @@ function docsLayoutSnippet({
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
-  const isIndex = $derived(page.url.pathname === '${baseHref}' || page.url.pathname === '${baseHref}/');
+  // Derive the index check from the configured base href — never hardcode the route.
+  const base = docs.nav.baseHref;
+  const isIndex = $derived(page.url.pathname === base || page.url.pathname === \`\${base}/\`);
 </script>
 
 <DocsShell nav={docs.nav} pathname={page.url.pathname} showToc={!isIndex} showPager={!isIndex}>

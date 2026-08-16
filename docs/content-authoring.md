@@ -16,7 +16,7 @@ Acrolls content is **source-owned** Markdown or mdsvex. Git is the CMS.
 ## Frontmatter
 
 Frontmatter is optional. When it is absent, the Acrolls mdsvex preprocessor emits an
-empty `metadata` export so eager metadata globs remain build-safe. Docs navigation then
+empty `metadata` export so the eager module glob remains build-safe. Docs navigation then
 falls back to the configured entry title or a humanized filename. A body `# Heading`
 still renders normally, but it is not used as navigation metadata.
 
@@ -33,16 +33,32 @@ an author warning. Acrolls renders the resolved title and optional description t
 `DocsPageHeader`; an initial Markdown H1 is removed. A different initial H1 emits an author
 warning in `acrolls validate`, CI output, and `docs.diagnostics`, never to documentation readers.
 
-Use the same named-export glob for static document facts as in the kit example:
+Declare the corpus as one collection, as in the kit example. The eager `modules` glob carries
+both frontmatter and the preprocessor's static document facts, so no separate facts glob is
+needed:
 
 ```ts
-const facts = import.meta.glob('../../content/**/*.md', {
-  eager: true,
-  import: '__acrollsDocument'
-});
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
 
-const docs = createAcrollsDocsSource({ modules, metadata, facts, contentRoot: '../../content', config });
+export const docs = content({
+  loader: markdownGlob({
+    body: import.meta.glob('../../content/**/*.md', { import: 'default' }),
+    modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+    root: '../../content'
+  }),
+  config: defineDocsConfig({ /* convention: { mode: 'authored' }, … */ })
+}).sourceSync();
 ```
+
+Optionally add a `schema` to validate frontmatter with any Standard Schema validator you bring
+(Valibot, Zod, Arktype — Acrolls depends on none of them), and a `filter` to drop documents from
+every addressable surface. Both are documented in
+[Integrate into SvelteKit](./integrate-sveltekit.md#typed-frontmatter-with-schema). A frontmatter
+block that fails the schema raises an `ACROLLS_SCHEMA_INVALID` diagnostic and then obeys the mode
+already in force: authored mode rejects the document, migration mode keeps it with its raw
+frontmatter and reports. Schema validation adds no new failure model on top of the two modes
+described below.
 
 Configure the matching mdsvex preprocessor with `docs: { mode: 'authored' }`. Before a production
 build or in CI, run `acrolls validate <content-directory> --mode authored --on-invalid fail`.
@@ -76,6 +92,32 @@ Acrolls uses these YAML frontmatter fields to display page titles and descriptio
 standard `PublicationLayout` or `Banner` is used. With only `<Publication>`, frontmatter is
 still available as `export const metadata` from the module, so a host-owned route must pass it
 to `Banner` (or render an equivalent accessible header) if it composes the article itself.
+
+### Unpublishing a page: `hidden` versus `filter`
+
+`hidden: true` means **unlisted, not private**. The page disappears from the sidebar, pager, and
+breadcrumb listings, but it keeps its route, is still prerendered, and still renders for anyone
+who has the link. Use it for an appendix or a deliberately unlinked deep-link target.
+
+To remove a document from every *addressable* surface, including direct URL access, use the
+collection's `filter` option instead. `filter` runs before the route engine, so a filtered
+document never becomes a route: it is absent from the nav and the prerendered output, and a
+direct URL 404s. A `draft: true` page you do not want reachable needs `filter`, not `hidden`.
+
+```ts
+content({ loader, filter: (entry) => !entry.data.draft, config });
+```
+
+`filter` is a publication boundary, not a confidentiality boundary. With the Markdown glob
+loader, Vite materializes every file matching the glob into the module graph at build time and
+`filter` runs afterwards, so a filtered draft's compiled body can still be present in the build
+output even though nothing routes to it. For secret or embargoed content, keep the file out of
+the globbed directory entirely — or behind host-owned authentication — rather than relying on
+`filter`. A `customSource` that never returns the document does not materialize it at all.
+
+`filter` receives `{ key, data, meta }` — the source key such as `guides/install.md`, the
+frontmatter, and the preprocessor facts. It deliberately has no public `id`, because slugs are
+decided by the route engine (and by host `entries[].href` overrides) after filtering runs.
 
 For generated docs, frontmatter `title`, then `description` (or `brief`) supplies the
 navigation record by default. A matching `documents` or `entries` configuration value in

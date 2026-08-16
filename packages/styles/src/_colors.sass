@@ -1,0 +1,69 @@
+// Acrolls color baseline — colors, backgrounds, borders only.
+//
+// This is the no-theme-class fallback: the :root defaults that apply before a
+// fractalthemer `.theme-*` class is set on <html>. fractalthemer's _themes.sass
+// (forwarded from theme.sass) overrides these per named theme. We deliberately
+// carry ONLY the color/background/border tokens here — type, space, radius,
+// shadow, z-index and layout scales are left to the consumer's own system.
+
+:root
+	// Surfaces
+	--bg: #FFFFFF
+	--bg-surface: #F8F9FA
+	--bg-raised: #FFFFFF
+	--bg-panel: #F1F3F5
+	--bg-footer: #E9ECEF
+	--bg-popover: #FFFFFF
+	--bg-dialog: #FFFFFF
+	--bg-terminal: #0F172A
+	--bg-input: #FFFFFF
+	--bg-canvas: #F8F9FA
+
+	// Borders
+	--border: #E2E8F0
+	--border-subtle: #EDF2F7
+	--border-md-table: #E2E8F0
+
+	// Text
+	--text-primary: #0F172A
+	--text-secondary: #475569
+	--text-muted: #7F91AA
+	--text-inverse: #FFFFFF
+
+	// Interactive states
+	--state-hover: #E2E8F0
+	--state-hover-subtle: #F1F5F9
+	--state-selected: #CBD5E1
+
+	// Accent / brand
+	--theme-color: #04825B
+	--theme-color-alt: #047857
+	--theme: var(--theme-color)
+
+	// Feedback
+	--feedback-error: #DC2626
+
+	// Syntax
+	--syntax-heading: #047857
+	--syntax-link: #04825B
+	--syntax-code: #DC2626
+	--syntax-quote: #475569
+	--syntax-marker: #04825B
+	--syntax-meta: #7C3AED
+	--syntax-comment: #7F91AA
+
+	// Markdown prose
+	--md-h1: #0F172A
+	--md-h2: #04825B
+	--md-h3: #7C3AED
+	--md-bold: #047857
+	--md-code: #DC2626
+	--md-code-back: #F1F5F9
+	--md-bullet: #04825B
+	--md-bullet-in: #04825B
+	--md-blockquote: #475569
+
+	// Misc surfaces
+	--scrollbar-thumb: #CBD5E1
+	--bg-badge: rgba(5, 150, 105, 0.12)
+	--bg-palette: rgba(15, 23, 42, 0.25)

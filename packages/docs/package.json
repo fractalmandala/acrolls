@@ -24,6 +24,10 @@
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
     },
+    "./collection": {
+      "types": "./dist/collection.d.ts",
+      "import": "./dist/collection.js"
+    },
     "./styles.css": "./styles.css",
     "./styles": "./styles.sass",
     "./styles.sass": "./styles.sass"

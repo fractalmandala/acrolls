@@ -4,16 +4,25 @@ import {
 	type AcrollsMdsvexOptions
 } from '@acrolls/mdsvex';
 import {
-	createDocsContentSource,
 	type DocsContentConfig,
 	type DocsContentSource,
 	type DocsDocumentFacts,
 	type DocsMetadata
 } from '@acrolls/docs/content';
+import { content, type ContentLoader, type LoadedDocument } from '@acrolls/docs/collection';
 
 export type { AcrollsMdsvexOptions };
 export { createAcrollsMdsvexOptions, createAcrollsMdsvexPreprocessor } from '@acrolls/mdsvex';
 export { defineDocsConfig } from '@acrolls/docs/content';
+export { content } from '@acrolls/docs/collection';
+export type {
+	Collection,
+	ContentLoader,
+	Entry,
+	EntrySummary,
+	LoadedDocument,
+	StandardSchemaV1
+} from '@acrolls/docs/collection';
 export type {
 	DocsContentConfig,
 	DocsContentEntryConfig,
@@ -42,6 +51,70 @@ export type AcrollsDocsSourceOptions<TDocument> = {
 	config: DocsContentConfig;
 };
 
+/** One eager Markdown module as Vite materializes it. */
+export type AcrollsMarkdownModule = {
+	metadata?: DocsMetadata;
+	__acrollsDocument?: DocsDocumentFacts;
+};
+
+export type MarkdownGlobOptions<TDocument> = {
+	/** `import.meta.glob('<root>/**\/*.md', { import: 'default' })` — lazy body modules. */
+	body: Record<string, () => Promise<TDocument>>;
+	/** `import.meta.glob('<root>/**\/*.md', { eager: true })` — full eager modules. */
+	modules: Record<string, AcrollsMarkdownModule>;
+	/** Directory prefix stripped from glob keys, e.g. `'../../content'`. */
+	root: string;
+};
+
+/**
+ * Build an eager {@link ContentLoader} from Vite's Markdown globs, for
+ * `content({ loader: markdownGlob({ ... }) })`.
+ *
+ * Both globs MUST use the identical pattern, and the two globs cannot be collapsed into one:
+ * Vite needs a *separate lazy* glob so document bodies stay out of the eager module graph.
+ * Collapsing `body` into `modules` (or dropping `body` and reading `.default` off the eager
+ * modules) would silently make every document body eager, pulling the entire corpus into the
+ * initial bundle. Do not "simplify" this into an eager-only version.
+ */
+export function markdownGlob<TDocument>(
+	options: MarkdownGlobOptions<TDocument>
+): ContentLoader<TDocument> {
+	const root = normalizeGlobPath(options.root);
+
+	return {
+		eager: true,
+		list(): LoadedDocument<TDocument>[] {
+			return Object.entries(options.body).map(([key, load]) => {
+				const module = options.modules[key];
+				return {
+					key: removeGlobRoot(key, root),
+					data: module?.metadata ?? {},
+					meta: module?.__acrollsDocument,
+					load
+				};
+			});
+		}
+	};
+}
+
+/**
+ * Wrap an arbitrary document store (CMS, database, HTTP API) as a {@link ContentLoader}.
+ *
+ * The nav/route engine consumes `list()` output, not globs, so a remote source needs no changes
+ * to navigation, routing, breadcrumbs, or pager. The returned loader declares `eager: false`, so
+ * it must be resolved with `await collection.source()` — `sourceSync()` will throw. `live()` is a
+ * reserved type-level seam with no implementation yet.
+ */
+export function customSource<TDocument>(
+	source: Pick<ContentLoader<TDocument>, 'list' | 'live'>
+): ContentLoader<TDocument> {
+	return {
+		eager: false,
+		list: source.list,
+		live: source.live
+	};
+}
+
 /**
  * Adapt Vite's two Markdown globs into the shared Acrolls content source.
  *
@@ -54,19 +127,28 @@ export type AcrollsDocsSourceOptions<TDocument> = {
  *   import: 'metadata'
  * });
  * ```
+ *
+ * @deprecated Prefer `content({ loader: markdownGlob({ body, modules, root }), config })`, which
+ * adds optional schema validation and filtering over the same engine. This function is
+ * re-expressed over `content()` internally, keeps working unchanged, and is not scheduled for
+ * removal.
  */
 export function createAcrollsDocsSource<TDocument>(
 	options: AcrollsDocsSourceOptions<TDocument>
 ): DocsContentSource<TDocument> {
 	const root = normalizeGlobPath(options.contentRoot);
-	const documents = Object.entries(options.modules).map(([key, load]) => ({
-		key: removeGlobRoot(key, root),
-		metadata: options.metadata?.[key],
-		facts: options.facts?.[key],
-		load
-	}));
+	const loader: ContentLoader<TDocument> = {
+		eager: true,
+		list: (): LoadedDocument<TDocument>[] =>
+			Object.entries(options.modules).map(([key, load]) => ({
+				key: removeGlobRoot(key, root),
+				data: options.metadata?.[key] ?? {},
+				meta: options.facts?.[key],
+				load
+			}))
+	};
 
-	return createDocsContentSource({ config: options.config, documents });
+	return content({ loader, config: options.config }).sourceSync();
 }
 
 function normalizeGlobPath(value: string): string {

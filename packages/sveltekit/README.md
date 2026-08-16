@@ -16,11 +16,11 @@ components untouched. The lower-level options API is exercised by
 ## Generated Markdown docs
 
 Point a SvelteKit host at any Markdown directory (`docs/`, `content/`, `posts/`, or a
-custom path) with one lazy component glob and one eager metadata glob. The filesystem root,
-public URL prefix, and SvelteKit route directory are independent:
+custom path) with one `content()` declaration over a `markdownGlob` loader. The filesystem
+root, public URL prefix, and SvelteKit route directory are independent:
 
 ```text
-contentRoot: ../../docs       # filesystem location
+root: ../../content           # filesystem location
 baseHref: /docs               # public URL location
 src/routes/docs/              # SvelteKit route location
 ```
@@ -32,21 +32,20 @@ containing directory.
 ```ts
 // src/lib/docs/source.ts
 import type { Component } from 'svelte';
-import { createAcrollsDocsSource, defineDocsConfig, type DocsMetadata } from 'acrolls/sveltekit';
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
 
-const modules = import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
-  string,
-  () => Promise<Component>
->;
-const metadata = import.meta.glob('../../content/**/*.md', {
-  eager: true,
-  import: 'metadata'
-}) as Record<string, DocsMetadata>;
+type DocsArticle = Component;
 
-export const docs = createAcrollsDocsSource({
-  modules,
-  metadata,
-  contentRoot: '../../content',
+export const docs = content({
+  loader: markdownGlob<DocsArticle>({
+    body: import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
+      string,
+      () => Promise<DocsArticle>
+    >,
+    modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+    root: '../../content'
+  }),
   config: defineDocsConfig({
     title: 'Documentation',
     baseHref: '/docs',
@@ -54,11 +53,47 @@ export const docs = createAcrollsDocsSource({
       guides: { title: 'Guides' }
     }
   })
-});
+}).sourceSync();
 ```
+
+Both globs use the identical pattern string. `body` is lazy (`{ import: 'default' }`) so
+document bodies stay out of the eager module graph; `modules` is eager (`{ eager: true }`) and
+supplies both frontmatter and the preprocessor's static document facts. `.sourceSync()` is
+legal because `markdownGlob` is an eager loader.
+
+`content()` also accepts `schema` (any Standard Schema validator, brought by the host) and
+`filter` (removes a document from every addressable surface, including direct URL access —
+unlike `hidden`, which leaves the page unlisted but routeable and prerendered). `filter` is a
+publication boundary, not a confidentiality one: the glob loader materializes every matching
+file into the module graph before `filter` runs, so a filtered document's compiled body can
+still be present in build output. Keep secret or embargoed content out of the globbed directory,
+or behind host-owned authentication. `customSource({ list })`
+replaces the glob loader with a CMS or API; it is async-only (`await collection.source()`), and
+its `live()` seam is declared but unimplemented. Full reference:
+[docs/integrate-sveltekit.md](../../docs/integrate-sveltekit.md#e-pattern-2--generated-docs-tree).
 
 Use `docs.nav` for `DocsShell`, `docs.get(params.slug)` for route validation,
 `docs.load(params.slug)` for the lazy document component, and `docs.entries()` for static
 route generation. `index.md` maps to its containing folder route. The first automatic
 source contract is Markdown-first; `.svx` remains supported through normal mdsvex imports
 but is not automatically discovered by this helper yet.
+
+### Migrating from `createAcrollsDocsSource`
+
+`createAcrollsDocsSource({ modules, metadata, facts, contentRoot, config })` is still exported,
+still works exactly as before, and emits no warning. It is now internally the same code path as
+`content()` and is marked `@deprecated` in TSDoc only to point at the newer API — **it is not
+scheduled for removal**, so existing hosts need no changes.
+
+| Old option | New location |
+|---|---|
+| `modules` (lazy `default` glob) | `markdownGlob({ body })` |
+| `metadata` (eager `metadata` glob) | folded into `markdownGlob({ modules })` |
+| `facts` (eager `__acrollsDocument` glob) | folded into `markdownGlob({ modules })` |
+| `contentRoot` | `markdownGlob({ root })` |
+| `config` | `content({ config })`, unchanged |
+
+The returned source is identical — same `nav`, `documents`, `diagnostics`, `get`, `load`, and
+`entries` — so routes, layouts, and shell code stay as they are. Migrating buys developer
+ergonomics and build-time type safety; it does not change what readers of the published site
+receive.

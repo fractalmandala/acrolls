@@ -7,7 +7,9 @@
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();
-	const isIndex = $derived(page.url.pathname === '/docs' || page.url.pathname === '/docs/');
+	// Derive the index check from the configured base href — never hardcode the route.
+	const base = docs.nav.baseHref;
+	const isIndex = $derived(page.url.pathname === base || page.url.pathname === `${base}/`);
 </script>
 
 <DocsShell

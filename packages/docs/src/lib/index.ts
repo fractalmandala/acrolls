@@ -28,6 +28,20 @@ export type {
 	DocsMetadata
 } from './content.js';
 
+export { content } from './collection.js';
+export type {
+	Collection,
+	ContentLoader,
+	ContentOptions,
+	Entry,
+	EntrySummary,
+	InferredData,
+	LoadedDocument,
+	StandardSchemaIssue,
+	StandardSchemaResult,
+	StandardSchemaV1
+} from './collection.js';
+
 export {
 	flattenDocsNav,
 	findActiveDocsItem,

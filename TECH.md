@@ -104,11 +104,36 @@ Article routes import `.svx` / `.md` modules or load content via filesystem in `
 ## Content-source pipeline
 
 ```text
-import.meta.glob(.md, lazy default) + import.meta.glob(.md, eager metadata)
-  → @acrolls/docs/content createDocsContentSource()
-  → @acrolls/sveltekit createAcrollsDocsSource() (workspace convenience adapter)
+import.meta.glob(.md, lazy default) + import.meta.glob(.md, eager module)
+  → acrolls/content markdownGlob()          (ContentLoader — the pluggable seam)
+  → acrolls/content content({ loader, schema?, filter?, config })
+      load → validate (Standard Schema) → filter
+  → @acrolls/docs/content createDocsContentSource()   (unchanged route/nav engine)
   → route records + DocsNav + breadcrumbs/pager order + entries()
 ```
+
+Two globs over the identical pattern, not three: the eager module carries both `metadata` and
+the preprocessor's `__acrollsDocument` facts. It cannot collapse to one — Vite needs the
+separate lazy glob to keep document bodies out of the eager module graph.
+
+`content()` is a façade plus a loader seam. It does not modify the engine: all nav, group,
+route, breadcrumb, pager, admission, and diagnostic logic stays in
+`packages/docs/src/lib/content.ts` and runs verbatim on the `DocsContentInput[]` the façade
+hands it. Schema failures produce `ACROLLS_SCHEMA_INVALID` diagnostics that follow the existing
+authored/migration admission policy rather than introducing a new failure model. `filter`
+removes documents before the engine runs, so a filtered document has no route at all; `hidden`
+is an engine-level presentation flag and keeps its route (PRODUCT.md behavior 15). `filter` is a
+routing boundary, not a confidentiality boundary: `import.meta.glob` materializes every matching
+file into the module graph at build time and `filter` runs afterwards, so Rollup cannot
+tree-shake a filtered document's compiled body out of the build output. A `customSource` whose
+`list()` never returns the document does not materialize it at all.
+
+`createAcrollsDocsSource()` in `@acrolls/sveltekit` remains exported with an unchanged
+signature and is now re-expressed over `content()`, so old and new hosts share exactly one code
+path. It is `@deprecated` in TSDoc, emits no runtime warning, and is not scheduled for removal.
+`customSource({ list })` is the non-Vite loader implementation for CMS/API/database sources; it
+is `eager: false`, so it requires the async `source()`. The loader type also declares a
+`live()` seam, which is reserved and has no implementation.
 
 The pure content entry is separate from the Svelte component barrel so it can be imported
 from build/configuration code without evaluating `.svelte` files. The host's page-tree
@@ -231,6 +256,7 @@ source files
   → mdsvex compile preflight
       ├─ ready / normalized → allowlisted document manifest
       └─ rejected → fail | generated error page | reported exclusion
+  → content() façade: schema validation → filter
   → createDocsContentSource
   → routes + navigation + lazy document loading
 ```

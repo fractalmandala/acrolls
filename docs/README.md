@@ -25,6 +25,8 @@ reference when a host needs a deliberate customization.
 | A CLI-led drop-in to an existing SvelteKit site | [CLI onboarding](./cli.md#onboard) |
 | Manual integration details and snippets | [Getting started](./getting-started.md) |
 | Exact SvelteKit file changes | [Integrate into SvelteKit](./integrate-sveltekit.md) |
+| Declaring a docs collection, typed frontmatter, `filter` vs `hidden` | [Generated docs tree](./integrate-sveltekit.md#e-pattern-2--generated-docs-tree) |
+| Moving off `createAcrollsDocsSource` | [Migration](./integrate-sveltekit.md#migrating-from-createacrollsdocssource) |
 | Writing `.md` / `.svx` content | [Content authoring](./content-authoring.md) |
 | Sidebar, TOC, multi-section docs | [Docs shell](./docs-shell.md) |
 | Foundation vs default CSS | [Styles](./styles.md) |
@@ -34,6 +36,7 @@ reference when a host needs a deliberate customization.
 | Install the published package | [Install from npm](./local-install.md) |
 | Publish and test a release | [Release](./release.md) |
 | A clean independent-host trial | [Third-host trial](#third-host-trial) → [checklist](./checklist.md) |
+| How sessions evolve the product & specs | [Evolution log](./evolution/) (sessions · proposals · ADRs) |
 
 Copy-paste snippets live under [`docs/snippets/`](./snippets/).
 

@@ -115,8 +115,10 @@ arbitrary redirect.
   state without maintaining separate route, nav, breadcrumb, and pager objects.
 - Keep routing, authentication, deployment, search, and the host's surrounding navigation
   under host ownership.
-- Do not add CMS storage, remote content, required search/indexing, or automatic `.svx`
-  discovery in this feature.
+- Do not add CMS storage, required search/indexing, or automatic `.svx` discovery in this
+  feature. Remote content is now partially addressed: behavior 70 ships the loader seam a
+  remote source would plug into, but Acrolls still implements no CMS, database, or API source,
+  and no live or streaming content transport. Building that adapter remains host-owned work.
 
 ### Behavior
 
@@ -446,9 +448,55 @@ source of truth.
     host, and exposes the expected code-frame, table-wrapper, callout, and figure output. The
     fixture is not a production content requirement for Acrolls users.
 
+66. A host declares its documentation corpus as one content collection rather than as a set of
+    hand-keyed build inputs. A single declaration names where documents come from, how they are
+    validated, which of them are published, and how they are configured, and it resolves to the
+    same content source that powers navigation, routes, breadcrumbs, pager order, and static
+    entries. This is a developer-facing ergonomics and type-safety change; it does not change
+    what a reader of a published site receives.
+
+67. Frontmatter validation is optional and host-owned. A host may attach any Standard Schema
+    validator to its collection; Acrolls adds no validation library to the host's dependency
+    tree. When a schema is attached, its validated output becomes the metadata the navigation
+    engine sees, so schema defaults and coercions reach titles and ordering, and the published
+    surface is typed at build time.
+
+68. Schema validation introduces no new failure model. A document whose frontmatter fails the
+    host schema produces a stable diagnostic naming the file and the offending field, and then
+    follows the corpus policy already in force: authored mode rejects the document exactly like
+    any other admission failure, and migration mode keeps it with its raw frontmatter and
+    reports. Schema diagnostics appear alongside every other corpus diagnostic.
+
+69. A collection accepts one uniform filter that decides publication. A filtered document is
+    removed from every addressable surface: it has no route, no navigation entry, no breadcrumb
+    or pager entry, no prerendered output, and a direct URL visit 404s. This is distinct from
+    `hidden` (behavior 15), which remains unlisted-but-routeable and still prerendered. A host
+    that wants a document unreachable uses the filter; a host that wants it unlinked but
+    reachable uses `hidden`. The two compose independently. `filter` is a publication and
+    routing boundary, not a confidentiality or access-control boundary: with the Markdown glob
+    loader, Vite materializes every file matching the glob into the module graph before the
+    filter runs, so a filtered document's compiled body can still be present in build output
+    even though nothing routes to it. Secret or embargoed content belongs outside the globbed
+    directory, or behind host-owned authentication. A `customSource` that never returns the
+    document does not materialize it at all.
+
+70. The document store is a pluggable seam. The navigation and route engine consumes a loader's
+    document list, not a Vite glob, so a CMS-, database-, or API-backed source needs no changes
+    to navigation, routing, breadcrumbs, or pager. Acrolls ships the seam and a Markdown glob
+    loader; the adapter to any particular remote system remains host-owned. Non-glob loaders
+    resolve asynchronously.
+
+71. The previous generated-source helper remains supported. Its signature, behavior, and error
+    messages are unchanged, it emits no runtime deprecation warning, and it resolves through the
+    same code path as the collection API. It is documented as deprecated to point hosts at the
+    newer surface and is not scheduled for removal.
+
 ### Deferred
 
 - Medium import
+- Remote content sources. The pluggable loader seam ships (behavior 70), but no CMS, database,
+  or API source implementation does, and the loader's `live()` hook is a reserved type-level
+  seam with no implementation and no live/streaming content behavior behind it.
 - Full rich-text Studio mode with protected SVX blocks
 - Packed consumer CI matrix across OS
 - npm publish automation

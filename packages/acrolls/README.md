@@ -15,7 +15,8 @@ Public imports all come from this package:
 import { createAcrollsMdsvexPreprocessor } from 'acrolls/mdsvex';
 import { Publication } from 'acrolls/svelte';
 import { DocsShell } from 'acrolls/docs';
-import { createDocsContentSource } from 'acrolls/docs/content';
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
 import 'acrolls/styles/default.css';
 import 'acrolls/docs/styles.css';
 ```

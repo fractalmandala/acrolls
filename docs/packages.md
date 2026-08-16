@@ -6,7 +6,8 @@
 | `acrolls/svelte` | `Publication`, `Callout`, `Figure`, … | Article components |
 | `acrolls/styles/*` | CSS / Sass entrypoints | Article styles |
 | `acrolls/docs` | `DocsShell`, `DocsNav` types, helpers | Docs chrome |
-| `acrolls/docs/content` | `createDocsContentSource`, `defineDocsConfig` | Generated docs tree |
+| `acrolls/content` | `content`, `markdownGlob`, `customSource` | Content collections — the recommended docs front door |
+| `acrolls/docs/content` | `defineDocsConfig`, `createDocsContentSource` | Docs config + lower-level source engine |
 | `acrolls/sveltekit` | SvelteKit preprocessor and generated-source helpers | Host integration |
 | `acrolls` binary | `onboard`, `validate`, `studio`, `integrate` | CLI workflow |
 
@@ -65,10 +66,44 @@ Wrap article content with **`Publication`** so code-frame enhancement + mermaid 
 ```
 acrolls/styles/foundation.css
 acrolls/styles/default.css
+acrolls/styles/theme.css
 acrolls/styles/foundation
 acrolls/styles/default
+acrolls/styles/theme
 acrolls/styles/tokens
 ```
+
+`acrolls/styles/theme` is the theming kit built on
+[fractalthemer](https://www.npmjs.com/package/fractalthemer) (40+ themes, auras, theme picker).
+See [styles.md](styles.md#theming-kit) for setup and the Sass package-importer requirement.
+
+---
+
+## `acrolls/content`
+
+```ts
+import {
+  content,
+  markdownGlob,
+  customSource,
+  type ContentLoader,
+  type LoadedDocument,
+  type Entry,
+  type EntrySummary,
+  type Collection,
+  type StandardSchemaV1
+} from 'acrolls/content';
+```
+
+| Export | Use |
+|---|---|
+| `content({ loader, config, schema?, filter? })` | Declare one docs collection; `.sourceSync()` (eager loaders) or `await .source()` |
+| `markdownGlob({ body, modules, root })` | Vite loader over two `import.meta.glob` calls on the identical pattern |
+| `customSource({ list })` | CMS/database/API loader seam; async-only, and its `live()` hook is unimplemented |
+| `StandardSchemaV1` | Structural Standard Schema type; hosts supply the validator |
+
+Full usage, the `filter` versus `hidden` distinction, and the migration table are in
+[Integrate into SvelteKit](./integrate-sveltekit.md#e-pattern-2--generated-docs-tree).
 
 ---
 

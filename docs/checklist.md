@@ -37,7 +37,10 @@ when another UI/agent will render the flow.
 
 - [ ] Choose a filesystem content root (`docs/`, `content/`, `posts/`, etc.)
 - [ ] Configure the public `baseHref` (`/docs`, `/content`, `/posts`, etc.) independently
-- [ ] Generated source combines lazy component and eager metadata globs
+- [ ] Generated source is one `content({ loader: markdownGlob({ body, modules, root }), config })`
+- [ ] `body` and `modules` globs use the identical pattern string (lazy `import: 'default'`, eager `eager: true`)
+- [ ] Drafts or unpublished pages use `filter` (unreachable), not `hidden` (unlisted but routeable)
+- [ ] Secret or embargoed content is kept out of the globbed directory entirely — `filter` is a publication boundary, not a confidentiality one
 - [ ] `DocsShell` receives generated `docs.nav` (or a deliberately manual `DocsNav`)
 - [ ] `docs/index.md` has a root `src/routes/docs/+page` that renders slug `''`, or the host intentionally provides its own overview
 - [ ] Use a `[...slug]` catch-all route when nested folders are allowed

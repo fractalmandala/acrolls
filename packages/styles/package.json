@@ -16,9 +16,11 @@
     "foundation.css",
     "default.css",
     "docs.css",
+    "theme.css",
     "foundation.sass",
     "default.sass",
     "docs.sass",
+    "theme.sass",
     "tokens.sass",
     "src",
     "README.md",
@@ -28,19 +30,23 @@
     "./foundation.css": "./foundation.css",
     "./default.css": "./default.css",
     "./docs.css": "./docs.css",
+    "./theme.css": "./theme.css",
     "./foundation": "./foundation.sass",
     "./default": "./default.sass",
     "./docs": "./docs.sass",
+    "./theme": "./theme.sass",
     "./tokens": "./tokens.sass",
     "./foundation.sass": "./foundation.sass",
     "./default.sass": "./default.sass",
     "./docs.sass": "./docs.sass",
+    "./theme.sass": "./theme.sass",
     "./tokens.sass": "./tokens.sass"
   },
   "sideEffects": [
     "./foundation.css",
     "./default.css",
-    "./docs.css"
+    "./docs.css",
+    "./theme.css"
   ],
   "scripts": {
     "build": "node ./scripts/build.mjs",
@@ -53,6 +59,9 @@
     "publishing",
     "sveltekit"
   ],
+  "dependencies": {
+    "fractalthemer": "^0.1.0"
+  },
   "devDependencies": {
     "sass": "^1.102.0"
   }

@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      fractalthemer:
+        specifier: ^0.1.0
+        version: 0.1.0(svelte@5.56.8)
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -17,6 +21,9 @@ importers:
       acrolls:
         specifier: workspace:*
         version: link:../../packages/acrolls
+      fractalthemer:
+        specifier: link:../../../fractalthemer
+        version: link:../../../fractalthemer
     devDependencies:
       '@sveltejs/adapter-auto':
         specifier: ^6.0.1
@@ -42,6 +49,9 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
+      valibot:
+        specifier: ^1.1.0
+        version: 1.4.2(typescript@5.9.3)
       vite:
         specifier: ^7.1.3
         version: 7.3.6(@types/node@22.20.1)(sass@1.102.0)
@@ -72,6 +82,9 @@ importers:
       acorn:
         specifier: ^8.18.0
         version: 8.18.0
+      fractalthemer:
+        specifier: ^0.1.0
+        version: 0.1.1(svelte@5.56.8)
       github-slugger:
         specifier: ^2.0.0
         version: 2.0.0
@@ -233,6 +246,10 @@ importers:
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(sass@1.102.0)
 
   packages/styles:
+    dependencies:
+      fractalthemer:
+        specifier: ^0.1.0
+        version: 0.1.1(svelte@5.56.8)
     devDependencies:
       sass:
         specifier: ^1.102.0
@@ -1455,6 +1472,16 @@ packages:
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
 
+  fractalthemer@0.1.0:
+    resolution: {integrity: sha512-bZD4+p7ssQu0w7ycuzGPeaPJjHvZCuS6ygQ1tdXrtpV07pfjnxfC1Kwl6DZs832OOYemdFO+isPhy7vF1nTq6g==}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  fractalthemer@0.1.1:
+    resolution: {integrity: sha512-0l6gZXdxStn5ouRwsuvLWJz+V39+4AXTltIALpSovi9a/GP5vZQvOcMluygLvHnwebDYuPmYliy49d0XR82P0A==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2055,6 +2082,14 @@ packages:
   uuid@14.0.1:
     resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
+
+  valibot@1.4.2:
+    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   vfile-message@2.0.4:
     resolution: {integrity: sha512-DjssxRGkMvifUOJre00juHoP9DPWuzjxKuMDrhNbk2TdaYYBNMStsNhEOt3idrtI12VQYM/1+iM0KOzXi4pxwQ==}
@@ -3164,6 +3199,14 @@ snapshots:
       mlly: 1.8.2
       rollup: 4.62.4
 
+  fractalthemer@0.1.0(svelte@5.56.8):
+    dependencies:
+      svelte: 5.56.8
+
+  fractalthemer@0.1.1(svelte@5.56.8):
+    dependencies:
+      svelte: 5.56.8
+
   fsevents@2.3.3:
     optional: true
 
@@ -4023,6 +4066,10 @@ snapshots:
       unist-util-visit-parents: 6.0.2
 
   uuid@14.0.1: {}
+
+  valibot@1.4.2(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
 
   vfile-message@2.0.4:
     dependencies:

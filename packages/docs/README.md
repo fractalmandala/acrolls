@@ -20,9 +20,34 @@ import { DocsShell, type DocsNav } from 'acrolls/docs';
 
 ## Generated content source
 
-For a Markdown-first external host, use the pure source entry from `acrolls/docs/content`.
-The generated source owns the document records, routes, metadata, `DocsNav`, breadcrumbs,
-pager order, and static route entries together:
+For a Markdown-first external host, declare one collection with `content()` from
+`acrolls/content`. The generated source owns the document records, routes, metadata,
+`DocsNav`, breadcrumbs, pager order, and static route entries together:
+
+```ts
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
+
+const docs = content({
+  loader: markdownGlob({
+    body: import.meta.glob('./content/**/*.md', { import: 'default' }),
+    modules: import.meta.glob('./content/**/*.md', { eager: true }),
+    root: './content'
+  }),
+  config: defineDocsConfig({
+    title: 'Documentation',
+    baseHref: '/docs'
+  })
+}).sourceSync();
+```
+
+`content()` also accepts an optional `schema` (any Standard Schema validator the host supplies)
+and an optional `filter`, which removes a document from every addressable surface including
+direct URL access. Outside Vite, `customSource({ list })` supplies documents from a CMS or API; it is
+async-only, so use `await collection.source()` rather than `sourceSync()`.
+
+`createDocsContentSource` remains exported from `acrolls/docs/content` as the lower-level
+engine, taking `{ config, documents }` directly:
 
 ```ts
 import { createDocsContentSource, defineDocsConfig } from 'acrolls/docs/content';
@@ -46,7 +71,11 @@ Folder names are humanized by default, so `guides/advanced` becomes nested `Guid
 `Advanced` navigation without any folder configuration. You can omit `folders` entirely.
 Typed configuration is only for presentation overrides such as folder labels, ordering,
 visibility, badges, and landing filenames. `hidden: true` means unlisted from docs navigation;
-it does not make a page private.
+it does not make a page private — the route still exists, is still prerendered, and still
+renders for anyone with the link. To make a document unreachable, use the collection's `filter`
+option, which removes it before routes are built. `filter` is a publication boundary, not a
+confidentiality one — with the glob loader the document's compiled body can still be present in
+build output, so keep secret or embargoed content out of the globbed directory entirely.
 
 For example, this overrides one folder while all other folders remain automatic:
 

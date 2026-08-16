@@ -194,42 +194,44 @@ docs/
     └── configuration.md
 ```
 
-Create `src/lib/docs/source.ts`. This example uses `docs/`, but replace both glob paths
-and `contentPrefix` if your content lives under `content/` or `posts/`:
+Create `src/lib/docs/source.ts`. This example uses `docs/`, but replace both glob paths and
+`root` if your content lives under `content/` or `posts/`:
 
 ```ts
 import type { Component } from 'svelte';
-import {
-  createDocsContentSource,
-  defineDocsConfig,
-  type DocsMetadata
-} from 'acrolls/docs/content';
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
-const contentPrefix = '../../docs/';
 
-const modules = import.meta.glob('../../docs/**/*.md', {
-  import: 'default'
-}) as Record<string, () => Promise<DocsArticle>>;
-
-const metadata = import.meta.glob('../../docs/**/*.md', {
-  eager: true,
-  import: 'metadata'
-}) as Record<string, DocsMetadata>;
-
-export const docs = createDocsContentSource({
-  documents: Object.entries(modules).map(([key, load]) => ({
-    key: key.slice(contentPrefix.length),
-    metadata: metadata[key],
-    load
-  })),
+export const docs = content({
+  loader: markdownGlob<DocsArticle>({
+    body: import.meta.glob('../../docs/**/*.md', { import: 'default' }) as Record<
+      string,
+      () => Promise<DocsArticle>
+    >,
+    modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+    root: '../../docs'
+  }),
   config: defineDocsConfig({
     title: 'Documentation',
     baseHref: '/docs',
     subtitle: 'Generated from Markdown'
   })
-});
+}).sourceSync();
 ```
+
+Both globs use the same pattern string: `body` is the lazy one that keeps document bodies out
+of the eager module graph, and `modules` is the eager one `markdownGlob` reads frontmatter and
+document facts from. `root` is the prefix stripped from each glob key. `.sourceSync()` is
+available because `markdownGlob` is an eager loader.
+
+Two further options are available on `content()` and covered in
+[Integrate into SvelteKit](./integrate-sveltekit.md#typed-frontmatter-with-schema): `schema`
+validates frontmatter with any Standard Schema validator you bring, and `filter` removes
+documents from every addressable surface — no route, no nav entry, and a direct URL 404s. It is
+a publication boundary, not a confidentiality one: keep secret or embargoed content out of the
+globbed directory entirely.
 
 The source interprets the filesystem tree as navigation automatically. You do **not** need to
 list every directory in `folders`:
@@ -248,8 +250,9 @@ The source provides:
 
 Titles come from frontmatter. Folder names are humanized by default and can be overridden
 selectively in `folders`; omit `folders` entirely when the natural filesystem structure is what
-you want. For example, `docs/foo/bar.md` becomes `/docs/foo/bar`, while `docs/foo/index.md`
-becomes `/docs/foo`. Set `hidden: true` in frontmatter or configuration to remove a page from
+you want. Routes are generated under your configured base href (`/docs` by default): with that
+default `docs/foo/bar.md` becomes `<base-href>/foo/bar`, while `docs/foo/index.md` becomes
+`<base-href>/foo`. Set `hidden: true` in frontmatter or configuration to remove a page from
 navigation while keeping it routable; it is not an access-control mechanism.
 
 Use `folders` only for presentation overrides such as a human-friendly title, ordering, badge,
@@ -262,8 +265,11 @@ folders: {
 }
 ```
 
-`acrolls/sveltekit` contains the optional SvelteKit convenience adapter. The simpler external
-host path shown above uses `acrolls/mdsvex` and `acrolls/docs/content` directly.
+`acrolls/content` is the front door for the collection API (`content`, `markdownGlob`,
+`customSource`); `acrolls/docs/content` keeps `defineDocsConfig`, the docs config types, and
+the lower-level `createDocsContentSource` engine. `acrolls/sveltekit` also re-exports these
+alongside the deprecated `createAcrollsDocsSource` adapter, which still works — see
+[Migrating from `createAcrollsDocsSource`](./integrate-sveltekit.md#migrating-from-createacrollsdocssource).
 
 Add a docs layout using the generated nav:
 

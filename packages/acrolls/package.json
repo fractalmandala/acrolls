@@ -30,19 +30,26 @@
       "types": "./exports/docs-content.d.ts",
       "import": "./exports/docs-content.js"
     },
+    "./content": {
+      "types": "./exports/content.d.ts",
+      "import": "./exports/content.js"
+    },
     "./sveltekit": {
       "types": "./exports/sveltekit.d.ts",
       "import": "./exports/sveltekit.js"
     },
     "./styles/foundation.css": "./styles/foundation.css",
     "./styles/default.css": "./styles/default.css",
+    "./styles/theme.css": "./styles/theme.css",
     "./docs/styles.css": "./styles/docs.css",
     "./styles/foundation": "./styles/foundation.sass",
     "./styles/default": "./styles/default.sass",
+    "./styles/theme": "./styles/theme.sass",
     "./docs/styles": "./styles/docs.sass",
     "./styles/tokens": "./styles/tokens.sass",
     "./styles/foundation.sass": "./styles/foundation.sass",
     "./styles/default.sass": "./styles/default.sass",
+    "./styles/theme.sass": "./styles/theme.sass",
     "./docs/styles.sass": "./styles/docs.sass",
     "./styles/tokens.sass": "./styles/tokens.sass"
   },
@@ -57,7 +64,7 @@
     "./styles/*.css"
   ],
   "scripts": {
-    "check": "node --check bin/acrolls.mjs && node --check exports/mdsvex.js && node --check exports/svelte.js && node --check exports/docs.js && node --check exports/docs-content.js && node --check exports/sveltekit.js"
+    "check": "node --check bin/acrolls.mjs && node --check exports/mdsvex.js && node --check exports/svelte.js && node --check exports/docs.js && node --check exports/docs-content.js && node --check exports/content.js && node --check exports/sveltekit.js"
   },
   "dependencies": {
     "@acrolls/cli": "workspace:^",
@@ -68,6 +75,7 @@
     "@acrolls/sveltekit": "workspace:^",
     "@sveltejs/acorn-typescript": "^1.0.12",
     "acorn": "^8.18.0",
+    "fractalthemer": "^0.1.0",
     "github-slugger": "^2.0.0",
     "hast-util-to-string": "^3.0.1",
     "mdsvex": "^0.12.6",

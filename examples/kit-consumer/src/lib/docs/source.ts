@@ -1,32 +1,34 @@
 import type { Component } from 'svelte';
-import {
-	createAcrollsDocsSource,
-	defineDocsConfig,
-	type DocsDocumentFacts,
-	type DocsMetadata
-} from 'acrolls/sveltekit';
+import * as v from 'valibot';
+import { content, markdownGlob } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 
-const modules = import.meta.glob('../../content/**/*.md', {
-	import: 'default'
-}) as Record<string, () => Promise<DocsArticle>>;
+/**
+ * `title` stays `optional` even though this host runs in `authored` mode: the engine's own
+ * `ACROLLS_TITLE_REQUIRED` admission rule already enforces titles and derives index titles from
+ * folders, so a required-title schema would double-reject index pages.
+ */
+const frontmatter = v.object({
+	title: v.optional(v.string()),
+	description: v.optional(v.string()),
+	order: v.optional(v.number()),
+	hidden: v.optional(v.boolean()),
+	draft: v.optional(v.boolean())
+});
 
-const metadata = import.meta.glob('../../content/**/*.md', {
-	eager: true,
-	import: 'metadata'
-}) as Record<string, DocsMetadata>;
-
-const facts = import.meta.glob('../../content/**/*.md', {
-	eager: true,
-	import: '__acrollsDocument'
-}) as Record<string, DocsDocumentFacts>;
-
-export const docs = createAcrollsDocsSource({
-	modules,
-	metadata,
-	facts,
-	contentRoot: '../../content',
+export const docs = content({
+	loader: markdownGlob<DocsArticle>({
+		body: import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
+			string,
+			() => Promise<DocsArticle>
+		>,
+		modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+		root: '../../content'
+	}),
+	schema: frontmatter,
+	filter: (entry) => !entry.data.draft,
 	config: defineDocsConfig({
 		title: 'Example docs',
 		baseHref: '/docs',
@@ -70,4 +72,4 @@ export const docs = createAcrollsDocsSource({
 			}
 		}
 	})
-});
+}).sourceSync();

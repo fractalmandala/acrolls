@@ -145,6 +145,10 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
+
+  // Derive the index check from the configured base href — never hardcode the route.
+  const base = docs.nav.baseHref;
+  const isIndex = $derived(page.url.pathname === base || page.url.pathname === `${base}/`);
 </script>
 
 <div class="docs-root">
@@ -154,8 +158,8 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
     homeHref="/"
     homeLabel="Home"
     filterable={true}
-    showToc={page.url.pathname !== '/docs'}
-    showPager={page.url.pathname !== '/docs'}
+    showToc={!isIndex}
+    showPager={!isIndex}
     persistOpen={true}
     menuLabel="Docs menu"
   >
@@ -213,7 +217,8 @@ TOC looks inside `.acrolls-docs-shell__article` (shell wraps children). Headings
 
 ## 4. Index page
 
-On `/docs`, set `showToc={false}` and `showPager={false}` (as above). List cards from your nav:
+On the index route (your base href root — `/docs` by default, derived via `docs.nav.baseHref` as
+above), set `showToc={false}` and `showPager={false}`. List cards from your nav:
 
 ```ts
 import { flattenDocsNav } from 'acrolls/docs';

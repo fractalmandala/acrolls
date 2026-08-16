@@ -9,9 +9,18 @@ making hosts duplicate page metadata. In authored mode, Markdown frontmatter is 
 contract for ordinary pages: Acrolls derives the visible page header, generated navigation,
 pager, static entries, and document metadata from it.
 
-The contract applies to generated `.md` docs consumed through `createAcrollsDocsSource` /
-`createDocsContentSource`. It does not change migration mode, standalone publication pages, or
-executable `.svx` content.
+The contract applies to generated `.md` docs consumed through `content()` — and equally through
+the deprecated-but-supported `createAcrollsDocsSource` and the lower-level
+`createDocsContentSource`, since all three resolve to the same engine. It does not change
+migration mode, standalone publication pages, or executable `.svx` content.
+
+An optional `schema` on `content()` layers host-defined frontmatter validation on top of this
+contract; it does not replace it. A schema failure raises an `ACROLLS_SCHEMA_INVALID`
+diagnostic and then obeys the mode already in force — authored mode rejects the document
+alongside the admission failures defined below, migration mode keeps it with raw frontmatter
+and reports. Keep `title` optional in a host schema: `ACROLLS_TITLE_REQUIRED` below is the
+authority on titles and derives index titles from folder names, so a required-title schema
+would double-reject every `index.md`.
 
 ## Authoring contract
 

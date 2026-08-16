@@ -1,0 +1,82 @@
+// Acrolls theming surface.
+//
+// This is the single stylesheet an Acrolls app needs for theming. It:
+//   1. Establishes an Acrolls-owned color/background/border :root baseline
+//      (_colors.sass) as the no-theme-class fallback.
+//   2. Forwards fractalthemer's engine (its curated light/dark themes, aura backgrounds, theme
+//      picker styling) as a dependency — fractalthemer stays the source of
+//      truth, no duplication. Its `.theme-*` classes override the baseline.
+//   3. Bridges fractalthemer's semantic tokens (--bg, --text-primary,
+//      --theme-color …) onto the shadcn-style names (--background, --card,
+//      --muted, --accent …) that the Acrolls surfaces (foundation/default/docs)
+//      consume. Each maps through a runtime var() so light/dark and every named
+//      theme flow through automatically, with an Open Color static fallback for
+//      when fractalthemer is absent.
+//
+// Ordering matters: `:root` and `.theme-*` have equal specificity, so the
+// baseline (@use 'colors') MUST be emitted before the forwarded theme classes,
+// or it would override every theme. Sass requires all @use/@forward at the top,
+// so the baseline @use leads and the bridge rules follow the forwards.
+//
+// Consume as sass (requires a Node package importer for the `pkg:` URLs —
+// registered for you in the CLI build and in the example's vite config):
+//   @use 'acrolls/styles/theme'
+// or as precompiled CSS (no importer needed):
+//   import 'acrolls/styles/theme.css'
+
+// 1. Acrolls color baseline (colors/backgrounds/borders only) — emitted first.
+@use 'colors'
+@use 'palette' as *
+
+// 2. fractalthemer engine — forwarded from the published package. Its theme
+//    classes are emitted after the baseline, so they win per active theme.
+@forward 'pkg:fractalthemer/styles/themes'
+@forward 'pkg:fractalthemer/styles/auras'
+@forward 'pkg:fractalthemer/styles/theme-picker'
+
+// 3. shadcn-name bridge. Every SEMANTIC token maps via runtime var() onto a
+//    fractalthemer token, so the active theme (light, dark, or any named theme)
+//    drives it; the second argument is an Open Color fallback for
+//    fractalthemer-less use. The chart palette below is a deliberate exception:
+//    a fixed categorical data-viz palette kept stable across themes so series
+//    colors stay distinguishable and legends stay consistent.
+:root
+	// Base Surfaces
+	--background: var(--bg, #{$oc-gray-0})
+	--foreground: var(--text-primary, #{$oc-gray-9})
+
+	// Elevation Surfaces / Containers
+	--card: var(--bg-surface, #{$oc-gray-0})
+	--card-foreground: var(--text-primary, #{$oc-gray-9})
+	--popover: var(--bg-raised, #{$oc-gray-0})
+	--popover-foreground: var(--text-primary, #{$oc-gray-9})
+
+	// Main Action / Primary Brand
+	--primary: var(--theme-color, #{$oc-indigo-6})
+	--primary-foreground: var(--text-inverse, #{$oc-gray-0})
+
+	// Secondary Actions
+	--secondary: var(--bg-panel, #{$oc-gray-2})
+	--secondary-foreground: var(--text-secondary, #{$oc-gray-9})
+
+	// Muted Content / Backgrounds
+	--muted: var(--bg-panel, #{$oc-gray-1})
+	--muted-foreground: var(--text-muted, #{$oc-gray-6})
+
+	// Interactive / Selection States
+	--accent: var(--state-hover, #{$oc-gray-2})
+	--accent-foreground: var(--text-primary, #{$oc-gray-9})
+
+	// Destructive / Error States (falls back to fractalthemer feedback token)
+	--destructive: var(--feedback-error, #{$oc-red-6})
+	--destructive-foreground: var(--text-inverse, #{$oc-gray-0})
+
+	--input: var(--border, #{$oc-gray-3})
+
+	// Data Visualizations / Charts — fixed categorical palette (theme-independent
+	// by design; see the bridge note above).
+	--chart-1: #{$oc-blue-6}
+	--chart-2: #{$oc-teal-6}
+	--chart-3: #{$oc-orange-6}
+	--chart-4: #{$oc-grape-6}
+	--chart-5: #{$oc-yellow-6}

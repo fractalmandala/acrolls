@@ -3,9 +3,10 @@
 ## Modes
 
 | CSS import | Sass layout import | When |
-|---|---|
+|---|---|---|
 | `acrolls/styles/default.css` | `acrolls/styles/default.sass` | Greenfield articles; want full editorial scale |
 | `acrolls/styles/foundation.css` | `acrolls/styles/foundation.sass` | Host already owns fonts, rhythm, colors |
+| `acrolls/styles/theme.css` | `acrolls/styles/theme` | Want Acrolls' built-in theming kit (fractalthemer) |
 
 ```ts
 import 'acrolls/styles/default.css';
@@ -90,10 +91,70 @@ Default/foundation respond to:
 - `prefers-color-scheme`  
 - `data-theme="light|dark"` on `.acrolls`  
 
-Host owns the theme toggle; Acrolls styles follow.
+Host owns the theme toggle; Acrolls styles follow. When you use the theming kit
+below, dark mode is handled for you by the light/dark theme pairs.
 
 ---
 
-## Themes roadmap
+## Theming kit
 
-Polished multi-theme packs are planned (see VISION). Today you theme via CSS variables + host design system.
+Acrolls ships a complete theming kit built on
+[fractalthemer](https://www.npmjs.com/package/fractalthemer): 40+ curated
+light/dark themes, aura gradient backgrounds, and a styled theme picker.
+`acrolls/styles/theme` **forwards** fractalthemer (it is a dependency of
+`acrolls`, so it installs with it — no separate install), adds an Acrolls color
+baseline, and bridges fractalthemer's semantic tokens onto the names the Acrolls
+surfaces read.
+
+Import the theme surface once at the app root, next to `default`/`foundation`:
+
+```ts
+import 'acrolls/styles/theme.css';   // precompiled — nothing else required
+```
+
+or as Sass:
+
+```sass
+@use 'acrolls/styles/theme'
+```
+
+> **Sass consumers only:** `acrolls/styles/theme` resolves fractalthemer through
+> `pkg:` URLs, so a Node package importer must be registered. In Vite:
+>
+> ```ts
+> import { NodePackageImporter } from 'sass';
+> export default defineConfig({
+>   css: { preprocessorOptions: { sass: { importers: [new NodePackageImporter()] } } }
+> });
+> ```
+>
+> The precompiled `acrolls/styles/theme.css` needs no importer.
+
+Pick a theme by setting fractalthemer's markers on `<html>` — a `theme-*` class
+plus `data-theme`, with `data-mode` for the light/dark axis:
+
+```html
+<html class="theme-dracula-dark" data-theme="theme-dracula-dark" data-mode="dark">
+```
+
+fractalthemer's runtime components drive this for you:
+
+```svelte
+<script lang="ts">
+  import { AuraBackground, ThemePicker } from 'fractalthemer';
+</script>
+
+<AuraBackground />
+<ThemePicker />
+```
+
+Add fractalthemer's anti-flicker script to `app.html` to apply the saved theme
+before hydration (see the fractalthemer README).
+
+### Owning the palette
+
+The Acrolls-authored baseline in `packages/styles/src/_colors.sass` sets only
+colors, backgrounds, and borders (the no-theme-class `:root` fallback). Named
+`theme-*` classes from fractalthemer override it. To customise, override
+fractalthemer tokens (`--bg`, `--theme-color`, `--text-primary`, …) or the
+Acrolls bridge names (`--background`, `--accent`, …) per selector.

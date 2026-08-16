@@ -1,6 +1,8 @@
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
 	buildOnboardingPlan,
 	renderCompletedOnboardingStep,
@@ -47,9 +49,21 @@ describe('Acrolls onboarding plan', () => {
 		]);
 
 		const source = plan.steps.find((step) => step.id === 'source');
-		expect(source?.code).toContain("import.meta.glob('../../content/**/*.md'");
-		expect(source?.code).toContain("const contentPrefix = '../../content/';");
+		expect(source?.code).toContain("import { content, markdownGlob } from 'acrolls/content';");
+		expect(source?.code).toContain(
+			"const body = import.meta.glob('../../content/**/*.md', { import: 'default' })"
+		);
+		expect(source?.code).toContain(
+			"const modules = import.meta.glob('../../content/**/*.md', { eager: true })"
+		);
+		expect(source?.code).toContain("root: '../../content'");
+		expect(source?.code).toContain('.sourceSync();');
+		expect(source?.code).not.toContain('createDocsContentSource');
+		expect(source?.code).not.toContain('__acrollsDocument');
 		expect(source?.code).not.toContain('folders:');
+		expect(source?.caution).toContain('identical pattern');
+		expect(source?.caution).toContain('Do not collapse the eager glob into the lazy one');
+		expect(plan.version).toBe(2);
 		const preprocessor = plan.steps.find((step) => step.id === 'preprocessor');
 		expect(preprocessor?.code).toContain("extensions: ['.svelte', '.md', '.svx']");
 		expect(preprocessor?.code).toContain("extensions: ['.md', '.svx']");
@@ -111,6 +125,47 @@ describe('Acrolls onboarding plan', () => {
 		expect(renderCompletedOnboardingStep(plan, 3, completed)).toContain('Already complete — continuing.');
 	});
 
+	it('marks the generated source complete for both the legacy three-glob and the content() host', async () => {
+		const legacySource = `import type { Component } from 'svelte';
+import { createAcrollsDocsSource, defineDocsConfig, type DocsDocumentFacts, type DocsMetadata } from 'acrolls/sveltekit';
+
+type DocsArticle = Component;
+const modules = import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<string, () => Promise<DocsArticle>>;
+const metadata = import.meta.glob('../../content/**/*.md', { eager: true, import: 'metadata' }) as Record<string, DocsMetadata>;
+const facts = import.meta.glob('../../content/**/*.md', { eager: true, import: '__acrollsDocument' }) as Record<string, DocsDocumentFacts>;
+
+export const docs = createAcrollsDocsSource({
+  modules,
+  metadata,
+  facts,
+  contentRoot: '../../content',
+  config: defineDocsConfig({ title: 'Docs', baseHref: '/docs' })
+});`;
+
+		const legacyRoot = await makeHost('acrolls-onboard-legacy-', legacySource);
+		const legacyPlan = await buildOnboardingPlan({
+			root: legacyRoot,
+			docsDir: 'src/content',
+			baseHref: '/docs',
+			mode: 'default',
+			style: 'css'
+		});
+		expect(legacyPlan.steps.find((step) => step.id === 'source')?.completed).toBe(true);
+
+		// The emitted snippet itself must satisfy the same detection predicate.
+		const migratedSource = legacyPlan.steps.find((step) => step.id === 'source')!.code!;
+		expect(migratedSource).toContain('markdownGlob(');
+		const migratedRoot = await makeHost('acrolls-onboard-content-', migratedSource);
+		const migratedPlan = await buildOnboardingPlan({
+			root: migratedRoot,
+			docsDir: 'src/content',
+			baseHref: '/docs',
+			mode: 'default',
+			style: 'css'
+		});
+		expect(migratedPlan.steps.find((step) => step.id === 'source')?.completed).toBe(true);
+	});
+
 	it('preserves a root base href and clean root route paths', async () => {
 		const plan = await buildOnboardingPlan({
 			root: exampleRoot,
@@ -127,3 +182,27 @@ describe('Acrolls onboarding plan', () => {
 		expect(plan.steps.find((step) => step.id === 'deploy')?.verify).toContain('check /, /<nested-slug>');
 	});
 });
+
+const temporaryRoots: string[] = [];
+
+afterAll(async () => {
+	await Promise.all(temporaryRoots.map((path) => rm(path, { recursive: true, force: true })));
+});
+
+/** Build a throwaway SvelteKit host whose only interesting file is src/lib/docs/source.ts. */
+async function makeHost(prefix: string, source: string): Promise<string> {
+	const root = await mkdtemp(resolve(tmpdir(), prefix));
+	temporaryRoots.push(root);
+	await writeFile(
+		resolve(root, 'package.json'),
+		JSON.stringify({
+			name: 'onboard-fixture',
+			type: 'module',
+			devDependencies: { '@sveltejs/kit': '^2.0.0', svelte: '^5.0.0', acrolls: '^0.1.0' }
+		}),
+		'utf8'
+	);
+	await mkdir(resolve(root, 'src/lib/docs'), { recursive: true });
+	await writeFile(resolve(root, 'src/lib/docs/source.ts'), source, 'utf8');
+	return root;
+}
