@@ -23,6 +23,9 @@
 		tocMaxLevel?: number;
 		persistOpen?: boolean;
 		menuLabel?: string;
+		/** Mark the article as Pagefind-indexable. Set false to exclude a page from
+		 * full-text search (e.g. frontmatter `search: { exclude: true }`). */
+		searchable?: boolean;
 		children: Snippet;
 		header?: Snippet;
 	};
@@ -41,6 +44,7 @@
 		tocMaxLevel = 3,
 		persistOpen = true,
 		menuLabel = 'Docs menu',
+		searchable = true,
 		children,
 		header
 	}: Props = $props();
@@ -88,7 +92,7 @@
 		></button>
 	{/if}
 
-	<div class="acrolls-docs-shell__sidebar" id="acrolls-docs-sidebar">
+	<div class="acrolls-docs-shell__sidebar" id="acrolls-docs-sidebar" data-pagefind-ignore>
 		<DocsSidebar
 			{nav}
 			{pathname}
@@ -99,7 +103,7 @@
 	</div>
 
 	<div class="acrolls-docs-shell__main">
-		<header class="acrolls-docs-shell__top">
+		<header class="acrolls-docs-shell__top" data-pagefind-ignore>
 			<DocsBreadcrumbs crumbs={resolvedCrumbs} />
 			{#if header}
 				<div class="acrolls-docs-shell__header-extra">
@@ -110,19 +114,23 @@
 
 		<div class="acrolls-docs-shell__body">
 			<div class="acrolls-docs-shell__content">
-				<div class="acrolls-docs-shell__article" bind:this={articleEl}>
+				<div
+					class="acrolls-docs-shell__article"
+					bind:this={articleEl}
+					data-pagefind-body={searchable ? '' : undefined}
+				>
 					{@render children()}
 				</div>
 
 				{#if showPager && (previous || next)}
-					<footer class="acrolls-docs-shell__footer">
+					<footer class="acrolls-docs-shell__footer" data-pagefind-ignore>
 						<DocsPager {previous} {next} />
 					</footer>
 				{/if}
 			</div>
 
 			{#if showToc}
-				<aside class="acrolls-docs-shell__toc" aria-label="Table of contents">
+				<aside class="acrolls-docs-shell__toc" aria-label="Table of contents" data-pagefind-ignore>
 					<DocsToc contentEl={articleEl} watch={pathname} minLevel={tocMinLevel} maxLevel={tocMaxLevel} />
 				</aside>
 			{/if}

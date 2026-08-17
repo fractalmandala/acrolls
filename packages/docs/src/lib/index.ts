@@ -63,6 +63,29 @@ export {
 export { scanHeadings } from './toc.js';
 export { readOpenState, writeOpenState, clearOpenState } from './storage.js';
 
+// SEO (P16)
+export { buildDocsSeo, docsSitemap, docsRobots } from './seo.js';
+export type {
+	DocsSiteSeo,
+	DocsPageSeo,
+	ResolvedDocsSeo,
+	BuildDocsSeoInput,
+	DocsSitemapOptions,
+	DocsRobotsOptions
+} from './seo.js';
+
+// AI static tier (P18)
+export { docsLlmsTxt, docsLlmsFullTxt, docsPageMarkdown, isAiExcluded } from './ai.js';
+export type { DocsRawSources, DocsAiOptions } from './ai.js';
+
+// OG images (P17)
+export { acrollsOgCard, docsOgImagePath, docsOgEntries, docsOgSlug } from './og.js';
+export type { SatoriNode, AcrollsOgCardOptions, DocsOgPathOptions } from './og.js';
+
+export { default as DocsSeo } from './DocsSeo.svelte';
+export { default as CopyPageMarkdown } from './CopyPageMarkdown.svelte';
+export { default as DocsSearch } from './DocsSearch.svelte';
+
 export { default as DocsShell } from './DocsShell.svelte';
 export { default as DocsSidebar } from './DocsSidebar.svelte';
 export { default as DocsAccordion } from './DocsAccordion.svelte';

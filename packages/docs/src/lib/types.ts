@@ -36,6 +36,9 @@ export type DocsNav = {
 	title: string;
 	/** Index href for this docs area */
 	baseHref: string;
+	/** Absolute site origin (e.g. https://example.com), no trailing slash — for
+	 * canonical, Open Graph, sitemap, and llms.txt absolute URLs. */
+	site?: string;
 	subtitle?: string;
 	/**
 	 * Storage namespace for accordion open state.

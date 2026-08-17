@@ -40,15 +40,18 @@
     },
     "./styles/foundation.css": "./styles/foundation.css",
     "./styles/default.css": "./styles/default.css",
+    "./styles/colors.css": "./styles/colors.css",
     "./styles/theme.css": "./styles/theme.css",
     "./docs/styles.css": "./styles/docs.css",
     "./styles/foundation": "./styles/foundation.sass",
     "./styles/default": "./styles/default.sass",
+    "./styles/colors": "./styles/colors.sass",
     "./styles/theme": "./styles/theme.sass",
     "./docs/styles": "./styles/docs.sass",
     "./styles/tokens": "./styles/tokens.sass",
     "./styles/foundation.sass": "./styles/foundation.sass",
     "./styles/default.sass": "./styles/default.sass",
+    "./styles/colors.sass": "./styles/colors.sass",
     "./styles/theme.sass": "./styles/theme.sass",
     "./docs/styles.sass": "./styles/docs.sass",
     "./styles/tokens.sass": "./styles/tokens.sass"
@@ -75,7 +78,6 @@
     "@acrolls/sveltekit": "workspace:^",
     "@sveltejs/acorn-typescript": "^1.0.12",
     "acorn": "^8.18.0",
-    "fractalthemer": "^0.1.0",
     "github-slugger": "^2.0.0",
     "hast-util-to-string": "^3.0.1",
     "mdsvex": "^0.12.6",
@@ -103,7 +105,13 @@
     "unist-util-visit-parents"
   ],
   "peerDependencies": {
-    "svelte": "^5.0.0"
+    "svelte": "^5.0.0",
+    "fractalthemer": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "fractalthemer": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.19.0"

@@ -98,6 +98,27 @@ export function markdownGlob<TDocument>(
 }
 
 /**
+ * Normalize a raw-Markdown glob into a `document.key`-keyed map for the AI static
+ * tier (llms.txt, per-page `.md`, copy-as-markdown). Applies the SAME root
+ * stripping as {@link markdownGlob}, so keys line up with `docs.documents[].key`.
+ *
+ * ```ts
+ * const raw = markdownRaw({
+ *   raw: import.meta.glob('../../content/star-star/star.md', { query: '?raw', import: 'default', eager: true }),
+ *   root: '../../content'
+ * });
+ * ```
+ */
+export function markdownRaw(options: { raw: Record<string, string>; root: string }): Record<string, string> {
+	const root = normalizeGlobPath(options.root);
+	const out: Record<string, string> = {};
+	for (const [key, value] of Object.entries(options.raw)) {
+		out[removeGlobRoot(key, root)] = value;
+	}
+	return out;
+}
+
+/**
  * Wrap an arbitrary document store (CMS, database, HTTP API) as a {@link ContentLoader}.
  *
  * The nav/route engine consumes `list()` output, not globs, so a remote source needs no changes

@@ -6,7 +6,15 @@
 |---|---|---|
 | `acrolls/styles/default.css` | `acrolls/styles/default.sass` | Greenfield articles; want full editorial scale |
 | `acrolls/styles/foundation.css` | `acrolls/styles/foundation.sass` | Host already owns fonts, rhythm, colors |
-| `acrolls/styles/theme.css` | `acrolls/styles/theme` | Want Acrolls' built-in theming kit (fractalthemer) |
+| `acrolls/styles/colors.css` | `acrolls/styles/colors` | **Lean** light/dark colors — no fractalthemer, no extra deps |
+| `acrolls/styles/theme.css` | `acrolls/styles/theme` | **Full** theme builder (fractalthemer: 40+ themes, auras, picker) |
+
+**Two color tiers** (the theme builder is optional):
+
+- **Lean** — `pnpm add acrolls`, import `colors`. Self-contained light/dark, no fractalthemer downloaded.
+- **Full** — also `pnpm add fractalthemer`, import `theme` instead. Adds the named themes, auras, and picker. Switch any time; it's a superset of `colors`.
+
+Import **one** of `colors` / `theme` per app — `theme` already includes the `colors` baseline.
 
 ```ts
 import 'acrolls/styles/default.css';
@@ -101,10 +109,19 @@ below, dark mode is handled for you by the light/dark theme pairs.
 Acrolls ships a complete theming kit built on
 [fractalthemer](https://www.npmjs.com/package/fractalthemer): 40+ curated
 light/dark themes, aura gradient backgrounds, and a styled theme picker.
-`acrolls/styles/theme` **forwards** fractalthemer (it is a dependency of
-`acrolls`, so it installs with it — no separate install), adds an Acrolls color
-baseline, and bridges fractalthemer's semantic tokens onto the names the Acrolls
-surfaces read.
+`acrolls/styles/theme` **forwards** fractalthemer, layers it over the lean
+`colors` baseline, and bridges fractalthemer's semantic tokens onto the names the
+Acrolls surfaces read.
+
+fractalthemer is an **optional peer dependency** — it is *not* installed by
+`acrolls` alone. Add it explicitly to use the builder:
+
+```bash
+pnpm add fractalthemer
+```
+
+If you only need light/dark, use `acrolls/styles/colors` instead and skip
+fractalthemer entirely.
 
 Import the theme surface once at the app root, next to `default`/`foundation`:
 

@@ -1,9 +1,19 @@
 import type { Component } from 'svelte';
 import * as v from 'valibot';
-import { content, markdownGlob } from 'acrolls/content';
+import { content, markdownGlob, markdownRaw } from 'acrolls/content';
 import { defineDocsConfig } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
+
+/** Raw Markdown source, keyed like `docs.documents[].key` — powers the AI static
+ * tier (llms.txt, per-page .md, copy-as-markdown). */
+export const raw = markdownRaw({
+	raw: import.meta.glob('../../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<
+		string,
+		string
+	>,
+	root: '../../content'
+});
 
 /**
  * `title` stays `optional` even though this host runs in `authored` mode: the engine's own
@@ -32,6 +42,7 @@ export const docs = content({
 	config: defineDocsConfig({
 		title: 'Example docs',
 		baseHref: '/docs',
+		site: 'https://example.com',
 		convention: {
 			mode: 'authored',
 			frontmatter: {

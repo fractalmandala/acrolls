@@ -7,7 +7,8 @@ Canonical CSS and indented Sass styles for Acrolls.
 ```js
 import 'acrolls/styles/foundation.css'; // mechanics only
 import 'acrolls/styles/default.css';    // foundation + editorial scale
-import 'acrolls/styles/theme.css';      // theming kit (fractalthemer)
+import 'acrolls/styles/colors.css';     // lean light/dark colors (no fractalthemer)
+import 'acrolls/styles/theme.css';      // full theme builder (fractalthemer)
 ```
 
 ## Sass
@@ -24,9 +25,10 @@ matching CSS preset.
 
 ## Theming kit
 
-`acrolls/styles/theme` forwards [fractalthemer](https://www.npmjs.com/package/fractalthemer)
-(40+ light/dark themes, aura backgrounds, theme picker) plus an Acrolls color baseline and a
-token bridge. `fractalthemer` is a dependency, so it installs with `acrolls`.
+Two tiers. **Lean:** `acrolls/styles/colors` — self-contained light/dark, no fractalthemer.
+**Full:** `acrolls/styles/theme` forwards [fractalthemer](https://www.npmjs.com/package/fractalthemer)
+(40+ light/dark themes, aura backgrounds, theme picker) over the same baseline. `fractalthemer` is
+an **optional peer dependency** — install it explicitly (`pnpm add fractalthemer`) to use `theme`.
 
 ```sass
 @use 'acrolls/styles/theme'

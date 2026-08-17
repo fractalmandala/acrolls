@@ -67,6 +67,9 @@ export type DocsDocumentConfig = {
 export type DocsContentConfig = {
 	title: string;
 	baseHref: string;
+	/** Absolute site origin (e.g. https://example.com), no trailing slash — used to
+	 * build absolute URLs for canonical tags, Open Graph, sitemap, and llms.txt. */
+	site?: string;
 	/** Optional root landing filename stem used when no host entry overrides it. */
 	index?: string;
 	subtitle?: string;
@@ -200,6 +203,7 @@ export function createDocsContentSource<TDocument>(options: {
 	const nav = hasDefinition
 		? buildDefinedNav(records, config, baseHref)
 		: buildNav(root, records, config, baseHref);
+	if (config.site) nav.site = config.site.replace(/\/+$/, '');
 	const documents = [...records].sort(compareDocuments);
 	const diagnostics = [
 		...admission.diagnostics,

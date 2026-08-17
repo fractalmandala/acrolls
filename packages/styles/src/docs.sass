@@ -384,3 +384,46 @@
 	.acrolls-docs-pager__link--next
 		text-align: left
 		align-items: flex-start
+
+// Docs search (Pagefind) — minimal functional styling; refine to taste.
+.acrolls-docs-search
+	position: relative
+.acrolls-docs-search__input
+	width: 100%
+	padding: 0.5rem 0.75rem
+	border: 1px solid var(--acrolls-docs-border)
+	border-radius: var(--acrolls-docs-radius)
+	background: var(--acrolls-docs-surface)
+	color: var(--acrolls-docs-fg)
+	font: inherit
+.acrolls-docs-search__note
+	margin: 0.5rem 0 0
+	color: var(--acrolls-docs-muted)
+	font-size: 0.9em
+.acrolls-docs-search__results
+	list-style: none
+	margin: 0.5rem 0 0
+	padding: 0.35rem
+	display: flex
+	flex-direction: column
+	gap: 0.15rem
+	border: 1px solid var(--acrolls-docs-border)
+	border-radius: var(--acrolls-docs-radius)
+	background: var(--acrolls-docs-surface)
+	max-height: 22rem
+	overflow: auto
+.acrolls-docs-search__result a
+	display: flex
+	flex-direction: column
+	gap: 0.15rem
+	padding: 0.5rem 0.6rem
+	border-radius: calc(var(--acrolls-docs-radius) * 0.7)
+	color: inherit
+	text-decoration: none
+.acrolls-docs-search__result a:hover
+	background: color-mix(in oklab, var(--acrolls-docs-accent) 12%, transparent)
+.acrolls-docs-search__result-title
+	font-weight: 600
+.acrolls-docs-search__result-excerpt
+	color: var(--acrolls-docs-muted)
+	font-size: 0.9em

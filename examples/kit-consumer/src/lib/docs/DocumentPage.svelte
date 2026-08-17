@@ -1,23 +1,19 @@
 <script lang="ts">
-	import { docs } from './source';
-	import { DocsPageHeader } from 'acrolls/docs';
+	import type { Component } from 'svelte';
+	import { docs, raw } from './source';
+	import { DocsPageHeader, CopyPageMarkdown, docsPageMarkdown } from 'acrolls/docs';
 
-	let { slug }: { slug: string } = $props();
+	// Article is resolved in the route `load` so it prerenders with content (SSR,
+	// SEO, and Pagefind all need the prose in the static HTML — not an {#await}).
+	let { slug, Article }: { slug: string; Article?: Component } = $props();
 	const document = $derived(docs.get(slug));
+	const markdown = $derived(docsPageMarkdown(docs, slug, raw));
 </script>
 
-<svelte:head>
-	<title>{document?.title ?? 'Example docs'} · Example docs</title>
-	<meta name="description" content={document?.description ?? 'Generated Acrolls documentation'} />
-</svelte:head>
-
 {#if document}
-	{#await document.loader() then Article}
-		<DocsPageHeader title={document.title} description={document.description} />
-		<Article />
-	{:catch error}
-		<p>Could not load this documentation page: {error instanceof Error ? error.message : String(error)}</p>
-	{/await}
+	<DocsPageHeader title={document.title} description={document.description} />
+	{#if markdown}<CopyPageMarkdown {markdown} />{/if}
+	{#if Article}<Article />{/if}
 {:else}
 	<p>Documentation page not found.</p>
 {/if}

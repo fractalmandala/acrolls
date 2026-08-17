@@ -191,6 +191,7 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 | `persistOpen` | `true` | localStorage accordion state |
 | `tocMinLevel` / `tocMaxLevel` | `2` / `3` | Heading levels in TOC |
 | `menuLabel` | `Docs menu` | Mobile button |
+| `searchable` | `true` | Mark the article `data-pagefind-body`; set `false` to exclude the page from search (see [Search](#search-pagefind)) |
 
 ---
 
@@ -290,3 +291,117 @@ Use different `storageKey` values.
 ## 8. Without the shell
 
 You can still use Publication alone for blogs. Docs shell is optional.
+
+---
+
+## Search (Pagefind)
+
+Full-text search is an optional add-on built on [Pagefind](https://pagefind.app) — a post-build
+indexer over your prerendered HTML. Acrolls takes no pagefind dependency; `DocsSearch` loads the
+runtime the build step emits.
+
+1. Install the indexer and make sure your docs prerender to static HTML:
+
+```bash
+pnpm add -D pagefind @sveltejs/adapter-static
+```
+
+2. Run pagefind after the build (adapter-static outputs to `build/`):
+
+```jsonc
+// package.json
+"scripts": { "build": "vite build && pagefind --site build" }
+```
+
+3. Place `<DocsSearch />` — e.g. in the shell header:
+
+```svelte
+<script lang="ts">
+  import { DocsShell, DocsSearch } from 'acrolls/docs';
+  import { docs } from '../../lib/docs/source';
+  import { page } from '$app/state';
+
+  let { children } = $props();
+  const searchable = $derived(
+    !(docs.get(page.url.pathname)?.metadata?.search as { exclude?: boolean } | undefined)?.exclude
+  );
+</script>
+
+<DocsShell nav={docs.nav} pathname={page.url.pathname} {searchable}>
+  {#snippet header()}<DocsSearch />{/snippet}
+  {@render children()}
+</DocsShell>
+```
+
+`DocsShell` marks the article `data-pagefind-body` and the sidebar/TOC/pager `data-pagefind-ignore`
+so search indexes prose, not chrome. Set `searchable={false}` (or frontmatter `search: { exclude: true }`)
+to keep a page out of the index. `DocsSearch` degrades to a note when the index is absent (dev).
+
+> **Content must prerender.** Resolve the article component in the route `load` and render it
+> directly — an `{#await document.loader()}` block leaves the prerendered HTML empty, so Pagefind
+> (and SEO, and no-JS readers) get nothing to index.
+
+---
+
+## SEO & social images
+
+`DocsSeo` emits head metadata and JSON-LD from the content tree; add it once in the docs layout.
+Absolute URLs need a `site` origin on the docs config (`defineDocsConfig({ site: 'https://…' })`).
+
+```svelte
+<script lang="ts">
+  import { DocsSeo, docsOgImagePath } from 'acrolls/docs';
+  import { docs } from '../../lib/docs/source';
+  import { page } from '$app/state';
+  const doc = $derived(docs.get(page.url.pathname));
+</script>
+
+<DocsSeo
+  nav={docs.nav}
+  pathname={page.url.pathname}
+  document={doc}
+  ogImage={docsOgImagePath(doc ?? 'index')}
+  site={{ twitter: '@you', locale: 'en_US' }}
+/>
+```
+
+This produces `<title>`, description, canonical, robots, Open Graph, Twitter, and JSON-LD
+(`WebSite` on the index, `TechArticle` on pages, plus `BreadcrumbList`). Per-page frontmatter
+`seo: { title, description, image, canonical, noindex }` overrides any field. Add `sitemap.xml`
+and `robots.txt` with `docsSitemap(docs)` / `docsRobots(docs)` in prerendered `+server.ts` routes.
+
+**Open Graph images (optional, build-time).** Acrolls owns the card design (`acrollsOgCard`);
+the host installs the renderer and prerenders one PNG per page:
+
+```bash
+pnpm add -D satori @resvg/resvg-js @fontsource/inter
+```
+
+```ts
+// src/routes/og/[slug]/+server.ts
+import satori from 'satori';
+import { Resvg } from '@resvg/resvg-js';
+import { read } from '$app/server';
+import fontUrl from '@fontsource/inter/files/inter-latin-700-normal.woff?url';
+import { acrollsOgCard, docsOgEntries, docsOgSlug } from 'acrolls/docs';
+import { docs } from '../../../lib/docs/source';
+
+export const prerender = true;
+export const entries = () => docsOgEntries(docs);
+
+export async function GET({ params }) {
+  const flat = params.slug.replace(/\.png$/, '');
+  const doc = docs.documents.find((d) => docsOgSlug(d) === flat);
+  const svg = await satori(acrollsOgCard({ title: doc?.title ?? docs.nav.title, description: doc?.description }), {
+    width: 1200, height: 630,
+    fonts: [{ name: 'Inter', data: await read(fontUrl).arrayBuffer(), weight: 700, style: 'normal' }]
+  });
+  return new Response(new Uint8Array(new Resvg(svg).render().asPng()), {
+    headers: { 'content-type': 'image/png' }
+  });
+}
+```
+
+Pass `ogImage={docsOgImagePath(doc)}` to `DocsSeo` (above) so `og:image`/`twitter:image` point at
+the generated PNG. `acrollsOgCard` accepts `accent` / `background` / `foreground` / `eyebrow` to
+rebrand the card.

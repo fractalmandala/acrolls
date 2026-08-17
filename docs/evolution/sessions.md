@@ -6,6 +6,138 @@ Chronological record of working sessions and what each changed. Newest first. Se
 
 ---
 
+## 2026-08-17 · S9 — Santa-loop review of the P14–P19 batch
+
+**Verdict: NICE** (Reviewer A: Opus = PASS; Reviewer B: Sonnet = PASS). Zero critical issues.
+
+**Tooling caveat:** codex (capped to Aug 20) and gemini (daily quota exhausted) were both
+unavailable, so Reviewer B fell back to a same-host Sonnet agent — context-isolated but NOT
+cross-vendor model diversity this round.
+
+**Both reviewers independently converged on two real accuracy nits (fixed):**
+- `theme.sass` header comment and ADR-0004 described the layer order as scheme → fractalthemer →
+  bridge, but the code emits scheme → **bridge** → fractalthemer. Harmless (bridge is pure `var()`
+  indirection; fractalthemer never sets the shadcn names) but the prose overstated it — corrected.
+- `@sveltejs/adapter-auto` remained a devDependency of the example though only adapter-static is
+  used — removed.
+
+**Non-blocking suggestions (tracked):** finalize the `_scheme.sass` dark seed values before release
+(P14 note); keyed `{#each}` in DocsSearch; a diagnostic when raw source is missing for a known doc.
+
+Post-fix: styles + example checks green.
+
+---
+
+## 2026-08-17 · S8 — Build: OG images (P17)
+
+**Focus:** Build-time Open Graph images, one per page.
+
+**Shipped**
+- **`og.ts`** (`@acrolls/docs`): `acrollsOgCard()` returns a Satori element tree (plain objects —
+  Acrolls takes NO satori dependency), plus `docsOgSlug` / `docsOgImagePath` / `docsOgEntries`.
+- **SEO wiring**: `buildDocsSeo`/`DocsSeo` gained an `ogImage` input; precedence is per-page
+  frontmatter `seo.image` > auto OG > site default. Setting it flips twitter card to
+  `summary_large_image`.
+- **Example**: `og/[slug]` prerendered endpoint renders each card via satori + `@resvg/resvg-js`
+  with Inter (`.woff` from `@fontsource/inter`, read via `$app/server` `read()`); build-time
+  devDeps only. Layout passes `docsOgImagePath(currentDoc)` to `DocsSeo`.
+
+**Key finding:** nested OG slugs caused a SvelteKit prerender file-vs-directory conflict
+(`/og/guides.png` + `/og/guides/…`). Fixed by **flattening** slugs (`/` → `--`) into a single
+`og/[slug]` route.
+
+**Verification:** docs + example `svelte-check` 0 errors; production build emitted 5 valid
+1200×630 PNGs; card renders correctly (eyebrow/title/description/brand, Inter font); page
+`og:image`/`twitter:image` resolve to absolute `https://example.com/og/<slug>.png` and the
+twitter card is `summary_large_image`.
+
+---
+
+## 2026-08-16 · S7 — Build: Pagefind search (P15)
+
+**Focus:** Full-text search over the prerendered docs.
+
+**Shipped**
+- **`DocsSearch.svelte`** (`@acrolls/docs`) — dynamically loads `/pagefind/pagefind.js` (Acrolls
+  takes NO pagefind dependency), debounced query, renders results with Pagefind's `<mark>`
+  excerpts, and degrades to a note when the index is absent (dev).
+- **Indexing scope** in `DocsShell`: `data-pagefind-body` on the article, `data-pagefind-ignore`
+  on sidebar/top/toc/pager (and the copy button), plus a `searchable` prop so a page can be
+  excluded (honors frontmatter `search: { exclude: true }`).
+- **Example wiring**: switched to `@sveltejs/adapter-static` + full prerender, added `pagefind`
+  devDep and a `vite build && pagefind --site build` step, placed `<DocsSearch>` in the shell
+  header, minimal search styles in `docs.sass`.
+
+**Key finding (P21):** `{#await document.loader()}` in DocumentPage renders only the *pending*
+branch during prerender, so the static HTML had an empty article — Pagefind indexed 0 pages, and
+SSR/SEO/no-JS all lose the content. Fixed by resolving the article component in the universal
+`load` (non-serializable is allowed in `+page.ts`) and rendering it synchronously. The
+onboarding-recommended snippet still teaches `{#await}` and should be updated.
+
+**Verification:** docs + example `svelte-check` 0 errors; production build indexed 5 pages / 242
+words (article-only — chrome ignored); served `build/` and confirmed a live query returns a
+highlighted result with the correct URL.
+
+---
+
+## 2026-08-16 · S6 — Build: optional theme (P14), site origin (P19), SEO (P16), AI static (P18)
+
+**Focus:** Implement the mechanical / no-new-dep proposals toward public release.
+
+**Shipped**
+- **P14 — theme builder optional.** Color layer split into `_scheme.sass` (self-contained light+dark)
+  + `_bridge.sass` (shadcn mapping). New lean surface `acrolls/styles/colors` (no fractalthemer);
+  `acrolls/styles/theme` layers fractalthemer over it. fractalthemer → **optional peer dependency**
+  on `@acrolls/styles` and the `acrolls` umbrella. ADR-0004 (supersedes ADR-0003's dep decision).
+  build/check green; `colors.css` self-contained (134 lines), `theme.css` inlines fractalthemer.
+  Dark palette = seed values to refine.
+- **P19 — `site` origin.** `site?` on `DocsContentConfig` + `DocsNav`, surfaced as `docs.nav.site`.
+- **P16 — SEO.** `seo.ts` (`buildDocsSeo` → title/description/canonical/robots/OG/Twitter + JSON-LD
+  WebSite·TechArticle·BreadcrumbList; `docsSitemap`; `docsRobots`) + `DocsSeo.svelte`. Per-page
+  `seo{}` frontmatter overrides. Verified in the example: absolute canonical/OG, correct JSON-LD
+  per page type (WebSite on index, TechArticle on pages), sitemap.xml (namespace bug caught+fixed),
+  robots.txt.
+- **P18 — AI static tier.** `ai.ts` (`docsLlmsTxt`, `docsLlmsFullTxt`, `docsPageMarkdown`,
+  `isAiExcluded`) + `CopyPageMarkdown.svelte` + a `markdownRaw` helper in `@acrolls/sveltekit` that
+  keys raw source to `document.key`. Example routes `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`,
+  `/robots.txt` (prerenderable). Server tier (Ask/MCP) still deferred.
+
+**Verification:** `@acrolls/docs` svelte-check 0 errors; example `svelte-check` 0 errors (after
+rebuilding docs + sveltekit dist so new exports resolve for consumers); live example confirmed all
+endpoints + head tags. Copy button's clipboard write is blocked under the sandbox's programmatic
+click (works on a real user gesture); raw-source path confirmed via llms-full output.
+
+**Remaining from S5:** P15 (Pagefind) and P17 (OG images) — both need new dependencies + build
+pipeline. P20 (frontmatter breadth) partially advanced (seo/ai frontmatter keys now read).
+
+---
+
+## 2026-08-16 · S5 — Pre-release capability decisions (search, SEO, OG, AI, frontmatter)
+
+**Focus:** Lock the direction for the remaining public-release capabilities, benchmarked against
+Blume (useblume.dev) and svocs (svocs.dev). Planning only — no code yet.
+
+**Decisions (all logged as proposals; all optional, static-first add-ons):**
+- **Search → Pagefind** (P15): post-build index over the prerendered output, chunked, scales
+  10→10k, no backend. Preferred over Orama (monolithic, loads whole index client-side).
+- **SEO → adopt Blume's shape** (P16): site `seo{}` + per-page `seo{}` frontmatter, JSON-LD
+  (WebSite/TechArticle/BreadcrumbList — the last straight from `buildDocsCrumbs`), sitemap/robots.
+  Depends on a new **`site` origin** config (P19), which is the first thing to build.
+- **OG images → build-time** (P17): satori+resvg default (Takumi as native alt), fed from the
+  `content()` tree, per-page `seo.image` override, default card = the Module Tile mark.
+- **AI → two tiers** (P18): static now (llms.txt/full, per-page `.md` endpoint, copy-as-markdown,
+  `ai.exclude`); server later (Ask chat, MCP server) gated on server output.
+- **Frontmatter → keep title-required-authored, add Blume's optional breadth** (P20); lock IA
+  precedence as host config > frontmatter `sidebar` > inferred.
+
+**Through-line:** lean install stays lean; each capability bolts on when wanted — same model as
+the theme builder (P14).
+
+**Sources:** useblume.dev/docs (seo, ai, frontmatter), svocs.dev/docs/og-images, Pagefind vs Orama
+comparisons.
+
+---
+
 ## 2026-08-16 · S4 — Santa-loop adversarial review of the theming + base-href changeset
 
 **Focus:** Run the dual-independent-reviewer convergence loop (santa-loop) over the S1–S3
