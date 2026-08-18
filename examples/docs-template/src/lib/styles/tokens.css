@@ -1,0 +1,171 @@
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Folio (technical journal)
+   Light + Dark via [data-theme] on <html>
+   Density via [data-density="comfortable" | "compact"]
+   Accent via [data-accent="copper" | "verdigris" | "iris"]
+   Default: Copper + comfortable
+   ═══════════════════════════════════════════════════════════════ */
+
+@import "./fonts.css";
+
+:root {
+  /* ── Palette — Light ── */
+  --bg:      oklch(98.6% 0.004 250);
+  --surface: oklch(100% 0 0);
+  --fg:      oklch(18% 0.016 70);
+  --muted:   oklch(43% 0.016 70);
+  --border:  oklch(90% 0.006 250);
+  --accent:  oklch(50% 0.13 48);
+
+  --accent-soft: oklch(95.5% 0.028 48);
+
+  --code-bg:       oklch(96.4% 0.008 250);
+  --nav-hover-bg:  oklch(96.4% 0.008 250);
+  --nav-active-bg: transparent;
+
+  --scrollbar-thumb:  oklch(82% 0.012 70);
+  --scrollbar-track: transparent;
+
+  --transition-theme: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --callout-note-bg:      oklch(96.5% 0.022 48);
+  --callout-note-border:  oklch(64% 0.11 48);
+  --callout-warn-bg:      oklch(96% 0.04 80);
+  --callout-warn-border:  oklch(62% 0.14 80);
+  --callout-tip-bg:       oklch(96% 0.035 155);
+  --callout-tip-border:   oklch(52% 0.12 155);
+  --callout-danger-bg:    oklch(96% 0.04 25);
+  --callout-danger-border: oklch(55% 0.17 25);
+
+  --toc-active: oklch(50% 0.13 48);
+
+  /* ── Typography ── */
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body:    "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --text-caption:  0.75rem;
+  --text-small:    0.8125rem;
+  --text-body:     1rem;
+  --text-h3:       1.25rem;
+  --text-h2:       1.5625rem;
+  --text-h1:       1.9375rem;
+  --text-display:  2.5rem;
+
+  /* ── Spacing ── */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* ── Layout ── */
+  --sidebar-width: 260px;
+  --toc-width:     220px;
+  --content-max:   780px;
+  --header-height: 56px;
+
+  /* ── Density — comfortable (default) ── */
+  --leading-body: 1.65;
+  --leading-small: 1.55;
+  --leading-display: 1.12;
+  --leading-lead: 1.5;
+  --block-gap: 1rem;
+  --section-gap: 3.25rem;
+}
+
+[data-density="comfortable"] {
+  --leading-body: 1.65;
+  --leading-small: 1.55;
+  --leading-display: 1.12;
+  --leading-lead: 1.5;
+  --block-gap: 1rem;
+  --section-gap: 3.25rem;
+}
+
+[data-density="compact"] {
+  --leading-body: 1.5;
+  --leading-small: 1.45;
+  --leading-display: 1.08;
+  --leading-lead: 1.42;
+  --block-gap: 0.75rem;
+  --section-gap: 2.15rem;
+}
+
+/* ── Palette — Dark ── */
+[data-theme="dark"] {
+  --bg:      oklch(15% 0.012 250);
+  --surface: oklch(18.5% 0.014 250);
+  --fg:      oklch(93% 0.01 80);
+  --muted:   oklch(70% 0.016 70);
+  --border:  oklch(28% 0.012 250);
+  --accent:  oklch(74% 0.12 52);
+
+  --accent-soft: oklch(26% 0.05 48);
+
+  --code-bg:       oklch(20% 0.012 250);
+  --nav-hover-bg:  oklch(22% 0.014 250);
+  --nav-active-bg: transparent;
+  --scrollbar-thumb: oklch(34% 0.012 70);
+
+  --callout-note-bg:      oklch(22% 0.035 48);
+  --callout-note-border:  oklch(68% 0.10 52);
+  --callout-warn-bg:      oklch(22% 0.05 80);
+  --callout-warn-border:  oklch(70% 0.13 80);
+  --callout-tip-bg:       oklch(22% 0.045 155);
+  --callout-tip-border:   oklch(68% 0.11 155);
+  --callout-danger-bg:    oklch(22% 0.055 25);
+  --callout-danger-border: oklch(68% 0.16 25);
+
+  --toc-active: oklch(74% 0.12 52);
+}
+
+/* Accent A — Copper (default; explicit hook) */
+[data-accent="copper"] {
+  --accent: oklch(50% 0.13 48);
+  --accent-soft: oklch(95.5% 0.028 48);
+  --toc-active: oklch(50% 0.13 48);
+  --callout-note-bg: oklch(96.5% 0.022 48);
+  --callout-note-border: oklch(64% 0.11 48);
+}
+[data-theme="dark"][data-accent="copper"] {
+  --accent: oklch(74% 0.12 52);
+  --accent-soft: oklch(26% 0.05 48);
+  --toc-active: oklch(74% 0.12 52);
+  --callout-note-bg: oklch(22% 0.035 48);
+  --callout-note-border: oklch(68% 0.10 52);
+}
+
+/* Accent B — Verdigris */
+[data-accent="verdigris"] {
+  --accent: oklch(46% 0.10 178);
+  --accent-soft: oklch(95.5% 0.03 178);
+  --toc-active: oklch(46% 0.10 178);
+  --callout-note-bg: oklch(96.5% 0.022 178);
+  --callout-note-border: oklch(52% 0.09 178);
+}
+[data-theme="dark"][data-accent="verdigris"] {
+  --accent: oklch(74% 0.09 180);
+  --accent-soft: oklch(24% 0.04 178);
+  --toc-active: oklch(74% 0.09 180);
+  --callout-note-bg: oklch(22% 0.035 178);
+  --callout-note-border: oklch(66% 0.08 180);
+}
+
+/* Accent C — Iris */
+[data-accent="iris"] {
+  --accent: oklch(48% 0.15 305);
+  --accent-soft: oklch(95.5% 0.03 305);
+  --toc-active: oklch(48% 0.15 305);
+  --callout-note-bg: oklch(96.5% 0.024 305);
+  --callout-note-border: oklch(58% 0.12 305);
+}
+[data-theme="dark"][data-accent="iris"] {
+  --accent: oklch(76% 0.12 305);
+  --accent-soft: oklch(25% 0.05 305);
+  --toc-active: oklch(76% 0.12 305);
+  --callout-note-bg: oklch(22% 0.04 305);
+  --callout-note-border: oklch(68% 0.10 305);
+}

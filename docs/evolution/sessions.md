@@ -6,6 +6,34 @@ Chronological record of working sessions and what each changed. Newest first. Se
 
 ---
 
+## 2026-08-17 · S10 — Scoped: multi-source docs (P22)
+
+**Focus:** A use case not yet covered — docs that are NOT already consolidated in one folder.
+Several separate sets (set1 / set2 / set3, each in its own location) should appear on one site
+under a single docs hierarchy, each set becoming a first-level subsection.
+
+**Finding (engine already supports it):** `content()` takes one `ContentLoader`, but a loader is
+just `{ eager, list() }` returning `LoadedDocument[]`, and the nav tree is built purely by
+splitting each document's `key` on `/` (`insertRecord` walks segments into a virtual root). There
+is **no assumption that keys share a filesystem root**, and the first path segment becomes a
+first-level section. So merging N sources with per-set key prefixes (`set1/…`, `set2/…`) yields
+exactly the requested hierarchy, and breadcrumbs/pager/TOC/search/SEO/OG all keep working because
+they consume the merged source.
+
+**Gap:** no first-class merge helper. Proposed `mergeLoaders([{ prefix, loader }, …])` (concat +
+prefix keys + collision error) plus a matching `mergeRaw` so the AI tier stays aligned.
+
+**Real constraint (decides the design):** `.md` bodies must be compiled by Vite, and
+`import.meta.glob` needs static literal patterns. Reach strategies for out-of-tree folders:
+relative globs (needs `server.fs.allow` in dev), **symlink each set into one content dir
+(recommended default)**, or a copy/sync step before build (most robust for CI / other repos). A
+pure Node-`fs` loader cannot replace these for component bodies — only for raw-HTML rendering via
+`renderAcrollsArticleHtml`.
+
+**Status:** logged as P22, `proposed`. Spec first, then build — not started.
+
+---
+
 ## 2026-08-17 · S9 — Santa-loop review of the P14–P19 batch
 
 **Verdict: NICE** (Reviewer A: Opus = PASS; Reviewer B: Sonnet = PASS). Zero critical issues.
