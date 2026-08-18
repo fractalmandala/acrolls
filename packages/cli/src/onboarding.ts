@@ -123,9 +123,18 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	const docsLayoutReady =
 		/(DocsShell|DocsSidebar)/.test(docsLayoutSourceForCheck) &&
 		docsLayoutSourceForCheck.includes('docs.nav');
+	// Two supported shapes for resolving the article body:
+	//   1. load-resolved (recommended) — the route `load` awaits `document.loader()` and passes the
+	//      component in, so the page prerenders with real content. The renderer takes it as a prop.
+	//   2. legacy in-component `{#await document.loader()}` — still recognized, but it renders only
+	//      the pending branch during prerender, so SSR/SEO/search see an empty article.
+	const documentPageResolvesBody =
+		documentPageSource.includes('loader') ||
+		/\bArticle\b/.test(documentPageSource) ||
+		catchAllLoadSource.includes('loader()');
 	const documentPageReady =
 		documentPageSource.includes('docs.get') &&
-		documentPageSource.includes('loader') &&
+		documentPageResolvesBody &&
 		(documentPageSource.includes('Publication') ||
 			configSource.includes('PublicationLayout') ||
 			configSource.includes('createAcrollsSvelteKitMdsvexPreprocessor'));

@@ -26,7 +26,7 @@ Live status of every idea and decision from the [session ledger](./sessions.md).
 | P19 | `site` origin config primitive (absolute URLs for canonical/OG/sitemap/llms) | `shipped` | S5→S6 | `site?` on `DocsContentConfig` + `DocsNav`, surfaced as `docs.nav.site`; used by SEO + AI helpers |
 | P20 | Frontmatter breadth — adopt Blume's optional nested fields (`seo`/`search`/`ai`/`draft`/`date`/`lastModified`/`sidebar`) while keeping title-required-in-authored | `proposed` | S5 | **decision to lock:** IA precedence = host config > frontmatter `sidebar.{order,label,…}` > inferred |
 | P21 | Resolve article component in route `load` (not `{#await}`) so pages prerender with content | `shipped (example); onboarding TODO` | S7 | required for SSR/SEO/Pagefind — `{#await document.loader()}` renders only the pending branch during prerender. Fixed in example; `onboarding.ts` docs`+page`/DocumentPage snippets still teach `{#await}` and should switch |
-| P22 | Multi-source docs — merge N separate content folders into one hierarchy, each set a first-level section (`mergeLoaders`/`mergeRaw` + key prefixing) | `proposed` | S10 | engine already supports it (nav tree is built from `key` segments; no shared-root assumption) — the gap is a first-class merge helper + a documented strategy for how out-of-tree folders reach Vite's static globs. **Spec first, then build.** |
+| P22 | Multi-source docs — merge N separate content folders into one hierarchy, each set a first-level section (`mergeLoaders`/`mergeRaw` + key prefixing) | `shipped` | S10→S11 | `packages/docs/src/lib/merge.ts` (framework-neutral ContentLoader composition), re-exported via `acrolls/content` + `acrolls/docs`; collision → `DocsContentError`; 9 unit tests. Example merges `src/content` + `src/content-handbook`; verified: 8 pages indexed, handbook routes/nav/crumbs/pager/OG/llms/sitemap all correct. Docs in integrate-sveltekit.md incl. out-of-tree reach strategies |
 
 ## Next to build (accepted, not yet implemented)
 
@@ -37,4 +37,3 @@ Live status of every idea and decision from the [session ledger](./sessions.md).
 
 - **P5–P8** — each is scoped and prototyped/described; needs a go/no-go to move to `accepted`.
 - **P4** — needs the prose typography authored, then documented.
-- **P22** — multi-source docs; spec the merge helper + the out-of-tree reach strategy before building.

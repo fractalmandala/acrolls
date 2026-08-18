@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fractalsvelte × Ogygia Architecture Flow Map</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #14161f;
+      --surface-raised: #1c1f2e;
+      --border: #2a2e45;
+      --text: #e2e8f0;
+      --text-muted: #8892b0;
+      --accent: #ff3e00;
+      --accent-glow: rgba(255, 62, 0, 0.2);
+      --node-server: #3b82f6;
+      --node-wire: #8b5cf6;
+      --node-client: #10b981;
+      --node-island: #f59e0b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: "JetBrains Mono", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    .title-group h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-group span {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .search-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--mono);
+      outline: none;
+      width: 220px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus {
+      border-color: var(--accent);
+    }
+    button.btn {
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.btn:hover {
+      background: var(--border);
+      border-color: var(--text-muted);
+    }
+    #workspace {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 62, 0, 0.03) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+      cursor: grab;
+    }
+    #workspace:active {
+      cursor: grabbing;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5000px;
+      height: 5000px;
+      transform-origin: 0 0;
+    }
+    svg#edge-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .flow-node {
+      position: absolute;
+      width: 280px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      cursor: move;
+      transition: box-shadow 0.15s, border-color 0.15s;
+      z-index: 10;
+    }
+    .flow-node:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 30px var(--accent-glow);
+      z-index: 20;
+    }
+    .flow-node.selected {
+      border-color: var(--accent);
+      outline: 2px solid var(--accent);
+    }
+    .flow-node-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top-left-radius: 7px;
+      border-top-right-radius: 7px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .node-title {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .node-kind {
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .kind-server { background: rgba(59, 130, 246, 0.15); color: var(--node-server); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .kind-wire { background: rgba(139, 92, 246, 0.15); color: var(--node-wire); border: 1px solid rgba(139, 92, 246, 0.3); }
+    .kind-client { background: rgba(16, 185, 129, 0.15); color: var(--node-client); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .kind-island { background: rgba(245, 158, 11, 0.15); color: var(--node-island); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .flow-node-body {
+      padding: 12px 14px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .node-meta {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .node-desc {
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    #sidebar {
+      position: absolute;
+      right: 20px;
+      top: 80px;
+      width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+    #sidebar h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+    }
+    .evidence-item {
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .evidence-label {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .evidence-val {
+      font-family: var(--mono);
+      color: var(--text);
+      word-break: break-all;
+    }
+    .legend {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 50;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>Fractalsvelte × Ogygia Flow Map</h1>
+      <span>RF-native Content Model & SvelteKit 5 Architecture</span>
+    </div>
+    <div class="controls">
+      <input type="text" id="search" class="search-box" placeholder="Filter nodes (e.g. folder, remote)..." />
+      <button class="btn" id="reset-btn">Reset View</button>
+    </div>
+  </header>
+
+  <div id="workspace">
+    <div id="canvas-container">
+      <svg id="edge-layer">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5563" />
+          </marker>
+          <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff3e00" />
+          </marker>
+        </defs>
+      </svg>
+      <div id="nodes-container"></div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <h3>Inspector & Evidence</h3>
+    <div id="evidence-content">
+      <p style="color: var(--text-muted); font-size: 12px;">Click any architecture node to inspect file references, container classes, and data boundaries.</p>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: var(--node-server)"></div> Server Layer (Filesystem / Loaders)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--node-wire)"></div> Wire Boundary (Remote Functions / SvelteKit RF)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--node-client)"></div> Client Shell (SSR zero-JS / Region Renderers)</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--node-island)"></div> Interactive Islands (Targeted Hydration / wake: 'visible')</div>
+  </div>
+
+  <script type="application/json" id="fa-flow-data">
+  {
+    "nodes": [
+      {
+        "id": "fs-corpus",
+        "title": "Doc Corpus (NN- Folders)",
+        "kind": "server",
+        "file": "src/content/docs/**/+doc.svx",
+        "class": "fs-convention",
+        "desc": "Ordered filesystem hierarchy with +meta.json sidecars and colocated demos.",
+        "x": 60,
+        "y": 80
+      },
+      {
+        "id": "folder-loader",
+        "title": "folder() Convention Scanner",
+        "kind": "server",
+        "file": "packages/ogygia/src/content/folder.ts",
+        "class": "folder()",
+        "desc": "Normalizes NN- prefixes into sibling order arrays and groups without touching CMS.",
+        "x": 60,
+        "y": 280
+      },
+      {
+        "id": "content-coll",
+        "title": "content() Collection Base",
+        "kind": "server",
+        "file": "packages/ogygia/src/content/collection-base.ts",
+        "class": "Collection",
+        "desc": "Universal, browser-safe collection holding ContentRef catalogs and lazy Entry bodies.",
+        "x": 420,
+        "y": 180
+      },
+      {
+        "id": "remote-wire",
+        "title": "withRemotes() Wire Layer",
+        "kind": "wire",
+        "file": "src/lib/docs.remote.ts",
+        "class": ".remote.ts (query/prerender)",
+        "desc": "SvelteKit Remote Functions: crosses client/server wire with zero parser overhead.",
+        "x": 780,
+        "y": 180
+      },
+      {
+        "id": "region-baker",
+        "title": "RegionValue Ticket Baker",
+        "kind": "wire",
+        "file": "packages/ogygia/src/region.ts",
+        "class": "RegionValue",
+        "desc": "Bakes server-side markdown AST and island markers into a serialized HTML ticket.",
+        "x": 780,
+        "y": 380
+      },
+      {
+        "id": "page-shell",
+        "title": "+page.svelte (Doc Route)",
+        "kind": "client",
+        "file": "src/routes/docs/[...slug]/+page.svelte",
+        "class": "doc-shell (csr = false)",
+        "desc": "Zero initial framework JS shell. Renders page layout and TOC.",
+        "x": 1140,
+        "y": 180
+      },
+      {
+        "id": "doc-component",
+        "title": "<Doc {view}> & <Region>",
+        "kind": "client",
+        "file": "packages/ogygia/src/content/Doc.svelte",
+        "class": "og-doc-body",
+        "desc": "Mounts baked region ticket HTML and manages TOC heading intersection scroll-spy.",
+        "x": 1140,
+        "y": 380
+      },
+      {
+        "id": "islands",
+        "title": "Interactive Islands",
+        "kind": "island",
+        "file": "src/lib/components/docs/ComponentLiveDemo.svelte",
+        "class": "island (wake: 'visible')",
+        "desc": "Isolated hydration root: Svelte 5 runes component active only when scrolled into view.",
+        "x": 1500,
+        "y": 280
+      },
+      {
+        "id": "ripple-engine",
+        "title": "Ripple Spec Renderer",
+        "kind": "island",
+        "file": "src/lib/ripple/RippleRenderer.svelte",
+        "class": "spec-driven-ui",
+        "desc": "Mounts declarative JSON AST trees into live Svelte 5 component hierarchies.",
+        "x": 1500,
+        "y": 480
+      }
+    ],
+    "edges": [
+      { "from": "fs-corpus", "to": "folder-loader", "type": "containment" },
+      { "from": "folder-loader", "to": "content-coll", "type": "containment" },
+      { "from": "content-coll", "to": "remote-wire", "type": "data" },
+      { "from": "remote-wire", "to": "region-baker", "type": "containment" },
+      { "from": "remote-wire", "to": "page-shell", "type": "data" },
+      { "from": "region-baker", "to": "doc-component", "type": "data" },
+      { "from": "page-shell", "to": "doc-component", "type": "containment" },
+      { "from": "doc-component", "to": "islands", "type": "state" },
+      { "from": "doc-component", "to": "ripple-engine", "type": "state" }
+    ]
+  }
+  </script>
+
+  <script>
+    const data = JSON.parse(document.getElementById('fa-flow-data').textContent);
+    const container = document.getElementById('nodes-container');
+    const svg = document.getElementById('edge-layer');
+    const workspace = document.getElementById('workspace');
+    const canvas = document.getElementById('canvas-container');
+    const sidebar = document.getElementById('evidence-content');
+    const search = document.getElementById('search');
+    const resetBtn = document.getElementById('reset-btn');
+
+    let panX = 40, panY = 40, scale = 1;
+    let isPanning = false, startPanX = 0, startPanY = 0;
+    let activeNode = null;
+    let draggedNode = null, dragOffsetX = 0, dragOffsetY = 0;
+
+    function applyTransform() {
+      canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+    applyTransform();
+
+    // Render nodes
+    data.nodes.forEach(n => {
+      const el = document.createElement('div');
+      el.className = 'flow-node';
+      el.id = n.id;
+      el.style.left = n.x + 'px';
+      el.style.top = n.y + 'px';
+
+      el.innerHTML = `
+        <div class="flow-node-header">
+          <span class="node-title">${n.title}</span>
+          <span class="node-kind kind-${n.kind}">${n.kind}</span>
+        </div>
+        <div class="flow-node-body">
+          <span class="node-meta">${n.file}</span>
+          <p class="node-desc">${n.desc}</p>
+        </div>
+      `;
+
+      el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        draggedNode = n;
+        dragOffsetX = e.clientX / scale - n.x;
+        dragOffsetY = e.clientY / scale - n.y;
+        selectNode(n);
+        e.stopPropagation();
+      });
+
+      container.appendChild(el);
+    });
+
+    function selectNode(n) {
+      document.querySelectorAll('.flow-node').forEach(el => el.classList.remove('selected'));
+      const el = document.getElementById(n.id);
+      if (el) el.classList.add('selected');
+
+      sidebar.innerHTML = `
+        <div class="evidence-item">
+          <div class="evidence-label">Component / Unit</div>
+          <div class="evidence-val">${n.title}</div>
+        </div>
+        <div class="evidence-item">
+          <div class="evidence-label">Architecture Kind</div>
+          <div class="evidence-val"><span class="node-kind kind-${n.kind}">${n.kind}</span></div>
+        </div>
+        <div class="evidence-item">
+          <div class="evidence-label">Codebase Path</div>
+          <div class="evidence-val">${n.file}</div>
+        </div>
+        <div class="evidence-item">
+          <div class="evidence-label">CSS / Identifier</div>
+          <div class="evidence-val">${n.class}</div>
+        </div>
+        <div class="evidence-item">
+          <div class="evidence-label">Functional Role</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${n.desc}</div>
+        </div>
+      `;
+      renderEdges();
+    }
+
+    function renderEdges() {
+      // Clear existing lines
+      const existing = svg.querySelectorAll('path.edge-path');
+      existing.forEach(p => p.remove());
+
+      data.edges.forEach(e => {
+        const from = data.nodes.find(n => n.id === e.from);
+        const to = data.nodes.find(n => n.id === e.to);
+        if (!from || !to) return;
+
+        const x1 = from.x + 280;
+        const y1 = from.y + 50;
+        const x2 = to.x;
+        const y2 = to.y + 50;
+
+        const dx = Math.max(40, (x2 - x1) / 2);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', e.type === 'data' ? '#8b5cf6' : e.type === 'state' ? '#f59e0b' : '#3b82f6');
+        path.setAttribute('stroke-width', '2');
+        if (e.type === 'data' || e.type === 'state') {
+          path.setAttribute('stroke-dasharray', '4 4');
+        }
+        path.setAttribute('marker-end', 'url(#arrow)');
+        path.setAttribute('class', 'edge-path');
+        svg.appendChild(path);
+      });
+    }
+
+    renderEdges();
+
+    // Workspace drag / pan
+    workspace.addEventListener('mousedown', (e) => {
+      if (e.target === workspace || e.target.id === 'edge-layer') {
+        isPanning = true;
+        startPanX = e.clientX - panX;
+        startPanY = e.clientY - panY;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (draggedNode) {
+        draggedNode.x = e.clientX / scale - dragOffsetX;
+        draggedNode.y = e.clientY / scale - dragOffsetY;
+        const el = document.getElementById(draggedNode.id);
+        if (el) {
+          el.style.left = draggedNode.x + 'px';
+          el.style.top = draggedNode.y + 'px';
+        }
+        renderEdges();
+      } else if (isPanning) {
+        panX = e.clientX - startPanX;
+        panY = e.clientY - startPanY;
+        applyTransform();
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      draggedNode = null;
+      isPanning = false;
+    });
+
+    // Zoom
+    workspace.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
+      scale = Math.min(2.0, Math.max(0.4, scale * zoomFactor));
+      applyTransform();
+    }, { passive: false });
+
+    // Reset button
+    resetBtn.addEventListener('click', () => {
+      panX = 40;
+      panY = 40;
+      scale = 1;
+      applyTransform();
+    });
+
+    // Search filter
+    search.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      data.nodes.forEach(n => {
+        const el = document.getElementById(n.id);
+        const match = n.title.toLowerCase().includes(q) || n.file.toLowerCase().includes(q) || n.desc.toLowerCase().includes(q);
+        el.style.opacity = match ? '1' : '0.15';
+      });
+    });
+  </script>
+</body>
+</html>

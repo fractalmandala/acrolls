@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { DocsCrumb, DocsNav, DocsPagerLink } from './types.js';
+	import type { DocsCrumb, DocsNav, DocsPagerLink, DocsTocItem } from './types.js';
 	import { buildDocsCrumbs, docsPager, withNavIds } from './nav.js';
 	import DocsSidebar from './DocsSidebar.svelte';
 	import DocsBreadcrumbs from './DocsBreadcrumbs.svelte';
@@ -17,6 +17,11 @@
 		showPager?: boolean;
 		/** Right-rail table of contents from article headings */
 		showToc?: boolean;
+		/**
+		 * Compile-time headings (a page's `metadata.headings`) for a server-rendered TOC. When
+		 * omitted, the TOC falls back to scanning the article DOM after mount.
+		 */
+		headings?: DocsTocItem[];
 		/** Break out of a constrained host column when the shell owns the page layout */
 		fullBleed?: boolean;
 		tocMinLevel?: number;
@@ -39,6 +44,7 @@
 		filterable = true,
 		showPager = true,
 		showToc = true,
+		headings,
 		fullBleed = false,
 		tocMinLevel = 2,
 		tocMaxLevel = 3,
@@ -131,7 +137,7 @@
 
 			{#if showToc}
 				<aside class="acrolls-docs-shell__toc" aria-label="Table of contents" data-pagefind-ignore>
-					<DocsToc contentEl={articleEl} watch={pathname} minLevel={tocMinLevel} maxLevel={tocMaxLevel} />
+					<DocsToc {headings} contentEl={articleEl} watch={pathname} minLevel={tocMinLevel} maxLevel={tocMaxLevel} />
 				</aside>
 			{/if}
 		</div>

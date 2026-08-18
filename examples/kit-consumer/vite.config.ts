@@ -24,6 +24,9 @@ const devSourceAliases = [
 ];
 
 export default defineConfig(({ command }) => ({
+  // Never fail on a busy port — take the next free one (5174, 5175, …).
+  server: { strictPort: false },
+  preview: { strictPort: false },
   resolve: {
     alias: command === 'serve' ? devSourceAliases : []
   },

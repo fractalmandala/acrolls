@@ -162,6 +162,23 @@ describe('createAcrollsMdsvexPreprocessor', () => {
 		).rejects.toThrow('Unexpected token');
 	});
 
+	it('compiles prose containing nested object literals', async () => {
+		// A nested literal used to be wrapped from the inside out, leaving the outer
+		// braces for Svelte to parse. The document reported as normalized and then
+		// failed the compile preflight, taking the whole build with it.
+		const documents = [
+			'# Config\n\nPass { a: { b: 1 } } to the helper.\n',
+			'# Theme\n\nThe default is { theme: { mode: dark } } for now.\n',
+			'# Deep\n\nUse { a: { b: { c: 1 } } } for nested config.\n'
+		];
+
+		for (const [index, content] of documents.entries()) {
+			const processor = createAcrollsMdsvexPreprocessor();
+			const result = await processor.markup({ content, filename: `nested-${index}.md` });
+			expect(result?.code).toBeTruthy();
+		}
+	});
+
 	it('escapes diagnostic values before placing them in a fallback module', () => {
 		const code = renderInvalidDocumentModule({
 			code: 'test',

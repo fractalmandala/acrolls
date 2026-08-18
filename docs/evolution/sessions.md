@@ -6,6 +6,49 @@ Chronological record of working sessions and what each changed. Newest first. Se
 
 ---
 
+## 2026-08-17 · S11 — Build: multi-source docs (P22)
+
+**Shipped**
+- **`packages/docs/src/lib/merge.ts`** — `mergeLoaders([{ prefix, loader }, …])` composes any
+  `ContentLoader`s (Vite globs, `customSource`, or a mix), prefixing each set's keys so every set
+  becomes a first-level section. Eager only when every source is eager. Duplicate merged keys throw
+  a `DocsContentError` naming both sets. `mergeRaw` applies the same prefixes so the AI tier stays
+  aligned. Placed in `@acrolls/docs` (framework-neutral) rather than `@acrolls/sveltekit`, and
+  re-exported from `collection.ts` so `acrolls/content` surfaces it automatically.
+- **9 unit tests** (`merge.test.ts`) covering prefixing, nested keys, root-merge, prefix
+  normalization, eager/async contract, collision error, same-filename-across-prefixes, and a full
+  `content()` hierarchy assertion. Docs suite: 57/57 pass.
+- **Example proof**: added `src/content-handbook/` as a genuinely separate folder and merged it with
+  `src/content` in `source.ts`.
+- **Docs**: "Multiple content sources" in `integrate-sveltekit.md`, including the out-of-tree reach
+  table (symlink recommended / relative globs / copy-sync) and why a Node `fs` loader can't
+  substitute for `.md` bodies.
+
+**Verification (production build):** routes `/docs/handbook`, `/docs/handbook/conventions`,
+`/docs/handbook/process/review` generated with nesting preserved; Pagefind index 5 → **8 pages**;
+8 OG PNGs incl. the handbook set; llms.txt / llms-full.txt / sitemap.xml all include the merged
+pages (proving `mergeRaw` keys line up). Visual: sidebar shows GUIDES and HANDBOOK as sibling
+first-level sections with breadcrumbs and a pager spanning the merged tree. example svelte-check 0
+errors.
+
+**Regression caught & fixed (mine):** `onboarding.test.ts` asserts against the real example, and the
+S7 P21 change (article resolved in `load`, so `DocumentPage` no longer contains `loader`) broke the
+CLI's `documentPageReady` detection. It shipped in commit 16cd863 because I ran docs/example checks
+but not the CLI suite after that change. `documentPageReady` now accepts **both** shapes
+(load-resolved *or* legacy `{#await document.loader()}`); all 16 CLI tests pass. Full suite green:
+mdsvex 24, docs 57, cli 16.
+
+**Also (user request):** the example dev/preview servers now take the next free port instead of
+failing when 5173 is busy — `strictPort: false` in `vite.config.ts` (server + preview), `vite dev`
+without a pinned port, and `autoPort: true` in the launch configs. Verified: with 5173 occupied,
+Vite bound 5174 and served the merged docs.
+
+**Note:** serving the built output via a plain static server requires clean-URL mapping
+(`/docs/x` → `docs/x.html`); requesting the literal `.html` path makes the hydrated client router
+404 on its own pathname. Serving artifact, not a product bug.
+
+---
+
 ## 2026-08-17 · S10 — Scoped: multi-source docs (P22)
 
 **Focus:** A use case not yet covered — docs that are NOT already consolidated in one folder.

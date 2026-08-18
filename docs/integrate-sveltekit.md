@@ -480,3 +480,75 @@ Open only trusted local SVX (it is executable).
 ## H. Adapter note
 
 Acrolls is adapter-agnostic (static, Node, Vercel). Ensure `md` / `svx` routes are not excluded from prerender if you prerender docs.
+
+---
+
+## Multiple content sources
+
+Docs are not always consolidated in one folder. When several sets live in separate places and you
+want them on one site under a single hierarchy, merge them with `mergeLoaders` — each prefixed set
+becomes a **first-level section**:
+
+```ts
+import { content, markdownGlob, markdownRaw, mergeLoaders, mergeRaw } from 'acrolls/content';
+import { defineDocsConfig } from 'acrolls/docs/content';
+
+export const docs = content({
+  loader: mergeLoaders<DocsArticle>([
+    {
+      prefix: 'set1',
+      loader: markdownGlob<DocsArticle>({
+        body: import.meta.glob('../../content-a/**/*.md', { import: 'default' }),
+        modules: import.meta.glob('../../content-a/**/*.md', { eager: true }),
+        root: '../../content-a'
+      })
+    },
+    {
+      prefix: 'set2',
+      loader: markdownGlob<DocsArticle>({
+        body: import.meta.glob('../../content-b/**/*.md', { import: 'default' }),
+        modules: import.meta.glob('../../content-b/**/*.md', { eager: true }),
+        root: '../../content-b'
+      })
+    }
+  ]),
+  config: defineDocsConfig({
+    title: 'Docs',
+    baseHref: '/docs',
+    folders: { set1: { title: 'Set 1', order: 1 }, set2: { title: 'Set 2', order: 2 } }
+  })
+}).sourceSync();
+```
+
+`set1/intro.md` becomes `/docs/set1/intro` under a **Set 1** section; nested files keep their
+structure underneath. Omit `prefix` to merge a source at the root. Two sources producing the same
+key raise a `DocsContentError` naming both sets, so collisions fail loudly instead of silently
+overwriting. Navigation, breadcrumbs, pager, TOC, search, SEO, sitemap, and OG images all work
+unchanged — they consume the merged source.
+
+For the AI tier, merge the raw maps with the **same prefixes** so keys stay aligned:
+
+```ts
+export const raw = mergeRaw([
+  { prefix: 'set1', raw: markdownRaw({ raw: import.meta.glob('../../content-a/**/*.md', { query: '?raw', import: 'default', eager: true }), root: '../../content-a' }) },
+  { prefix: 'set2', raw: markdownRaw({ raw: import.meta.glob('../../content-b/**/*.md', { query: '?raw', import: 'default', eager: true }), root: '../../content-b' }) }
+]);
+```
+
+`mergeLoaders` composes `ContentLoader`s, so it also merges `customSource` (CMS/API) sets with
+filesystem ones. The merged loader is eager only when every source is eager; if any source is
+async, use `await source()` instead of `sourceSync()`.
+
+### Reaching folders outside the project
+
+`import.meta.glob` needs **static literal patterns** that Vite can resolve at build time, so how
+out-of-tree sets reach the build matters:
+
+| Strategy | Use when | Notes |
+|---|---|---|
+| **Symlink** each set into one content dir | sets live anywhere on disk | recommended default — one literal glob, no extra config |
+| Relative globs (`'../../../docs-a/**/*.md'`) | sets live near the project | outside the project root needs `server.fs.allow` in dev |
+| Copy/sync step before build | sets live in other repos / CI | most robust; add the sync to your build script |
+
+A plain Node `fs` loader cannot replace these for `.md` bodies, because Markdown must be compiled
+by the Acrolls mdsvex preprocessor through Vite.

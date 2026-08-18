@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { DocsShell, DocsSeo, DocsSearch, docsOgImagePath } from 'acrolls/docs';
+	import type { DocsTocItem } from 'acrolls/docs';
 	import { docs } from '../../lib/docs/source';
 	import type { Snippet } from 'svelte';
 
@@ -16,6 +17,9 @@
 	const searchable = $derived(
 		!(currentDoc?.metadata?.search as { exclude?: boolean } | undefined)?.exclude
 	);
+	// Compile-time headings (from `metadata.headings`) render the TOC server-side — present for
+	// crawlers and no-JS readers, with no post-mount DOM scan.
+	const headings = $derived(currentDoc?.metadata?.headings as DocsTocItem[] | undefined);
 </script>
 
 <DocsSeo
@@ -31,6 +35,7 @@
 	pathname={page.url.pathname}
 	showToc={!isIndex}
 	showPager={!isIndex}
+	{headings}
 	{searchable}
 >
 	{#snippet header()}

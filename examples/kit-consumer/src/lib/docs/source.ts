@@ -1,19 +1,34 @@
 import type { Component } from 'svelte';
 import * as v from 'valibot';
-import { content, markdownGlob, markdownRaw } from 'acrolls/content';
+import { content, markdownGlob, markdownRaw, mergeLoaders, mergeRaw } from 'acrolls/content';
 import { defineDocsConfig } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 
 /** Raw Markdown source, keyed like `docs.documents[].key` — powers the AI static
  * tier (llms.txt, per-page .md, copy-as-markdown). */
-export const raw = markdownRaw({
-	raw: import.meta.glob('../../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<
-		string,
-		string
-	>,
-	root: '../../content'
-});
+export const raw = mergeRaw([
+	{
+		raw: markdownRaw({
+			raw: import.meta.glob('../../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<
+				string,
+				string
+			>,
+			root: '../../content'
+		})
+	},
+	{
+		prefix: 'handbook',
+		raw: markdownRaw({
+			raw: import.meta.glob('../../content-handbook/**/*.md', {
+				query: '?raw',
+				import: 'default',
+				eager: true
+			}) as Record<string, string>,
+			root: '../../content-handbook'
+		})
+	}
+]);
 
 /**
  * `title` stays `optional` even though this host runs in `authored` mode: the engine's own
@@ -29,14 +44,31 @@ const frontmatter = v.object({
 });
 
 export const docs = content({
-	loader: markdownGlob<DocsArticle>({
-		body: import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
-			string,
-			() => Promise<DocsArticle>
-		>,
-		modules: import.meta.glob('../../content/**/*.md', { eager: true }),
-		root: '../../content'
-	}),
+	// Multi-source: the main corpus plus a second set kept in its own folder.
+	// Each prefixed set becomes a first-level section of the same docs hierarchy.
+	loader: mergeLoaders<DocsArticle>([
+		{
+			loader: markdownGlob<DocsArticle>({
+				body: import.meta.glob('../../content/**/*.md', { import: 'default' }) as Record<
+					string,
+					() => Promise<DocsArticle>
+				>,
+				modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+				root: '../../content'
+			})
+		},
+		{
+			prefix: 'handbook',
+			loader: markdownGlob<DocsArticle>({
+				body: import.meta.glob('../../content-handbook/**/*.md', { import: 'default' }) as Record<
+					string,
+					() => Promise<DocsArticle>
+				>,
+				modules: import.meta.glob('../../content-handbook/**/*.md', { eager: true }),
+				root: '../../content-handbook'
+			})
+		}
+	]),
 	schema: frontmatter,
 	filter: (entry) => !entry.data.draft,
 	config: defineDocsConfig({
@@ -61,6 +93,10 @@ export const docs = content({
 			guides: {
 				title: 'Guides',
 				order: 1
+			},
+			handbook: {
+				title: 'Handbook',
+				order: 2
 			}
 		},
 		entries: {

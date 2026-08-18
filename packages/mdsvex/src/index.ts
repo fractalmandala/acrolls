@@ -7,6 +7,7 @@ import rehypeSlug from 'rehype-slug';
 import { createAcrollsHighlighter, type HighlightOptions } from './highlighter.js';
 import { rehypeAcrollsTableWrap } from './rehype-table-wrap.js';
 import { rehypeAcrollsHeadingAnchors } from './rehype-heading-anchors.js';
+import { rehypeAcrollsHeadings, type AcrollsHeadingsOptions } from './rehype-headings.js';
 import { remarkAcrollsMermaidGuard } from './remark-mermaid-guard.js';
 import { normalizeAcrollsMarkdown } from './source-safety.js';
 import {
@@ -28,6 +29,8 @@ export { createAcrollsHighlighter } from './highlighter.js';
 export type { HighlightOptions } from './highlighter.js';
 export { rehypeAcrollsTableWrap } from './rehype-table-wrap.js';
 export { rehypeAcrollsHeadingAnchors } from './rehype-heading-anchors.js';
+export { rehypeAcrollsHeadings } from './rehype-headings.js';
+export type { AcrollsHeading, AcrollsHeadingsOptions } from './rehype-headings.js';
 export { rehypeAcrollsCode } from './rehype-code.js';
 export { remarkAcrollsCodeMeta } from './remark-code-meta.js';
 export { remarkAcrollsMermaidGuard } from './remark-mermaid-guard.js';
@@ -69,6 +72,11 @@ export type AcrollsMdsvexOptions = HighlightOptions & {
 		mode?: 'authored' | 'migration';
 		leadingH1?: 'suppress-and-warn' | 'preserve';
 	};
+	/**
+	 * Collect headings into `metadata.headings` for a server-rendered table of contents. On by
+	 * default (h2–h4). Pass `false` to disable, or a level range to tune what is collected.
+	 */
+	toc?: false | AcrollsHeadingsOptions;
 };
 
 /**
@@ -79,14 +87,26 @@ export function createAcrollsMdsvexOptions(options: AcrollsMdsvexOptions = {}) {
   const {
     strict = false,
     layout,
-    extensions = ['.svx', '.md']
+    extensions = ['.svx', '.md'],
+    toc = {}
   } = options;
+
+  // Collect headings right after rehype-slug assigns ids, and before the anchor pass, so the
+  // ids match the in-page anchors and the collected text carries no anchor markup. The tuple form
+  // hands unified the attacher plus its options — passing the built transformer would make unified
+  // run it as an attacher against an undefined tree.
+  const headingPlugins = toc === false ? [] : [[rehypeAcrollsHeadings, toc] as const];
 
   return {
     extensions,
     layout,
     remarkPlugins: [remarkGfm, remarkAcrollsMermaidGuard],
-    rehypePlugins: [rehypeSlug, rehypeAcrollsHeadingAnchors, rehypeAcrollsTableWrap],
+    rehypePlugins: [
+      rehypeSlug,
+      ...headingPlugins,
+      rehypeAcrollsHeadingAnchors,
+      rehypeAcrollsTableWrap
+    ],
     highlight: {
       highlighter: createAcrollsHighlighter({ strict })
     }

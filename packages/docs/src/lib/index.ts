@@ -29,6 +29,10 @@ export type {
 } from './content.js';
 
 export { content } from './collection.js';
+export { mergeLoaders, mergeRaw } from './merge.js';
+export type { MergeSource, MergeRawSource } from './merge.js';
+export { acrollsFields } from './fields.js';
+export type { AcrollsPageFields, AcrollsPostFields, AcrollsChangeFields } from './fields.js';
 export type {
 	Collection,
 	ContentLoader,
@@ -37,6 +41,7 @@ export type {
 	EntrySummary,
 	InferredData,
 	LoadedDocument,
+	SchemaInput,
 	StandardSchemaIssue,
 	StandardSchemaResult,
 	StandardSchemaV1

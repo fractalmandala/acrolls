@@ -88,13 +88,36 @@ export type EntrySummary<TData> = {
 	hidden: boolean;
 };
 
-/** Resolves the output type of a schema, falling back to raw metadata when none is given. */
-export type InferredData<TSchema> = TSchema extends StandardSchemaV1<never, infer TOutput>
-	? TOutput
-	: DocsMetadata;
+/**
+ * A schema for a collection: one Standard Schema, or an array of them layered left→right (a blessed
+ * genre stack plus your own extras). {@link content} validates every layer and merges their outputs.
+ */
+export type SchemaInput = StandardSchemaV1 | readonly StandardSchemaV1[];
+
+type SchemaOutput<TSchema> = TSchema extends StandardSchemaV1<never, infer TOutput> ? TOutput : never;
+
+type UnionToIntersection<TUnion> = (
+	TUnion extends unknown ? (value: TUnion) => void : never
+) extends (value: infer TIntersection) => void
+	? TIntersection
+	: never;
+
+/**
+ * Resolves the data type a schema produces, falling back to raw metadata when none is given. An
+ * array layers left→right, so the result is the intersection of every layer's output.
+ */
+export type InferredData<TSchema> = TSchema extends readonly StandardSchemaV1[]
+	? UnionToIntersection<SchemaOutput<TSchema[number]>> extends infer TMerged
+		? [TMerged] extends [Record<string, unknown>]
+			? TMerged
+			: DocsMetadata
+		: DocsMetadata
+	: TSchema extends StandardSchemaV1<never, infer TOutput>
+		? TOutput
+		: DocsMetadata;
 
 /** The declarative collection returned by {@link content}. */
-export type Collection<TDocument, TSchema extends StandardSchemaV1 | undefined = undefined> = {
+export type Collection<TDocument, TSchema extends SchemaInput | undefined = undefined> = {
 	/** Resolves the underlying content source, awaiting async loaders. */
 	source(): Promise<DocsContentSource<TDocument>>;
 	/** Synchronous variant. Throws unless the loader declares `eager: true`. */
@@ -110,7 +133,7 @@ export type Collection<TDocument, TSchema extends StandardSchemaV1 | undefined =
 };
 
 /** Options accepted by {@link content}. */
-export type ContentOptions<TDocument, TSchema extends StandardSchemaV1 | undefined> = {
+export type ContentOptions<TDocument, TSchema extends SchemaInput | undefined> = {
 	loader: ContentLoader<TDocument>;
 	config: DocsContentConfig;
 	/** Optional Standard Schema validating each document's frontmatter. */
@@ -139,7 +162,7 @@ type Pipeline<TDocument> = {
  * handed to `createDocsContentSource` untouched, so all nav, group, route, breadcrumb, pager,
  * admission, and diagnostic behavior is the engine's, verbatim.
  */
-export function content<TDocument, TSchema extends StandardSchemaV1 | undefined = undefined>(
+export function content<TDocument, TSchema extends SchemaInput | undefined = undefined>(
 	options: ContentOptions<TDocument, TSchema>
 ): Collection<TDocument, TSchema> {
 	const build = (pipeline: Pipeline<TDocument>): DocsContentSource<TDocument> => {
@@ -191,22 +214,30 @@ export function content<TDocument, TSchema extends StandardSchemaV1 | undefined 
  * Synchronous pipeline. A schema whose `validate` returns a Promise cannot be honored here, so
  * it throws rather than admitting a silently unvalidated document.
  */
-function runPipelineSync<TDocument, TSchema extends StandardSchemaV1 | undefined>(
+function runPipelineSync<TDocument, TSchema extends SchemaInput | undefined>(
 	loaded: readonly LoadedDocument<TDocument>[],
 	options: ContentOptions<TDocument, TSchema>
 ): Pipeline<TDocument> {
 	const pipeline: Pipeline<TDocument> = { documents: [], diagnostics: [] };
 
+	const layers = schemaLayers(options.schema);
+
 	for (const document of loaded) {
 		let result: StandardSchemaResult<unknown> | undefined;
-		if (options.schema) {
-			const returned = options.schema['~standard'].validate(document.data ?? {});
-			if (isPromise(returned)) {
-				throw new DocsContentError(
-					`Schema validation for "${document.key}" returned a Promise. Asynchronous schema validation is not supported on the synchronous path — use "await source()" instead of "sourceSync()", or supply a synchronous validator.`
-				);
+		if (layers.length > 0) {
+			const merged: Record<string, unknown> = {};
+			const issues: StandardSchemaIssue[] = [];
+			for (const layer of layers) {
+				const returned = layer['~standard'].validate(document.data ?? {});
+				if (isPromise(returned)) {
+					throw new DocsContentError(
+						`Schema validation for "${document.key}" returned a Promise. Asynchronous schema validation is not supported on the synchronous path — use "await source()" instead of "sourceSync()", or supply a synchronous validator.`
+					);
+				}
+				if (returned.issues) issues.push(...returned.issues);
+				else Object.assign(merged, returned.value);
 			}
-			result = returned;
+			result = issues.length > 0 ? { issues } : { value: merged };
 		}
 		admit(document, result, options, pipeline);
 	}
@@ -215,29 +246,48 @@ function runPipelineSync<TDocument, TSchema extends StandardSchemaV1 | undefined
 }
 
 /** Asynchronous pipeline. Awaits schema results, so async validators validate for real. */
-async function runPipelineAsync<TDocument, TSchema extends StandardSchemaV1 | undefined>(
+async function runPipelineAsync<TDocument, TSchema extends SchemaInput | undefined>(
 	loaded: readonly LoadedDocument<TDocument>[],
 	options: ContentOptions<TDocument, TSchema>
 ): Promise<Pipeline<TDocument>> {
 	const pipeline: Pipeline<TDocument> = { documents: [], diagnostics: [] };
 
+	const layers = schemaLayers(options.schema);
+
 	for (const document of loaded) {
 		// Sequential by design: document order is the engine's input order, and validation is
 		// pure, so there is nothing to gain from interleaving.
-		const result = options.schema
-			? await options.schema['~standard'].validate(document.data ?? {})
-			: undefined;
+		let result: StandardSchemaResult<unknown> | undefined;
+		if (layers.length > 0) {
+			const merged: Record<string, unknown> = {};
+			const issues: StandardSchemaIssue[] = [];
+			for (const layer of layers) {
+				// Each layer validates the raw frontmatter; outputs merge left→right, so a later
+				// layer's field wins. One layer's issues do not skip the rest — every problem is
+				// reported at once.
+				const returned = await layer['~standard'].validate(document.data ?? {});
+				if (returned.issues) issues.push(...returned.issues);
+				else Object.assign(merged, returned.value);
+			}
+			result = issues.length > 0 ? { issues } : { value: merged };
+		}
 		admit(document, result, options, pipeline);
 	}
 
 	return pipeline;
 }
 
+/** Normalize a schema option (single, array, or absent) to the ordered list of layers to run. */
+function schemaLayers(schema: SchemaInput | undefined): readonly StandardSchemaV1[] {
+	if (!schema) return [];
+	return Array.isArray(schema) ? schema : [schema as StandardSchemaV1];
+}
+
 /**
  * Shared validate → filter → engine-input step. Everything after the schema call is identical
  * on both paths; only the awaiting differs.
  */
-function admit<TDocument, TSchema extends StandardSchemaV1 | undefined>(
+function admit<TDocument, TSchema extends SchemaInput | undefined>(
 	document: LoadedDocument<TDocument>,
 	result: StandardSchemaResult<unknown> | undefined,
 	options: ContentOptions<TDocument, TSchema>,
@@ -313,3 +363,8 @@ function toSummary<TData, TDocument>(document: DocsContentDocument<TDocument>): 
 		hidden: document.hidden
 	};
 }
+
+// Multi-source merge helpers (P22) — re-exported here so consumers reach them
+// through the same `acrolls/content` surface as `content()` and `markdownGlob`.
+export { mergeLoaders, mergeRaw } from './merge.js';
+export type { MergeSource, MergeRawSource } from './merge.js';

@@ -4,6 +4,11 @@
 	import { scanHeadings } from './toc.js';
 
 	type Props = {
+		/**
+		 * Headings resolved at compile time (from `metadata.headings`). When provided, they render
+		 * server-side with no DOM scan or mount flash; the DOM fallback below is skipped entirely.
+		 */
+		headings?: DocsTocItem[];
 		/** Element that contains the article headings */
 		contentEl?: HTMLElement | null;
 		/** Or pass a CSS selector resolved under document */
@@ -17,6 +22,7 @@
 	};
 
 	let {
+		headings,
 		contentEl = null,
 		contentSelector = '.acrolls-docs-shell__article',
 		minLevel = 2,
@@ -26,10 +32,20 @@
 		class: className = ''
 	}: Props = $props();
 
-	let items = $state<DocsTocItem[]>([]);
+	/** Compile-time headings win; the DOM scan is the fallback for hosts not on that pipeline. */
+	const provided = $derived(
+		headings?.filter((h) => h.level >= minLevel && h.level <= maxLevel) ?? null
+	);
+
+	let scanned = $state<DocsTocItem[]>([]);
+	const items = $derived(provided ?? scanned);
 	let activeId = $state<string | null>(null);
 
 	async function rescan() {
+		if (provided) {
+			scanned = [];
+			return;
+		}
 		await tick();
 		const root =
 			contentEl ??
@@ -37,10 +53,10 @@
 				? document.querySelector<HTMLElement>(contentSelector)
 				: null);
 		if (!root) {
-			items = [];
+			scanned = [];
 			return;
 		}
-		items = scanHeadings({ root, minLevel, maxLevel, ensureIds: true });
+		scanned = scanHeadings({ root, minLevel, maxLevel, ensureIds: true });
 	}
 
 	onMount(() => {
