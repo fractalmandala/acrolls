@@ -1,5 +1,9 @@
 import type { DocsNav, DocsNavNode, DocsNavSection } from './types.js';
 import { normalizePath, slugify, stableId } from './nav-path.js';
+import { passthroughNaming, type DocsNamingConvention } from './naming.js';
+
+export { numbered, dated, dateOf, passthroughNaming } from './naming.js';
+export type { DocsNamingConvention, DocsSegment, NumberedOptions, DatedOptions } from './naming.js';
 
 export type DocsMetadata = Readonly<Record<string, unknown>>;
 
@@ -72,6 +76,16 @@ export type DocsContentConfig = {
 	site?: string;
 	/** Optional root landing filename stem used when no host entry overrides it. */
 	index?: string;
+	/**
+	 * Filename stems (case-insensitive) that mark a directory's landing page. Default `['index']`.
+	 * Add `'readme'` or `'+doc'` to treat a `README.md` / `+doc.md` as the folder's landing.
+	 */
+	indexNames?: readonly string[];
+	/**
+	 * Filename ordering convention. `numbered()` reads an `NN-` prefix, `dated()` a `YYYY-MM-DD`
+	 * prefix; both strip it from the slug and title. Default: segments pass through unchanged.
+	 */
+	naming?: DocsNamingConvention;
 	subtitle?: string;
 	storageKey?: string;
 	section?: {
@@ -133,6 +147,8 @@ type SourceRecord<TDocument> = DocsContentDocument<TDocument> & {
 	isIndex: boolean;
 	folderPath: string;
 	routeSegments: string[];
+	/** Convention-derived order per route segment, parallel to `routeSegments`. */
+	segmentOrders: Array<number | undefined>;
 };
 
 type ResolvedGroup<TDocument> = {
@@ -149,6 +165,8 @@ type ResolvedGroup<TDocument> = {
 type FolderRecord<TDocument> = {
 	name: string;
 	path: string;
+	/** Convention-derived order for this directory segment, when its name encoded one. */
+	order?: number;
 	children: Map<string, FolderRecord<TDocument>>;
 	documents: SourceRecord<TDocument>[];
 };
@@ -163,6 +181,71 @@ type NavCandidate = {
 type DefinedNavCandidate = NavCandidate & { node: DocsNavNode };
 
 const ACRONYMS = new Set(['api', 'cli', 'css', 'faq', 'html', 'http', 'id', 'md', 'sdk', 'ui', 'url', 'yaml']);
+
+/** The naming convention in force, defaulting to the legacy passthrough. */
+function namingOf(config: DocsContentConfig): DocsNamingConvention {
+	return config.naming ?? passthroughNaming;
+}
+
+/** The lowercase set of filename stems treated as a directory landing. Default `['index']`. */
+function indexNamesOf(config: DocsContentConfig): Set<string> {
+	return new Set((config.indexNames ?? ['index']).map((name) => name.toLowerCase()));
+}
+
+/** Whether a raw filename stem (last path segment, no extension) marks a directory landing. */
+function isIndexStem(rawStem: string, indexNames: Set<string>): boolean {
+	return indexNames.has(rawStem.toLowerCase());
+}
+
+/**
+ * Run the naming convention's `verify` over each directory's raw siblings, surfacing ordering
+ * problems (mixed prefixes, duplicate numbers, impossible dates) as build diagnostics. Index-stem
+ * leaves are excluded — a folder's landing is not an ordered page. No-ops without a `verify`.
+ */
+function namingDiagnostics<TDocument>(
+	inputs: readonly DocsContentInput<TDocument>[],
+	config: DocsContentConfig
+): DocsContentDiagnostic[] {
+	const naming = namingOf(config);
+	if (!naming.verify) return [];
+	const indexNames = indexNamesOf(config);
+
+	const byDir = new Map<string, Set<string>>();
+	for (const input of inputs) {
+		const rawSegments = normalizeSourceKey(input.key).replace(/\.md$/, '').split('/').filter(Boolean);
+		for (let index = 0; index < rawSegments.length; index += 1) {
+			const child = rawSegments[index];
+			const isLeaf = index === rawSegments.length - 1;
+			if (isLeaf && isIndexStem(child, indexNames)) continue;
+			const parent = rawSegments.slice(0, index).join('/');
+			let siblings = byDir.get(parent);
+			if (!siblings) {
+				siblings = new Set();
+				byDir.set(parent, siblings);
+			}
+			siblings.add(child);
+		}
+	}
+
+	const diagnostics: DocsContentDiagnostic[] = [];
+	for (const [rawDir, siblings] of byDir) {
+		const cleanDir = rawDir
+			.split('/')
+			.filter(Boolean)
+			.map((segment) => naming.segment(segment).slug)
+			.join('/');
+		for (const message of naming.verify(cleanDir, [...siblings])) {
+			diagnostics.push({
+				code: 'ACROLLS_NAMING_ORDER',
+				severity: 'warning',
+				file: rawDir || '(root)',
+				message,
+				remediation: 'Align the filename ordering prefixes, or opt the directory out of the convention.'
+			});
+		}
+	}
+	return diagnostics;
+}
 
 export function createDocsContentSource<TDocument>(options: {
 	config: DocsContentConfig;
@@ -208,7 +291,8 @@ export function createDocsContentSource<TDocument>(options: {
 	const diagnostics = [
 		...admission.diagnostics,
 		...leadingH1Diagnostics(records, config),
-		...rejectedDocumentLinkDiagnostics(admission, baseHref)
+		...rejectedDocumentLinkDiagnostics(admission, baseHref),
+		...namingDiagnostics(admission.documents, config)
 	];
 	const aliases = new Map<string, SourceRecord<TDocument>>();
 	for (const document of documents) {
@@ -253,10 +337,11 @@ function admitDocuments<TDocument>(
 	const documents: DocsContentInput<TDocument>[] = [];
 	const rejected: DocsContentInput<TDocument>[] = [];
 	const diagnostics: DocsContentDiagnostic[] = [];
+	const indexNames = indexNamesOf(config);
 
 	for (const input of inputs) {
 		const key = normalizeSourceKey(input.key);
-		const isIndex = key.replace(/\.md$/, '').split('/').at(-1) === 'index';
+		const isIndex = isIndexStem(key.replace(/\.md$/, '').split('/').at(-1) ?? '', indexNames);
 		const metadata = input.metadata ?? {};
 		const errors: DocsContentDiagnostic[] = [];
 
@@ -488,8 +573,14 @@ function toSourceRecord<TDocument>(
 
 	const withoutExtension = key.slice(0, -3);
 	const rawSegments = withoutExtension.split('/').filter(Boolean);
-	const isIndex = rawSegments.at(-1) === 'index';
-	const routeSegments = (isIndex ? rawSegments.slice(0, -1) : rawSegments).map(routeSegment);
+	const naming = namingOf(config);
+	const isIndex = isIndexStem(rawSegments.at(-1) ?? '', indexNamesOf(config));
+	// Apply the naming convention to each structural segment: strip the ordering prefix for the slug
+	// and capture the order it encoded (parallel to routeSegments, used for leaf and folder sorting).
+	const contentSegments = isIndex ? rawSegments.slice(0, -1) : rawSegments;
+	const applied = contentSegments.map((raw) => naming.segment(raw));
+	const routeSegments = applied.map((segment) => routeSegment(segment.slug));
+	const segmentOrders = applied.map((segment) => segment.order);
 	const slug = routeOverride ? routeSlug(routeOverride, baseHref) : routeSegments.join('/');
 	const folderSegments = isIndex ? routeSegments : routeSegments.slice(0, -1);
 	const folderPath = folderSegments.join('/');
@@ -502,7 +593,9 @@ function toSourceRecord<TDocument>(
 		? indexTitle(routeSegments, folderPath, config, landingEntryConfig)
 		: entryConfig?.title ?? landingEntryConfig?.title ?? documentConfig?.title ?? stringMetadata(metadata, 'title') ?? fallbackTitle(routeSegments, config.title);
 	const description = entryConfig?.description ?? landingEntryConfig?.description ?? documentConfig?.description ?? stringMetadata(metadata, 'description') ?? stringMetadata(metadata, 'brief');
-	const order = entryConfig?.order ?? documentConfig?.order ?? numberMetadata(metadata, 'order');
+	// A leaf's own segment order (last route segment) is the fallback when no config/frontmatter order.
+	const order =
+		entryConfig?.order ?? documentConfig?.order ?? numberMetadata(metadata, 'order') ?? segmentOrders.at(-1);
 
 	return {
 		key,
@@ -517,7 +610,8 @@ function toSourceRecord<TDocument>(
 		loader: input.load,
 		isIndex,
 		folderPath,
-		routeSegments
+		routeSegments,
+		segmentOrders
 	};
 }
 
@@ -542,14 +636,18 @@ function resolveLandingEntryConfigs(config: DocsContentConfig): Map<string, Docs
 
 function insertRecord<TDocument>(root: FolderRecord<TDocument>, record: SourceRecord<TDocument>): void {
 	let folder = root;
-	const folderSegments = record.isIndex ? record.routeSegments : record.routeSegments.slice(0, -1);
-	for (const segment of folderSegments) {
+	// segmentOrders runs parallel to routeSegments, so folder segment `i` carries order `[i]`.
+	const folderCount = record.isIndex ? record.routeSegments.length : record.routeSegments.length - 1;
+	for (let index = 0; index < folderCount; index += 1) {
+		const segment = record.routeSegments[index];
 		const path = folder.path ? `${folder.path}/${segment}` : segment;
 		let child = folder.children.get(segment);
 		if (!child) {
 			child = createFolder(segment, path);
 			folder.children.set(segment, child);
 		}
+		// A directory's `NN-` prefix sets its order; every sibling agrees, so first write wins.
+		if (child.order === undefined) child.order = record.segmentOrders[index];
 		folder = child;
 	}
 	folder.documents.push(record);
@@ -855,7 +953,7 @@ function buildNav<TDocument>(
 			badge: folderConfig?.badge,
 			defaultOpen: folderConfig?.defaultOpen ?? true,
 			items,
-			order: folderConfig?.order,
+			order: folderConfig?.order ?? folder.order,
 			path: folder.path
 		});
 	}
@@ -925,7 +1023,7 @@ function buildFolderItems<TDocument>(
 		};
 		candidates.push({
 			node,
-			order: folderConfig?.order ?? index?.order,
+			order: folderConfig?.order ?? child.order ?? index?.order,
 			path: child.path,
 			title: node.title
 		});

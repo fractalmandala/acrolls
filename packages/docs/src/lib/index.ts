@@ -11,7 +11,17 @@ export type {
 export {
 	createDocsContentSource,
 	defineDocsConfig,
-	DocsContentError
+	DocsContentError,
+	numbered,
+	dated,
+	dateOf,
+	passthroughNaming
+} from './content.js';
+export type {
+	DocsNamingConvention,
+	DocsSegment,
+	NumberedOptions,
+	DatedOptions
 } from './content.js';
 export type {
 	DocsContentConfig,
