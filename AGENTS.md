@@ -1,6 +1,6 @@
 # AGENTS.md — Acrolls
 
-Context for any coding agent working on **Acrolls** (`/Users/amrit/acrolls`).
+Context for any coding agent working on **Acrolls** (`/Users/amrit/fractalmandala/acrolls`).
 
 ## What this is
 
@@ -8,14 +8,6 @@ Context for any coding agent working on **Acrolls** (`/Users/amrit/acrolls`).
 
 - **Not** a CMS, not a hosted product, not part of the mandala monorepo.
 - Hosts keep routing, auth, deploy; Acrolls owns article compile, publication UI, docs chrome.
-
-## Paths
-
-| Path | Role |
-|---|---|
-| `/Users/amrit/acrolls` | Product monorepo (git `main`) |
-| `/Users/amrit/dharmalib` | Optional **demo consumer** only (local trial, do not treat as product core) |
-| `/Users/amrit/mandala` | Unrelated monorepo; handoffs may live there for cross-session pick-up |
 
 ## Tech stack
 
@@ -40,7 +32,7 @@ Context for any coding agent working on **Acrolls** (`/Users/amrit/acrolls`).
 ## Commands
 
 ```bash
-cd /Users/amrit/acrolls
+cd /Users/amrit/fractalmandala/acrolls
 pnpm install
 pnpm build
 pnpm --filter @acrolls/docs test
@@ -84,7 +76,31 @@ Product intent: `docs/VISION.md`, root `PRODUCT.md`, `TECH.md`.
 - TOC: `scanHeadings` on shell article root after mount  
 - Studio: HTML pipeline via `renderAcrollsArticleHtml`, not full SVX execute  
 
-## Handoff
+1. You can only use SASS single-tab indented styling, not SCSS not CSS. No curly braces no semicolons
+2. No inline-styling with `style=""` method allowed.
+3. No styling in .svelte pages and components with `<style>` tags allowed.
+4. For rules on styling, read - [Fractalstyler Rules](/Users/amrit/fractalmandala/fractalstyler2/AGENTS.md)
+5. You CANNOT create new classes without explicit user approval.
+6. Any classes you absolutely must create, after user approval, must be created as `page-name.sass` or `component-name.sass` and kept in [styles folder](src/lib/styles), and imported into that page or component directly.
+7. See section `## YAML Frontmatter`
+8. See section `## Construction Architecture`
+9. GEMINI - save your `walkthrough` documents in `docs`, name them according to actual subject of walkthrough.
+10. If a new doc is created, add it to the registry of docs at [index.md](docs/index.md). See section `## Discovery Guide` below.
+11. See `fractalstyler` and `fractalthemer` setup section below, if these packages are not yet installed
 
-Mandala-tracked pick-up note:  
-`/Users/amrit/mandala/handoffs/2026-08-10-acrolls-sveltekit-docs-framework.md`
+## YAML Frontmatter
+
+Markdown documents created and placed inside `docs` folder or inside `src` folder must contain minimum YAML frontmatter. File names must be in lower case kebab-case - `kebab-case.md` as example.
+
+```YAML
+---
+title:
+description:
+tags:
+  - ...tag1
+  - ...tag2
+  - ...
+---
+```
+
+> Exception is index.md files, which do not need tags.
