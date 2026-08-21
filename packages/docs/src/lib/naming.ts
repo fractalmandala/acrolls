@@ -25,6 +25,14 @@ export type DocsNamingConvention = {
 	verify?(dir: string, segments: readonly string[]): string[];
 };
 
+/**
+ * A convention that implements sibling verification. The built-in conventions return this
+ * stronger type while custom host conventions may still omit `verify()`.
+ */
+export type VerifiedDocsNamingConvention = DocsNamingConvention & {
+	verify(dir: string, segments: readonly string[]): string[];
+};
+
 /** The default convention: segments pass through untouched, nothing ordered. Preserves legacy behavior. */
 export const passthroughNaming: DocsNamingConvention = {
 	segment: (raw) => ({ slug: raw })
@@ -45,7 +53,7 @@ export type NumberedOptions = {
  * `03-routing` → `{ slug: 'routing', order: 3 }`, sorted third, served at `/routing`. Its `verify`
  * flags a directory that mixes prefixed and unprefixed siblings, or repeats a prefix number.
  */
-export function numbered(options: NumberedOptions = {}): DocsNamingConvention {
+export function numbered(options: NumberedOptions = {}): VerifiedDocsNamingConvention {
 	return {
 		segment(raw) {
 			const match = NUMBER_PREFIX.exec(raw);
@@ -98,7 +106,7 @@ export type DatedOptions = {
  * post lives at `/release`, not `/2026-08-13-release`. Undated siblings pass through unordered.
  * Recover the date for display with {@link dateOf} on the entry's source key.
  */
-export function dated(options: DatedOptions = {}): DocsNamingConvention {
+export function dated(options: DatedOptions = {}): VerifiedDocsNamingConvention {
 	const format = options.format ?? 'YYYY-MM-DD';
 	const { matcher } = compileDateFormat(format);
 	return {

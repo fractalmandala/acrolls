@@ -11,7 +11,9 @@ import {
   validationExitCode
 } from './validate.js';
 
-const VERSION = '0.1.1';
+// The private CLI package has its own version, while the public `acrolls` wrapper injects the
+// umbrella package version at runtime. Direct workspace execution keeps the private fallback.
+const VERSION = process.env.ACROLLS_VERSION ?? '0.1.1';
 
 function help() {
   console.log(`acrolls ${VERSION}

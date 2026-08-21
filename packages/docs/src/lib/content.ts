@@ -3,7 +3,13 @@ import { normalizePath, slugify, stableId } from './nav-path.js';
 import { passthroughNaming, type DocsNamingConvention } from './naming.js';
 
 export { numbered, dated, dateOf, passthroughNaming } from './naming.js';
-export type { DocsNamingConvention, DocsSegment, NumberedOptions, DatedOptions } from './naming.js';
+export type {
+	DocsNamingConvention,
+	DocsSegment,
+	NumberedOptions,
+	DatedOptions,
+	VerifiedDocsNamingConvention
+} from './naming.js';
 
 export type DocsMetadata = Readonly<Record<string, unknown>>;
 

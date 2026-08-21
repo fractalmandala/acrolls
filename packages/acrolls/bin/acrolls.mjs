@@ -2,11 +2,14 @@
 
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
+const publicPackage = JSON.parse(
+	readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf8')
+);
 let cliEntry;
 try {
   cliEntry = require.resolve('@acrolls/cli/dist/index.js');
@@ -20,7 +23,11 @@ try {
   cliEntry = localEntry;
 }
 const child = spawn(process.execPath, [cliEntry, ...process.argv.slice(2)], {
-  stdio: 'inherit'
+	stdio: 'inherit',
+	env: {
+		...process.env,
+		ACROLLS_VERSION: publicPackage.version
+	}
 });
 
 child.once('error', (error) => {

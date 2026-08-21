@@ -1,6 +1,6 @@
 import type { Component } from 'svelte';
 import { content, markdownGlob } from 'acrolls/content';
-import { defineDocsConfig } from 'acrolls/docs/content';
+import { defineDocsConfig, type DocsDocumentFacts, type DocsMetadata } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 
@@ -10,7 +10,14 @@ export const docs = content({
 			string,
 			() => Promise<DocsArticle>
 		>,
-		modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+		metadata: import.meta.glob('../../docs/**/*.md', {
+			eager: true,
+			import: 'metadata'
+		}) as Record<string, DocsMetadata>,
+		facts: import.meta.glob('../../docs/**/*.md', {
+			eager: true,
+			import: '__acrollsDocument'
+		}) as Record<string, DocsDocumentFacts>,
 		root: '../../docs'
 	}),
 	config: defineDocsConfig({

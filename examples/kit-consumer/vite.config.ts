@@ -20,6 +20,7 @@ const devSourceAliases = [
 	{ find: /^@acrolls\/docs\/content$/, replacement: src('docs/src/lib/content.ts') },
 	{ find: /^@acrolls\/docs\/collection$/, replacement: src('docs/src/lib/collection.ts') },
 	{ find: /^@acrolls\/sveltekit$/, replacement: src('sveltekit/src/index.ts') },
+	{ find: /^@acrolls\/sveltekit\/content$/, replacement: src('sveltekit/src/content.ts') },
 	{ find: /^@acrolls\/mdsvex$/, replacement: src('mdsvex/src/index.ts') }
 ];
 
@@ -27,6 +28,12 @@ export default defineConfig(({ command }) => ({
   // Never fail on a busy port — take the next free one (5174, 5175, …).
   server: { strictPort: false },
   preview: { strictPort: false },
+  build: {
+    // Mermaid's renderer is a lazy optional feature and fractalthemer's catalog is
+    // intentionally shipped as a vendor chunk. Keep a 700 kB budget for those
+    // async-only dependencies while still warning if application code grows past it.
+    chunkSizeWarningLimit: 700
+  },
   resolve: {
     alias: command === 'serve' ? devSourceAliases : []
   },

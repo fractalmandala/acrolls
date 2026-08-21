@@ -54,15 +54,17 @@ describe('Acrolls onboarding plan', () => {
 			"const body = import.meta.glob('../../content/**/*.md', { import: 'default' })"
 		);
 		expect(source?.code).toContain(
-			"const modules = import.meta.glob('../../content/**/*.md', { eager: true })"
+			"import: 'metadata'"
 		);
+		expect(source?.code).toContain("import: '__acrollsDocument'");
+		expect(source?.code).toContain('metadata,');
+		expect(source?.code).toContain('facts,');
 		expect(source?.code).toContain("root: '../../content'");
 		expect(source?.code).toContain('.sourceSync();');
 		expect(source?.code).not.toContain('createDocsContentSource');
-		expect(source?.code).not.toContain('__acrollsDocument');
 		expect(source?.code).not.toContain('folders:');
 		expect(source?.caution).toContain('identical pattern');
-		expect(source?.caution).toContain('Do not collapse the eager glob into the lazy one');
+		expect(source?.caution).toContain('named eager metadata/facts imports');
 		expect(plan.version).toBe(2);
 		const preprocessor = plan.steps.find((step) => step.id === 'preprocessor');
 		expect(preprocessor?.code).toContain("extensions: ['.svelte', '.md', '.svx']");
@@ -177,7 +179,7 @@ export const docs = createAcrollsDocsSource({
 
 		expect(plan.baseHref).toBe('/');
 		expect(plan.steps.find((step) => step.id === 'routes')?.file).toBe(
-			'src/routes/+page.svelte, src/routes/[...slug]/+page.ts, src/routes/[...slug]/+page.svelte'
+			'src/routes/+page.ts, src/routes/+page.svelte, src/routes/[...slug]/+page.ts, src/routes/[...slug]/+page.svelte'
 		);
 		expect(plan.steps.find((step) => step.id === 'deploy')?.verify).toContain('check /, /<nested-slug>');
 	});

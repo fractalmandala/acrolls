@@ -53,7 +53,11 @@ export const docs = content({
 					string,
 					() => Promise<DocsArticle>
 				>,
-				modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+				metadata: import.meta.glob('../../content/**/*.md', { eager: true, import: 'metadata' }),
+				facts: import.meta.glob('../../content/**/*.md', {
+					eager: true,
+					import: '__acrollsDocument'
+				}),
 				root: '../../content'
 			})
 		},
@@ -64,7 +68,14 @@ export const docs = content({
 					string,
 					() => Promise<DocsArticle>
 				>,
-				modules: import.meta.glob('../../content-handbook/**/*.md', { eager: true }),
+				metadata: import.meta.glob('../../content-handbook/**/*.md', {
+					eager: true,
+					import: 'metadata'
+				}),
+				facts: import.meta.glob('../../content-handbook/**/*.md', {
+					eager: true,
+					import: '__acrollsDocument'
+				}),
 				root: '../../content-handbook'
 			})
 		}

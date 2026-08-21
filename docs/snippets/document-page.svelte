@@ -1,19 +1,16 @@
 <script lang="ts">
+	import type { Component } from 'svelte';
 	import { docs } from './source';
 	import { Publication } from 'acrolls/svelte';
 
-	let { slug }: { slug: string } = $props();
+	let { slug, Article }: { slug: string; Article?: Component } = $props();
 	const document = $derived(docs.get(slug));
 </script>
 
 {#if document}
-	{#await document.loader() then Article}
-		<Publication>
-			<Article />
-		</Publication>
-	{:catch loadError}
-		<p>Could not load this documentation page: {loadError instanceof Error ? loadError.message : String(loadError)}</p>
-	{/await}
+	<Publication>
+		{#if Article}<Article />{/if}
+	</Publication>
 {:else}
 	<p>Documentation page not found.</p>
 {/if}

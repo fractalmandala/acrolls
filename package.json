@@ -17,8 +17,8 @@
 		"release:pack": "pnpm --config.node-linker=hoisted --filter acrolls pack",
 		"verify:packed-consumer": "node ./scripts/verify-packed-consumer.mjs",
 		"release": "pnpm --config.node-linker=hoisted --filter acrolls publish --access public",
-		"cli": "pnpm --filter @acrolls/cli exec node ./dist/index.js",
-		"acrolls": "pnpm --filter @acrolls/cli exec node ./dist/index.js"
+		"cli": "node ./packages/cli/dist/index.js",
+		"acrolls": "node ./packages/acrolls/bin/acrolls.mjs"
 	},
 	"devDependencies": {
 		"typescript": "^5.9.2"

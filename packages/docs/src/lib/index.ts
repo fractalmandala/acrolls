@@ -21,7 +21,8 @@ export type {
 	DocsNamingConvention,
 	DocsSegment,
 	NumberedOptions,
-	DatedOptions
+	DatedOptions,
+	VerifiedDocsNamingConvention
 } from './content.js';
 export type {
 	DocsContentConfig,

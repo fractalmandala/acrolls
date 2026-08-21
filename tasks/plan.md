@@ -1,4 +1,40 @@
-# Plan — Content-source and navigation layer
+# Plan — Acrolls repair and verification
+
+## Repair objective
+
+Restore a clean repository health baseline without changing Acrolls' host-ownership boundary or
+public content/navigation model. Existing feature work remains the subject of the historical plan
+below; this section records the current repair sequence and its acceptance gates.
+
+## Repair order
+
+1. Preserve optional custom naming conventions while making the built-in `numbered()` and `dated()`
+   return types expose their implemented `verify()` method to TypeScript callers.
+2. Run the focused `@acrolls/docs` check and tests, then the repository package check, tests, and
+   production build.
+3. Verify the public CLI from the repository root and correct only confirmed path/version
+   ergonomics that are inside Acrolls' own scripts.
+4. Reconcile stale task/checklist guidance and audit the explicit styling rules against existing
+   source without introducing unapproved classes or changing host product scope.
+5. Complete browser acceptance and the packed-consumer install/build gate where the environment
+   permits it.
+
+## Acceptance criteria
+
+- `pnpm --filter @acrolls/docs check` passes with zero errors and the existing docs tests remain green.
+- `pnpm check`, `pnpm test`, and `pnpm build` pass from the repository root.
+- `./packages/cli/dist/index.js validate examples/starter/article.md` passes from the repository root.
+- The packed public package contains its documented exports and a fresh consumer can install and build.
+- Browser checks cover docs root, nested navigation, persisted open state, TOC, pager, and console errors.
+
+## Boundaries
+
+- Always preserve dirty user changes and the public `acrolls/*` entrypoint contract.
+- Ask first before adding dependencies, changing public navigation semantics, or publishing.
+- Never hide a failed verification behind a generated `dist` result or claim browser/release readiness
+  from unit tests alone.
+
+# Historical plan — Content-source and navigation layer
 
 ## Architecture
 

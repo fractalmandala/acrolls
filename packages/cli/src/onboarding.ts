@@ -87,26 +87,31 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 
 	const sourceFile = 'src/lib/docs/source.ts';
 	const documentPageFile = 'src/lib/docs/DocumentPage.svelte';
+	const rootRouteLoadFile = `${routeDirectory}/+page.ts`;
 	const rootRouteFile = `${routeDirectory}/+page.svelte`;
 	const catchAllSvelteFile = `${routeDirectory}/[...slug]/+page.svelte`;
 	const catchAllLoadFile = `${routeDirectory}/[...slug]/+page.ts`;
 	const sourceSource = await readOptional(resolve(root, sourceFile));
 	const docsLayoutSourceForCheck = await readOptional(resolve(root, docsLayoutFile));
 	const documentPageSource = await readOptional(resolve(root, documentPageFile));
+	const rootRouteLoadSource = await readOptional(resolve(root, rootRouteLoadFile));
 	const rootRouteSource = await readOptional(resolve(root, rootRouteFile));
 	const catchAllLoadSource = await readOptional(resolve(root, catchAllLoadFile));
 	const catchAllSvelteSource = await readOptional(resolve(root, catchAllSvelteFile));
-	// A migrated host uses `content({ loader: markdownGlob({ body, modules, root }) })`; a host that
+	// A migrated host uses `content({ loader: markdownGlob({ body, metadata, facts, root }) })`; a host that
 	// has not migrated still uses `createDocsContentSource`/`createAcrollsDocsSource` with an eager
 	// `import: 'metadata'` glob. Both must be recognized as complete — `--check` must never regress
 	// an un-migrated host.
 	// `[(<]` so an explicitly parameterized call — `markdownGlob<DocsArticle>({ ... })` — still matches.
+	const namedMetadataFactsReady =
+		sourceSource.includes("import: 'metadata'") &&
+		sourceSource.includes("import: '__acrollsDocument'");
 	const collectionSourceReady =
 		/\bcontent\s*[(<]/.test(sourceSource) &&
 		/\bmarkdownGlob\s*[(<]/.test(sourceSource) &&
 		sourceSource.includes('body') &&
-		sourceSource.includes('modules') &&
-		sourceSource.includes('eager: true');
+		sourceSource.includes('eager: true') &&
+		(sourceSource.includes('modules') || namedMetadataFactsReady);
 	const legacySourceReady =
 		(sourceSource.includes('createDocsContentSource') || sourceSource.includes('createAcrollsDocsSource')) &&
 		sourceSource.includes("import: 'metadata'") &&
@@ -139,8 +144,11 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			configSource.includes('PublicationLayout') ||
 			configSource.includes('createAcrollsSvelteKitMdsvexPreprocessor'));
 	const routesReady =
+		rootRouteLoadSource.includes('loader()') &&
 		rootRouteSource.includes('DocumentPage') &&
+		rootRouteSource.includes('data.Article') &&
 		catchAllLoadSource.includes('entries') &&
+		catchAllLoadSource.includes('loader()') &&
 		catchAllLoadSource.includes('docs.get') &&
 		catchAllLoadSource.includes('error(404') &&
 		catchAllSvelteSource.includes('DocumentPage') &&
@@ -153,6 +161,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	const nestedDocsSourceImport = relativeImport(`${routeDirectory}/[...slug]`, sourceFile);
 	const docsLayoutCode = docsLayoutSnippet({ docsSourceImport });
 	const documentPageCode = documentPageSnippet();
+	const rootRouteLoadCode = rootRouteLoadSnippet(docsSourceImport);
 	const catchAllLoadCode = catchAllLoadSnippet(nestedDocsSourceImport);
 	const catchAllSvelteCode = catchAllSvelteSnippet(nestedDocumentPageImport);
 
@@ -217,7 +226,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			action: `Create this file. It maps the ${docsDir}/ corpus into a serializable Acrolls page tree.`,
 			code: sourceCode,
 			caution:
-				'The lazy body glob and the eager modules glob must use the identical pattern, and root must match that same pattern or every route key will be wrong. Do not collapse the eager glob into the lazy one (or drop body and read .default off the eager modules): Vite needs the separate lazy glob to keep document bodies out of the eager module graph, and merging them pulls the entire corpus into the initial bundle. Filesystem folders are discovered automatically; add folders only for label/order/presentation overrides. This starter discovers .md only; .svx is intentionally explicit.',
+				'The lazy body, metadata, and facts globs must use the identical pattern, and root must match that same pattern or every route key will be wrong. Keep the body glob lazy and use named eager metadata/facts imports so compiled article components and Shiki stay out of the eager graph. Filesystem folders are discovered automatically; add folders only for label/order/presentation overrides. This starter discovers .md only; .svx is intentionally explicit.',
 			verify:
 				'The source exports docs, the two glob patterns are identical, and root matches that pattern.',
 			completed: sourceReady
@@ -241,15 +250,15 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			code: documentPageCode,
 			caution:
 				'Keep the Publication wrapper. It mounts code-frame and Mermaid enhancers; CSS alone does not provide those behaviors.',
-			verify: 'The component resolves docs.get(slug), awaits document.loader(), and renders <Publication>.',
+			verify: 'The component resolves docs.get(slug), receives the route-resolved Article component, and renders <Publication>.',
 			completed: documentPageReady
 		},
 		{
 			id: 'routes',
 			title: 'Add the docs routes',
-			file: `${rootRouteFile}, ${catchAllLoadFile}, ${catchAllSvelteFile}`,
+			file: `${rootRouteLoadFile}, ${rootRouteFile}, ${catchAllLoadFile}, ${catchAllSvelteFile}`,
 			action: 'Create the root page and the nested catch-all route. Copy each snippet into its named file.',
-			code: `// ${rootRouteFile}\n${rootRouteSnippet(documentPageImport)}\n\n// ${catchAllLoadFile}\n${catchAllLoadCode}\n\n// ${catchAllSvelteFile}\n${catchAllSvelteCode}`,
+			code: `// ${rootRouteLoadFile}\n${rootRouteLoadCode}\n\n// ${rootRouteFile}\n${rootRouteSnippet(documentPageImport)}\n\n// ${catchAllLoadFile}\n${catchAllLoadCode}\n\n// ${catchAllSvelteFile}\n${catchAllSvelteCode}`,
 			caution:
 				'The root route handles the empty slug. The catch-all entries must exclude the empty root slug, or the same page will be generated twice.',
 			verify: `Both ${baseHref} and a nested ${baseHref}/<slug> route return a page; unknown slugs return 404.`,
@@ -477,7 +486,7 @@ export default defineConfig({
 function docsSourceSnippet({ contentGlob, baseHref }: { contentGlob: string; baseHref: string }): string {
 	return `import type { Component } from 'svelte';
 import { content, markdownGlob } from 'acrolls/content';
-import { defineDocsConfig, type DocsMetadata } from 'acrolls/docs/content';
+import { defineDocsConfig, type DocsDocumentFacts, type DocsMetadata } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 
@@ -485,15 +494,20 @@ const body = import.meta.glob('${contentGlob}/**/*.md', { import: 'default' }) a
   string,
   () => Promise<DocsArticle>
 >;
-const modules = import.meta.glob('${contentGlob}/**/*.md', { eager: true }) as Record<
-  string,
-  { metadata?: DocsMetadata }
->;
+const metadata = import.meta.glob('${contentGlob}/**/*.md', {
+  eager: true,
+  import: 'metadata'
+}) as Record<string, DocsMetadata>;
+const facts = import.meta.glob('${contentGlob}/**/*.md', {
+  eager: true,
+  import: '__acrollsDocument'
+}) as Record<string, DocsDocumentFacts>;
 
 export const docs = content({
   loader: markdownGlob({
     body,
-    modules,
+    metadata,
+    facts,
     root: '${contentGlob}'
   }),
   config: defineDocsConfig({
@@ -529,30 +543,43 @@ function docsLayoutSnippet({
 
 function documentPageSnippet(): string {
 	return `<script lang="ts">
+  import type { Component } from 'svelte';
   import { docs } from './source';
   import { Publication } from 'acrolls/svelte';
 
-  let { slug }: { slug: string } = $props();
+  let { slug, Article }: { slug: string; Article?: Component } = $props();
   const document = $derived(docs.get(slug));
 </script>
 
 {#if document}
-  {#await document.loader() then Article}
-    <Publication><Article /></Publication>
-  {:catch loadError}
-    <p>Could not load this documentation page: {loadError instanceof Error ? loadError.message : String(loadError)}</p>
-  {/await}
+  <Publication>
+    {#if Article}<Article />{/if}
+  </Publication>
 {:else}
   <p>Documentation page not found.</p>
 {/if}`;
 }
 
+function rootRouteLoadSnippet(docsSourceImport: string): string {
+	return `import { error } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { docs } from '${docsSourceImport}';
+
+export const load: PageLoad = async () => {
+  const document = docs.get('');
+  if (!document) error(404, 'Documentation index not found');
+  const Article = await document.loader();
+  return { slug: '', Article };
+};`;
+}
+
 function rootRouteSnippet(documentPageImport: string): string {
 	return `<script lang="ts">
   import DocumentPage from '${documentPageImport}';
+  let { data } = $props();
 </script>
 
-<DocumentPage slug="" />`;
+<DocumentPage slug={data.slug} Article={data.Article} />`;
 }
 
 function catchAllLoadSnippet(docsSourceImport: string): string {
@@ -563,20 +590,22 @@ import { docs } from '${docsSourceImport}';
 export const entries: EntryGenerator = () =>
   docs.documents.filter((document) => document.slug).map((document) => ({ slug: document.slug }));
 
-export const load: PageLoad = ({ params }) => {
+export const load: PageLoad = async ({ params }) => {
   const slug = params.slug ?? '';
-  if (!docs.get(slug)) error(404, \`Documentation page "\${slug || 'index'}" not found\`);
-  return { slug };
+  const document = docs.get(slug);
+  if (!document) error(404, \`Documentation page "\${slug || 'index'}" not found\`);
+  const Article = await document.loader();
+  return { slug, Article };
 };`;
 }
 
 function catchAllSvelteSnippet(documentPageImport: string): string {
 	return `<script lang="ts">
   import DocumentPage from '${documentPageImport}';
-  let { data }: { data: { slug: string } } = $props();
+  let { data } = $props();
 </script>
 
-<DocumentPage slug={data.slug} />`;
+<DocumentPage slug={data.slug} Article={data.Article} />`;
 }
 
 async function readOptional(path: string): Promise<string> {

@@ -200,7 +200,7 @@ Create `src/lib/docs/source.ts`. This example uses `docs/`, but replace both glo
 ```ts
 import type { Component } from 'svelte';
 import { content, markdownGlob } from 'acrolls/content';
-import { defineDocsConfig } from 'acrolls/docs/content';
+import { defineDocsConfig, type DocsDocumentFacts, type DocsMetadata } from 'acrolls/docs/content';
 
 type DocsArticle = Component;
 
@@ -210,7 +210,14 @@ export const docs = content({
       string,
       () => Promise<DocsArticle>
     >,
-    modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../docs/**/*.md', {
+      eager: true,
+      import: 'metadata'
+    }) as Record<string, DocsMetadata>,
+    facts: import.meta.glob('../../docs/**/*.md', {
+      eager: true,
+      import: '__acrollsDocument'
+    }) as Record<string, DocsDocumentFacts>,
     root: '../../docs'
   }),
   config: defineDocsConfig({
@@ -221,10 +228,11 @@ export const docs = content({
 }).sourceSync();
 ```
 
-Both globs use the same pattern string: `body` is the lazy one that keeps document bodies out
-of the eager module graph, and `modules` is the eager one `markdownGlob` reads frontmatter and
-document facts from. `root` is the prefix stripped from each glob key. `.sourceSync()` is
-available because `markdownGlob` is an eager loader.
+All globs use the same pattern string: `body` is the lazy one that keeps document bodies out
+of the eager module graph, while the named `metadata` and `facts` globs supply frontmatter and
+document facts without importing compiled article components or Shiki eagerly. `root` is the
+prefix stripped from each glob key. `.sourceSync()` is available because `markdownGlob` is an
+eager loader.
 
 Two further options are available on `content()` and covered in
 [Integrate into SvelteKit](./integrate-sveltekit.md#typed-frontmatter-with-schema): `schema`
@@ -300,16 +308,25 @@ than `[slug]`, whenever nested folders are allowed:
 // src/routes/docs/+page.ts
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = () => ({ slug: '' });
+import { error } from '@sveltejs/kit';
+import { docs } from '../../lib/docs/source';
+
+export const load: PageLoad = async () => {
+  const document = docs.get('');
+  if (!document) error(404, 'Documentation index not found');
+  const Article = await document.loader();
+  return { slug: '', Article };
+};
 ```
 
 ```svelte
 <!-- src/routes/docs/+page.svelte -->
 <script lang="ts">
   import DocumentPage from '../../lib/docs/DocumentPage.svelte';
+  let { data } = $props();
 </script>
 
-<DocumentPage slug="" />
+<DocumentPage slug={data.slug} Article={data.Article} />
 ```
 
 If the docs area needs a host-authored overview instead, write that in `+page.svelte` and
@@ -326,10 +343,12 @@ export const entries: EntryGenerator = () =>
     .filter((document) => document.slug)
     .map((document) => ({ slug: document.slug }));
 
-export const load: PageLoad = ({ params }) => {
+export const load: PageLoad = async ({ params }) => {
   const slug = params.slug ?? '';
-  if (!docs.get(slug)) error(404, `Documentation page "${slug || 'index'}" not found`);
-  return { slug };
+  const document = docs.get(slug);
+  if (!document) error(404, `Documentation page "${slug || 'index'}" not found`);
+  const Article = await document.loader();
+  return { slug, Article };
 };
 ```
 
@@ -337,29 +356,29 @@ export const load: PageLoad = ({ params }) => {
 <!-- src/routes/docs/[...slug]/+page.svelte -->
 <script lang="ts">
   import DocumentPage from '../../../lib/docs/DocumentPage.svelte';
-  let { data }: { data: { slug: string } } = $props();
+  let { data } = $props();
 </script>
 
-<DocumentPage slug={data.slug} />
+<DocumentPage slug={data.slug} Article={data.Article} />
 ```
 
-In `DocumentPage.svelte`, load the matching component and render it inside your existing
-article presentation:
+In `DocumentPage.svelte`, receive the component resolved by the route `load` function and render it
+inside your existing article presentation. Resolving it in `load` keeps the article in SSR, SEO, and
+static-search output:
 
 ```svelte
 <script lang="ts">
+	import type { Component } from 'svelte';
   import { docs } from './source';
   import { Publication } from 'acrolls/svelte';
-  let { slug }: { slug: string } = $props();
+  let { slug, Article }: { slug: string; Article?: Component } = $props();
   const document = $derived(docs.get(slug));
 </script>
 
 {#if document}
-  {#await document.loader() then Article}
-    <Publication>
-      <Article />
-    </Publication>
-  {/await}
+	<Publication>
+	  {#if Article}<Article />{/if}
+	</Publication>
 {:else}
   <p>Documentation page not found.</p>
 {/if}

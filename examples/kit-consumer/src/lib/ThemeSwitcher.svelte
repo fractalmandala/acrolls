@@ -39,35 +39,3 @@
 		{/each}
 	</select>
 </label>
-
-<style>
-	.theme-switcher {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.55rem;
-		font-size: 0.75rem;
-		font-weight: 650;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--muted-foreground);
-	}
-
-	.theme-switcher select {
-		border: 1px solid var(--border);
-		border-radius: calc(var(--radius) * 0.75);
-		background: var(--card);
-		color: var(--foreground);
-		font: inherit;
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: normal;
-		text-transform: none;
-		padding: 0.4rem 1.8rem 0.4rem 0.65rem;
-		cursor: pointer;
-	}
-
-	.theme-switcher select:focus-visible {
-		outline: 2px solid color-mix(in oklab, var(--accent) 60%, transparent);
-		outline-offset: 2px;
-	}
-</style>

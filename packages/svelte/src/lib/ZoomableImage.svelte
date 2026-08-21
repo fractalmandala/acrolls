@@ -30,11 +30,11 @@
 	</button>
 	<dialog class="acrolls-zoom-dialog" bind:this={dialog} onclick={(e) => e.target === dialog && close()}>
 		<form method="dialog">
-			<button type="submit" class="acrolls-code-frame__btn" style="float:right">Close</button>
+			<button type="submit" class="acrolls-code-frame__btn">Close</button>
 		</form>
 		<img src={cleanSrc} {alt} />
 		{#if alt}
-			<p style="margin:0.75rem 0 0;color:var(--acrolls-muted)">{alt}</p>
+			<p>{alt}</p>
 		{/if}
 	</dialog>
 {:else}

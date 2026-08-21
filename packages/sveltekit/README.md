@@ -43,7 +43,14 @@ export const docs = content({
       string,
       () => Promise<DocsArticle>
     >,
-    modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../content/**/*.md', {
+      eager: true,
+      import: 'metadata'
+    }),
+    facts: import.meta.glob('../../content/**/*.md', {
+      eager: true,
+      import: '__acrollsDocument'
+    }),
     root: '../../content'
   }),
   config: defineDocsConfig({
@@ -56,10 +63,12 @@ export const docs = content({
 }).sourceSync();
 ```
 
-Both globs use the identical pattern string. `body` is lazy (`{ import: 'default' }`) so
-document bodies stay out of the eager module graph; `modules` is eager (`{ eager: true }`) and
-supplies both frontmatter and the preprocessor's static document facts. `.sourceSync()` is
-legal because `markdownGlob` is an eager loader.
+All globs use the identical pattern string. `body` is lazy (`{ import: 'default' }`) so document
+bodies stay out of the eager module graph; the named `metadata` and `facts` globs supply
+frontmatter and the preprocessor's static document facts without importing compiled article
+components or Shiki into the eager graph. `.sourceSync()` is legal because `markdownGlob` is an
+eager loader. The legacy `modules: import.meta.glob(..., { eager: true })` form remains supported
+for compatibility, but it eagerly materializes the full compiled modules and is not recommended.
 
 `content()` also accepts `schema` (any Standard Schema validator, brought by the host) and
 `filter` (removes a document from every addressable surface, including direct URL access —
@@ -88,8 +97,8 @@ scheduled for removal**, so existing hosts need no changes.
 | Old option | New location |
 |---|---|
 | `modules` (lazy `default` glob) | `markdownGlob({ body })` |
-| `metadata` (eager `metadata` glob) | folded into `markdownGlob({ modules })` |
-| `facts` (eager `__acrollsDocument` glob) | folded into `markdownGlob({ modules })` |
+| `metadata` (eager `metadata` glob) | `markdownGlob({ metadata })` |
+| `facts` (eager `__acrollsDocument` glob) | `markdownGlob({ facts })` |
 | `contentRoot` | `markdownGlob({ root })` |
 | `config` | `content({ config })`, unchanged |
 
