@@ -1,6 +1,0 @@
-{
-	"title": "Cloudflare Pages",
-	"description": "Deploy SVOCS to Cloudflare Pages with zero configuration.",
-	"order": 2,
-	"tags": ["deployment", "cloudflare"]
-}
