@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run lint
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:unit -- --run
+      - run: node scripts/sync-template.mjs --check
+      - run: bun run build
+
+  scaffold:
+    name: Scaffold smoke test
+    runs-on: ubuntu-latest
+    env:
+      CREATE: ${{ github.workspace }}/packages/create-svocs-docs
+      CLI: ${{ github.workspace }}/packages/svocs-cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      # The packages aren't workspaces of the root; each carries its own lockfile.
+      - run: bun install --frozen-lockfile
+        working-directory: ${{ env.CREATE }}
+      - run: bun install --frozen-lockfile
+        working-directory: ${{ env.CLI }}
+      # stdin is not a TTY here, so the scaffolder takes every default.
+      - run: node "$CREATE/bin.js" smoke-site
+        working-directory: ${{ runner.temp }}
+      - run: bun install
+        working-directory: ${{ runner.temp }}/smoke-site
+      - run: bun run check && bun run lint && bun run build
+        working-directory: ${{ runner.temp }}/smoke-site
+      - run: node "$CLI/bin.js" doctor
+        working-directory: ${{ runner.temp }}/smoke-site
+      - run: node "$CLI/bin.js" update --from="$CREATE" --dry-run --force
+        working-directory: ${{ runner.temp }}/smoke-site

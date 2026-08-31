@@ -16,11 +16,18 @@ import type { StandardSchemaV1 } from './collection.js';
  * ```
  */
 
+/** Nav-only IA hints (P20): `sidebar.{order,label}` is the canonical spelling; flat `order` remains a working alias. */
+export type AcrollsSidebarFields = {
+	order?: number;
+	label?: string;
+};
+
 /** The fields every Acrolls docs surface reads off a page. `title` is required; the rest carry defaults. */
 export type AcrollsPageFields = {
 	title: string;
 	description?: string;
 	order?: number;
+	sidebar?: AcrollsSidebarFields;
 	hidden: boolean;
 	draft: boolean;
 	badge?: string;
@@ -98,6 +105,16 @@ const page = schema<AcrollsPageFields>('acrolls/page', (data) => {
 	if (data.badge !== undefined && !isString(data.badge)) {
 		throw new Error('`badge` must be a string');
 	}
+	const sidebar = data.sidebar === null ? undefined : (data.sidebar as Record<string, unknown> | undefined);
+	if (sidebar !== undefined && (typeof sidebar !== 'object' || Array.isArray(sidebar))) {
+		throw new Error('`sidebar` must be an object');
+	}
+	if (sidebar?.order !== undefined && typeof sidebar.order !== 'number') {
+		throw new Error('`sidebar.order` must be a number');
+	}
+	if (sidebar?.label !== undefined && !isString(sidebar.label)) {
+		throw new Error('`sidebar.label` must be a string');
+	}
 
 	const fields: AcrollsPageFields = {
 		title: data.title,
@@ -107,6 +124,11 @@ const page = schema<AcrollsPageFields>('acrolls/page', (data) => {
 	};
 	if (description !== undefined) fields.description = description;
 	if (typeof data.order === 'number') fields.order = data.order;
+	if (sidebar && (sidebar.order !== undefined || sidebar.label !== undefined)) {
+		fields.sidebar = {};
+		if (typeof sidebar.order === 'number') fields.sidebar.order = sidebar.order;
+		if (isString(sidebar.label)) fields.sidebar.label = sidebar.label;
+	}
 	if (isString(data.badge)) fields.badge = data.badge;
 	if (data.redirect_from !== undefined) {
 		fields.redirect_from = isString(data.redirect_from)

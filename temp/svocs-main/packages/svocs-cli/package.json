@@ -1,0 +1,29 @@
+{
+	"name": "svocs-cli",
+	"version": "0.5.0",
+	"description": "Companion CLI for SVOCS docs sites: check your setup, pull template updates, sync mirrored pages, migrate from Fumadocs, Nextra, Docusaurus, Starlight, MkDocs, mdBook, or an Obsidian vault.",
+	"type": "module",
+	"license": "MIT",
+	"homepage": "https://svocs.dev",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/juddisjudd/svocs.git",
+		"directory": "packages/svocs-cli"
+	},
+	"bugs": "https://github.com/juddisjudd/svocs/issues",
+	"bin": {
+		"svocs": "bin.js"
+	},
+	"files": [
+		"bin.js",
+		"lib",
+		"!lib/**/*.test.mjs"
+	],
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {
+		"@clack/prompts": "^1.7.0",
+		"picocolors": "^1.1.1"
+	}
+}

@@ -6,6 +6,118 @@ Chronological record of working sessions and what each changed. Newest first. Se
 
 ---
 
+## 2026-08-31 · S13 — UI playset: root demo app over `docs/playset`
+
+**Focus:** Give the designated root `src/` scaffold a runnable dev surface for composing the
+Acrolls UI (nav, TOC, pager, shells) against the real content engine — kept structurally outside
+the published package.
+
+**Shipped**
+- **Root is now a dev-only SvelteKit app.** `vite.config.ts` carries kit config in the
+  `sveltekit()` plugin options (no `svelte.config.js`, mirroring kit-consumer): `.md` in
+  `extensions`, `vitePreprocess` + `createAcrollsSvelteKitMdsvexPreprocessor`, `NodePackageImporter`
+  for `pkg:` SASS URLs, and `serve`-only dev source aliases re-pointing the `@acrolls/*` leaves to
+  their `src/` (edits under `packages/*/src` hot-reload here with no rebuild). Plus `src/app.html`,
+  `src/app.d.ts`, root `tsconfig.json`, and `src/routes/+layout.svelte` importing
+  `$lib/styles/index.sass` (the fractalstyler2 scaffold).
+- **Demo corpus wiring** — `src/lib/demo/source.ts` feeds `docs/playset/` (five numbered
+  docs-shaped Markdown files) through `markdownGlob` (body/metadata/facts triple) + `content()` with
+  minimal config (`title: 'UI playset'`, `baseHref: '/docs'`), `.sourceSync()`. The stub
+  `src/routes/+page.svelte` renders `docs.nav` — a pipeline proof only; the real composition
+  (AppShell, PageShell, pickers in `src/comps/`) is authored by the user, untouched.
+- **Scripts and deps** — `pnpm dev:ui` (`vite dev`, `strictPort: false`); root devDeps gained
+  `@sveltejs/kit`, `@sveltejs/vite-plugin-svelte`, `acrolls: workspace:*`, `mdsvex`, `sass`,
+  `svelte`, `vite`; `.gitignore` gained `vite.config.ts.timestamp-*`.
+- **Playset content fix** — `docs/playset/03-presets/01-preset.md` code-spanned three raw
+  `<html>` mentions (Svelte `node_invalid_placement` inside list items), matching the corpus's own
+  convention (see `01-getting-started.md`).
+
+**Verified end to end:** `pnpm install` + `svelte-kit sync` clean; `pnpm dev:ui` boots; SSR 200 with
+`<title>UI playset</title>`, "5 documents compiled", and the full nav tree (01 Introduction /
+02 Components / 03 Presets with items) — real engine output, no mocks. Dev server killed after
+verification.
+
+**Boundary:** nothing here can ship — the pack root is `packages/acrolls/` and its `files`
+allowlist (`bin`, `exports`, `styles`, `README`, `LICENSE`) cannot see the repo root.
+
+**Same-day follow-up: routes wired to the corpus.** `/` stays the docs home. The engine config
+flipped to `baseHref: '/'` + `naming: numbered()` — `01-` prefixes order siblings and strip from
+slugs and titles, so `01-introduction/01-getting-started` serves at `/introduction/getting-started`
+as "Getting Started", matching the host's hand-written links exactly. A `[...slug]` route resolves
+the compiled article in `load` (kit-consumer pattern) and renders it inside the user's composition
+classes (`content-shell` / `article-heading` / `acrolls-content`), with a styled not-found fallback;
+index listing items link via `item.href`. The layout's sidebar and "On this page" now derive from
+`docs.nav.sections` and `metadata.headings` (compile-time rehype-slug ids → anchor links), keeping
+the hand-drawn placeholder markup as the empty-state fallback. Verified on the user's own dev
+server: all five doc routes 200 with real titles, clean nav hrefs, working TOC anchors, prose and
+Mermaid fallbacks in the SSR HTML. A `svelte` fence added to `getting-started.md` as a Shiki
+specimen (`acrolls-code-frame__pre shiki shiki-themes …` dual-theme CSS vars) for the upcoming
+docs-content styling pass.
+
+---
+
+## 2026-08-31 · S12 — Backend closure: audit findings and scaffold (D1–D8)
+
+**Focus:** Resolve the six findings from the scenario audit after user go/no-go: D1–D4 fix,
+D5 accept. **D7:** decided same-day and shipped below (content-only `docs init`). **D8:** the
+suite was promoted to a permanent regression home — `packages/docs/src/lib/scenarios.test.ts`
+(imports re-pointed one level up, `__audit__/` removed, header records its origin and scope).
+**D6:** decided same-day and shipped below.
+
+**Shipped**
+- **D1 — filesystem sections link their landing page.** `buildNav()` now sets a top-level
+  section's `href`/`slug`/`description` from the folder's landing page (any `indexNames` stem, so
+  README landings work too) and stops duplicating the landing as an item — matching
+  `buildDefinedNav` and behavior 7 (the landing link and the disclosure control are separate
+  interactions). A section without a landing stays disclosure-only; a folder holding only an
+  index still renders as a linkable section.
+- **D2 — merged sources render in declaration order.** `ContentLoader` gained an optional
+  `sectionOrder` hint map; `mergeLoaders` records each prefixed source's declaration index,
+  `content()` forwards it, and both builders consume it as the lowest-precedence section order
+  (explicit `folders[].order` and naming-convention orders win). `mergeRaw` needs no counterpart.
+- **D3 — camelCase slugs cleanly.** `slugify` splits lower→upper word boundaries
+  (`packageA` → `package-a`, `parseURL` → `parse-url`) before lowercasing, and `humanize()`
+  splits the same boundaries for titles (`Package A`, never `Packagea`). Applies to source
+  segments, merge prefixes, TOC anchors, and storage-key fallbacks alike — routes for camelCase
+  files change, which is the point.
+- **D4 — folders keys match raw casing; unmatched keys throw.** `folders`/`documents` config
+  keys register under both their raw and slug-space forms (`myFolder` and `my-folder` both
+  match). A `folders` key matching no discovered folder now throws a `DocsContentError` with
+  remediation (previously a silent no-op). `entries` keys stay raw by design (virtual groups).
+- **D5 — accepted:** per-page parent overrides remain the re-homing mechanism; no folder-level
+  flatten. Audit label moved FINDING → ACCEPTED with rationale.
+- **D6 — IA frontmatter fields (`sidebar.{order,label}`).** The blessed page schema gained a
+  validated `sidebar` object; the engine reads `sidebar.order` at the frontmatter tier of the
+  order chain with flat `order` kept as a working alias (canonical wins when both are present),
+  and `sidebar.label` renames nav entries only — page title, SEO, headings untouched. A landing
+  page's label names its section and its order positions the section when no `folders[].order`
+  encodes one. `lastModified` stays out (the SEO layer's JSON-LD read remains its only
+  consumer). The precedence lock (host config > frontmatter sidebar > inferred) is now an
+  executable spec: six new scenario tests.
+- **D7 — `acrolls docs init`, content-only scope.** New CLI command seeds the docs corpus with a
+  starter `index.md` (default `docs/`; `--docs-dir` / `--dry-run` like its siblings) and never
+  overwrites an existing index. The starter text lives in one constant (`starter.ts`) shared with
+  `onboard`'s content step — plan version 3, since that step's `code`/`action` changed shape
+  (behavior 63) and its action now names the command. The runtime empty-state placeholder —
+  P10's other half — remains with frontend closure, and onboarding's content step flips to
+  optional together with it.
+
+**Regression caught by the suite:** the landing filter initially dropped every item whose `slug`
+was undefined — including nested groups without landings ('Advanced' vanished from Guides). The
+filter now applies only when a landing exists.
+
+**Tests:** audit FINDING blocks rewritten as FIXED regressions; new assertions cover the
+unmatched-folder throw, that explicit order beats declaration order, the full IA precedence
+lock, and `docs init` (create / `--docs-dir` / dry-run / no-overwrite / starter contract).
+Suite: mdsvex 40, docs 128, cli 21 — all green; `pnpm build` clean.
+
+**Docs:** getting-started.md (section landing links, folder-key casing + throw),
+integrate-sveltekit.md (declaration order, clean prefix slugs, loud unmatched keys),
+content-authoring.md (new `### Navigation hints: sidebar` — IA hints and the precedence lock),
+cli.md (`docs init` reference), AGENTS.md (CLI package row).
+
+---
+
 ## 2026-08-17 · S11 — Build: multi-source docs (P22)
 
 **Shipped**

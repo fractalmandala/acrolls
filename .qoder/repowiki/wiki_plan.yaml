@@ -1,0 +1,50 @@
+version: 1
+
+scope:
+  include: []
+  exclude:
+    - node_modules/**
+    - "**/node_modules/**"
+    - .pnpm-store/**
+    - ref/**
+    - temp/**
+    - "**/dist/**"
+    - "**/.svelte-kit/**"
+    - pnpm-lock.yaml
+
+repowiki:
+  template: architecture
+  notes:
+    - text: "Acrolls is an open-source SvelteKit publishing + docs framework (the Fumadocs/Starlight equivalent for Svelte): it turns plain Markdown/mdsvex (.md/.svx) into publication-grade articles plus a full docs shell. It is NOT a CMS, hosted product, or website builder; hosts keep routing, auth, deployment, and content storage."
+    - text: "Responsibility boundary: Acrolls owns mdsvex compilation semantics, the Publication article UI, compile-time code highlighting, docs-shell chrome, and CLI tooling. The host owns routing, deployment, SEO policy, content location, global navigation, and theme-toggle persistence."
+    - text: "Current stage: Alpha. v0 scope (reader surface, author CLI, Studio) plus the docs shell with generated content source are implemented, and the fractalthemer theming kit (acrolls/styles/theme) has shipped. Remaining roadmap: the Acrolls docs/marketing site, the npm release sequence, 'acrolls docs init' scaffold, optional search — do not describe npm publishing as already done."
+    - text: "Consumer contract: external hosts install only the public npm package 'acrolls' (pnpm add acrolls@latest) and import through supported 'acrolls/*' entrypoints. Scoped @acrolls/* packages (packages/mdsvex, svelte, styles, docs, sveltekit, cli) are internal bundled implementation units — never direct consumer dependencies, and hosts must not add workspace/clone/file: dependencies."
+    - text: "Monorepo: pnpm workspaces, Node >= 20.19, Svelte 5 runes, SvelteKit 2.62+, TypeScript; tsup for TS libs and svelte-package for Svelte packages. All packages live under packages/; the public package is packages/acrolls and the CLI implementation is packages/cli."
+    - text: "Key commands: pnpm install; pnpm build; pnpm check; pnpm test; pnpm --filter @acrolls/docs test; pnpm dev:docs runs the docs watcher + example host at http://127.0.0.1:5173/docs; validate content with node ./packages/cli/dist/index.js validate examples/starter/article.md."
+    - text: "Forbidden patterns: no default mdsvex layout that wraps every site .md (scope Publication to blog/docs routes); avoid frontmatter key 'metadata' (clashes with the mdsvex export) — use 'reading'; escape { and } in Shiki HTML for Svelte compile; Tailwind is not part of the styling direction — custom CSS and pure indented SASS aligned with CUBE CSS."
+    - text: "Authoritative docs for humans and integrating agents: start at llms.txt (repo root) for agent reading order, docs/README.md for the handbook, then docs/getting-started.md, local-install.md, integrate-sveltekit.md, docs-shell.md, content-authoring.md, cli.md, troubleshooting.md, checklist.md. Product intent lives in docs/VISION.md, PRODUCT.md, and TECH.md."
+    - text: "ref/ and temp/ are third-party reference snapshots and scratch space, not Acrolls product code. examples/ holds demo hosts: kit-consumer is the working example (with the /acceptance smoke route), starter holds sample content."
+  documents:
+    - title: "Project Overview & Current Status"
+      goal: "Give a brand-new agent the fastest possible understanding: the objective (what Acrolls is), what is being built, the Acrolls-vs-host responsibility boundary, and the current development stage (Alpha — what has shipped vs. what remains on the roadmap)."
+      template: |
+        ## Objective
+        ## What Is Being Built
+        ## Responsibility Boundary (Acrolls vs. Host)
+        ## Current Stage & Roadmap
+    - title: "Package Architecture"
+      goal: "Map every package under packages/ (acrolls, cli, docs, mdsvex, styles, svelte, sveltekit): responsibility, key exports, build tooling, and how the public 'acrolls' package exposes supported 'acrolls/*' entrypoints backed by the scoped internal packages."
+      hints:
+        - "State the dependency direction explicitly: acrolls (public) -> @acrolls/* (internal), and that external hosts may only depend on the public package."
+    - title: "Content Pipeline & Docs Shell"
+      goal: "Explain the mdsvex compile pipeline (GFM, frontmatter, heading slugs, tables, Shiki dual themes, fence meta, renderAcrollsArticleHtml), the Publication component surface, and the docs shell: content-source discovery, generated DocsNav, routes, breadcrumbs, pager, TOC, and open-state persistence."
+    - title: "Consumer Integration & CLI"
+      goal: "Describe how an external SvelteKit host adopts Acrolls: the public 'acrolls' install contract, CLI commands (onboard, init, integrate, validate, studio), corpus preflight authored/migration modes with fail/error-page policies, and the agent-friendly --json onboarding plan."
+    - title: "Development Workflow"
+      goal: "Document monorepo development: build/check/test commands, the example host and /acceptance route, the fractalthemer theming kit, styling conventions (indented SASS, CUBE CSS, no Tailwind), and the authoritative handbook under docs/ plus llms.txt for agents."
+
+knowledgecard:
+  notes:
+    - text: "Organize knowledge cards per package under packages/ (acrolls, cli, docs, mdsvex, styles, svelte, sveltekit); each card should state the package's responsibility, key exports, and its relationship to the public 'acrolls' entrypoints."
+    - text: "Never treat ref/ or temp/ contents as product code — they are third-party reference snapshots and scratch space, and must not appear as knowledge cards."
+    - text: "docs/ is the canonical consumer/agent integration handbook; knowledge cards should cite those docs rather than duplicating their content."

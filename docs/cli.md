@@ -41,6 +41,7 @@ command documents whether it writes anything.
 | `acrolls validate` | Compile and report one page or a corpus | Only with `--report` |
 | `acrolls studio` | Preview and edit one source file locally | Yes, only when its editor saves the selected source file |
 | `acrolls init` | Create an empty content directory | Yes |
+| `acrolls docs init` | Seed the docs directory with a starter `index.md` | Yes (never overwrites) |
 | `acrolls integrate` | Plan or apply reviewed host edits | Only with `--yes` |
 
 The normal first-run order is `onboard` → `validate` → host `pnpm check`/`pnpm build` → deploy.
@@ -239,6 +240,27 @@ Create an empty content directory (no sample article).
 pnpm exec acrolls init
 pnpm exec acrolls init --content-dir content/docs --dry-run
 ```
+
+---
+
+## `docs init`
+
+Seed the docs corpus with a starter `index.md` — content only, by design. `integrate` wires the
+host and `onboard` walks the full installation; this command only gives you a working first page.
+
+```bash
+pnpm exec acrolls docs init
+pnpm exec acrolls docs init --docs-dir handbook --dry-run
+```
+
+| Flag | Meaning |
+|---|---|
+| `--docs-dir <path>` | Docs corpus directory (default: `docs`) |
+| `--dry-run` | Print what would happen; write nothing |
+
+The starter maps to the docs base route and infers its title from the folder, so it never creates
+a junk route. An existing `index.md` is left untouched — delete it first to regenerate. The
+starter text is the same snippet `onboard`'s content checkpoint shows.
 
 ---
 

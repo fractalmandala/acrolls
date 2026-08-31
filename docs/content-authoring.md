@@ -124,6 +124,36 @@ navigation record by default. A matching `documents` or `entries` configuration 
 `defineDocsConfig` takes precedence. Use configuration for deliberate navigation labels and
 frontmatter for content-owned defaults.
 
+### Navigation hints: `sidebar`
+
+Pages can carry navigation-only IA hints in frontmatter:
+
+```md
+---
+title: The Complete Installation and Setup Guide
+sidebar:
+  order: 2
+  label: Setup
+---
+```
+
+`sidebar.order` positions the page among its siblings; `sidebar.label` renames it in the
+navigation tree only — the page's `<h1>`, SEO title, and pager keep the full title. A landing
+page's `sidebar.label` names its section, and its `sidebar.order` positions the section when no
+`folders[].order` encodes one.
+
+Order resolves through a fixed precedence — the IA lock:
+
+1. **Host config** — `documents[].order`, `folders[].order`, `entries[].order` in
+   `defineDocsConfig`.
+2. **Frontmatter** — `sidebar.order`, then flat `order` as a working alias (`sidebar.order`
+   wins when both are present).
+3. **Inference** — naming conventions such as `01-`, then discovery/declaration order.
+
+Labels resolve the same way: config `title` > `sidebar.label` > the page title. A non-object
+`sidebar` or a wrongly typed `sidebar.order`/`sidebar.label` fails loudly instead of being
+skipped.
+
 ### File URI links
 
 Markdown link destinations cannot contain raw spaces. Exported `file://` references must

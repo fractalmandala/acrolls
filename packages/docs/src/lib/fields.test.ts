@@ -87,6 +87,35 @@ describe('acrollsFields.page', () => {
 		expect(source.diagnostics.some((d) => d.code === 'ACROLLS_SCHEMA_INVALID')).toBe(true);
 		expect(source.diagnostics[0].message).toContain('`order` must be a number');
 	});
+
+	it('validates the sidebar object and keeps it on the page', async () => {
+		const loader = loaderOf([
+			{
+				key: 'guide.md',
+				data: { title: 'Guide', sidebar: { order: 2, label: 'Setup' } },
+				load: async () => 'guide'
+			}
+		]);
+		const source = await content({ loader, config, schema: acrollsFields.page }).source();
+		const data = source.documents[0].metadata as Record<string, unknown>;
+
+		expect(source.diagnostics).toEqual([]);
+		expect(data.sidebar).toEqual({ order: 2, label: 'Setup' });
+	});
+
+	it('rejects a wrongly typed sidebar field', async () => {
+		const loader = loaderOf([
+			{ key: 'guide.md', data: { title: 'Guide', sidebar: { order: 'first' } }, load: async () => 'guide' }
+		]);
+		const source = await content({
+			loader,
+			config: authoredConfig,
+			schema: acrollsFields.page
+		}).source();
+
+		expect(source.diagnostics.some((d) => d.code === 'ACROLLS_SCHEMA_INVALID')).toBe(true);
+		expect(source.diagnostics[0].message).toContain('`sidebar.order` must be a number');
+	});
 });
 
 describe('acrollsFields.post — a layered genre stack', () => {

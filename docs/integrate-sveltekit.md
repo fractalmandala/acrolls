@@ -526,6 +526,13 @@ key raise a `DocsContentError` naming both sets, so collisions fail loudly inste
 overwriting. Navigation, breadcrumbs, pager, TOC, search, SEO, sitemap, and OG images all work
 unchanged — they consume the merged source.
 
+Sections render in **declaration order** — the order you list the sources in the array. Explicit
+ordering still wins when you need it: a `folders['<prefix>'].order` value (or a naming-convention
+order on the prefix) overrides the declaration position. Prefixes slug cleanly regardless of
+casing (`packageA` serves from `/docs/package-a` under a **Package A** section), and if a folder
+is renamed so a `folders` key no longer matches, the build errors instead of dropping the override
+silently.
+
 For the AI tier, merge the raw maps with the **same prefixes** so keys stay aligned:
 
 ```ts

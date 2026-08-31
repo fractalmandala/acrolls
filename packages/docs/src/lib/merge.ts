@@ -78,9 +78,18 @@ export function mergeLoaders<TDocument>(
 	sources: readonly MergeSource<TDocument>[]
 ): ContentLoader<TDocument> {
 	const eager = sources.every((source) => source.loader.eager);
+	// Declaration order becomes the sections' fallback order: each prefixed source records its
+	// position so merged sets render in the order the host listed them. Explicit
+	// `folders[].order` and naming-convention orders still win over the hint.
+	const sectionOrder: Record<string, number> = {};
+	sources.forEach((source, index) => {
+		const prefix = normalizePrefix(source.prefix);
+		if (prefix) sectionOrder[prefix] = index;
+	});
 
 	return {
 		eager,
+		sectionOrder,
 		list() {
 			const lists = sources.map((source) => source.loader.list());
 			if (eager) return mergeLists(sources, lists as LoadedDocument<TDocument>[][]);

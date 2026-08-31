@@ -25,7 +25,7 @@ Context for any coding agent working on **Acrolls** (`/Users/amrit/fractalmandal
 | `@acrolls/svelte` | `Publication`, Callout, Figure, Banner, Mermaid enhance |
 | `@acrolls/styles` | `foundation.css`, `default.css`, SASS tokens |
 | `@acrolls/docs` | Docs shell: nested nav, TOC, breadcrumbs, pager, persist |
-| `@acrolls/cli` | validate, studio, integrate, init |
+| `@acrolls/cli` | validate, studio, integrate, init, docs init |
 | `@acrolls/sveltekit` | Internal bundled Kit helper exposed as `acrolls/sveltekit` |
 | `acrolls` | Public package, all supported `acrolls/*` entrypoints, and CLI |
 
@@ -37,12 +37,22 @@ pnpm install
 pnpm build
 pnpm --filter @acrolls/docs test
 pnpm --filter @acrolls/example-kit dev
+pnpm dev:ui
 ./packages/cli/dist/index.js validate examples/starter/article.md
 ./packages/cli/dist/index.js studio examples/starter/article.md
 ```
 
 External hosts install only `acrolls` from npm. Internal scoped packages are bundled
 implementation units, not consumer dependencies.
+
+## UI playset (temporary, dev-only)
+
+The repo root is a minimal SvelteKit app for visually composing the Acrolls UI
+(`pnpm dev:ui`). It renders `docs/playset/` (dummy docs-shaped Markdown) through the real
+content engine via `src/lib/demo/source.ts`; the kit config lives in `vite.config.ts`
+(no `svelte.config.js`), and `serve`-only aliases re-point `@acrolls/*` to package sources for
+HMR. Nothing at the root is built or published — the pack root is `packages/acrolls/` and its
+`files` allowlist cannot see the repo root. Do not wire root demo code into packages.
 
 ## Conventions
 

@@ -5,6 +5,7 @@ import { parseArgs, exists } from './util.js';
 import { cmdIntegrate, detectHost } from './integrate.js';
 import { cmdOnboard } from './onboarding.js';
 import { cmdStudio } from './studio.js';
+import { cmdDocsInit } from './docs-init.js';
 import {
   formatValidationDiagnostic,
   validateCorpus,
@@ -22,6 +23,7 @@ Usage:
   acrolls                        Show project state
   acrolls --cwd <path> <command> Run against a host without changing directories
   acrolls init [--content-dir <path>] [--dry-run]
+  acrolls docs init [--docs-dir <path>] [--dry-run]
   acrolls integrate [--dry-run] [--mode foundation|default] [--style css|sass] [--yes]
   acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--style css|sass] [--check] [--non-interactive|--interactive] [--json]
   acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]
@@ -143,6 +145,11 @@ async function main() {
     if (!cmd) code = await cmdStatus();
     else if (cmd === 'init') code = await cmdInit(args);
     else if (cmd === 'integrate') code = await cmdIntegrate(args);
+    else if (cmd === 'docs' && args._[1] === 'init') code = await cmdDocsInit(args);
+    else if (cmd === 'docs') {
+      console.error('Usage: acrolls docs init [--docs-dir <path>] [--dry-run]');
+      code = 2;
+    }
     else if (cmd === 'onboard') code = await cmdOnboard(args);
     else if (cmd === 'validate') code = await cmdValidate(args);
     else if (cmd === 'studio') code = await cmdStudio(args);

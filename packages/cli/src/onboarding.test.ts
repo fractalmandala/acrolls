@@ -65,7 +65,7 @@ describe('Acrolls onboarding plan', () => {
 		expect(source?.code).not.toContain('folders:');
 		expect(source?.caution).toContain('identical pattern');
 		expect(source?.caution).toContain('named eager metadata/facts imports');
-		expect(plan.version).toBe(2);
+		expect(plan.version).toBe(3);
 		const preprocessor = plan.steps.find((step) => step.id === 'preprocessor');
 		expect(preprocessor?.code).toContain("extensions: ['.svelte', '.md', '.svx']");
 		expect(preprocessor?.code).toContain("extensions: ['.md', '.svx']");

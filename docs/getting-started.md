@@ -247,7 +247,9 @@ list every directory in `folders`:
 - The first directory level becomes a top-level `DocsNav` section.
 - Markdown files directly inside that directory become section items.
 - Deeper directories become nested groups with their own child items.
-- `index.md` becomes the route for its containing directory.
+- `index.md` becomes the route for its containing directory — and links the section header
+  itself, so clicking the section title navigates to the folder's landing page. Opening the
+  section still just discloses its children; the two are separate interactions.
 
 The source provides:
 
@@ -272,6 +274,10 @@ folders: {
   // Other directories continue to be discovered automatically.
 }
 ```
+
+Folder keys may be written in raw path casing (`myFolder`) or slug form (`my-folder`) — both
+match the same directory. A key that matches no discovered folder fails the build with a clear
+error instead of silently doing nothing, so a misspelling can never quietly drop an override.
 
 `acrolls/content` is the front door for the collection API (`content`, `markdownGlob`,
 `customSource`); `acrolls/docs/content` keeps `defineDocsConfig`, the docs config types, and

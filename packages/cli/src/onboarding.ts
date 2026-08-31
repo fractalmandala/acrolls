@@ -3,6 +3,7 @@ import { join, relative, resolve } from 'node:path';
 import type { Args } from './util.js';
 import { exists } from './util.js';
 import { detectHost } from './integrate.js';
+import { DOCS_STARTER_INDEX_MD } from './starter.js';
 
 export type OnboardingOptions = {
 	root: string;
@@ -25,14 +26,17 @@ export type OnboardingStep = {
 };
 
 /**
+ * Plan version 3: the content checkpoint's snippet comes from the shared `DOCS_STARTER_INDEX_MD`
+ * constant — the same text `acrolls docs init` writes — and its action names that command.
+ * Checkpoint ids, ordering, and every JSON field name are unchanged; only the `content` step's
+ * `code`/`action` text changed shape, which PRODUCT.md behavior 63 requires be versioned rather
+ * than silently altered.
+ *
  * Plan version 2: the generated-source checkpoint emits the `content({ loader: markdownGlob() })`
- * two-glob form instead of the legacy three-glob `createDocsContentSource` snippet. Checkpoint
- * ids, ordering, and every JSON field name are unchanged; only the `source` step's `code` and
- * `caution` text changed shape, which PRODUCT.md behavior 63 requires be versioned rather than
- * silently altered.
+ * two-glob form instead of the legacy three-glob `createDocsContentSource` snippet.
  */
 export type OnboardingPlan = {
-	version: 2;
+	version: 3;
 	root: string;
 	host: {
 		kind: string;
@@ -212,8 +216,8 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 			id: 'content',
 			title: 'Create the first docs content',
 			file: `${docsDir}/index.md`,
-			action: `Create this file (or use your existing Markdown directory instead of ${docsDir}/).`,
-			code: `---\ntitle: Documentation\ndescription: The documentation home\n---\n\n# Documentation\n\nYour first Acrolls documentation page.`,
+			action: `Create this file (run \`acrolls docs init\` to write it), or use your existing Markdown directory instead of ${docsDir}/.`,
+			code: DOCS_STARTER_INDEX_MD,
 			caution:
 				'Frontmatter is optional in migration mode, but title and description are recommended for navigation, page metadata, and the visible banner. Keep executable Svelte in .svx, not ordinary .md prose.',
 			verify: `The file exists and opens as Markdown at ${baseHref}.`,
@@ -297,7 +301,7 @@ export async function buildOnboardingPlan(options: OnboardingOptions): Promise<O
 	];
 
 	return {
-		version: 2,
+		version: 3,
 		root,
 		host: {
 			kind: host.kind,

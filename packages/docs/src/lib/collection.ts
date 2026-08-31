@@ -60,6 +60,12 @@ export type ContentLoader<TDocument> = {
 	/** `true` when `list()` is synchronous, which makes {@link Collection.sourceSync} legal. */
 	readonly eager: boolean;
 	/**
+	 * Optional per-section ordering hints keyed by source prefix. `mergeLoaders` records each
+	 * prefixed source's declaration index here so merged sections render in the order the host
+	 * listed them; explicit `folders[].order` and naming-convention orders still win.
+	 */
+	sectionOrder?: Readonly<Record<string, number>>;
+	/**
 	 * Reserved seam for future live/incremental sources. Declared only — there is no
 	 * implementation, and nothing in Acrolls consumes it yet.
 	 */
@@ -166,7 +172,11 @@ export function content<TDocument, TSchema extends SchemaInput | undefined = und
 	options: ContentOptions<TDocument, TSchema>
 ): Collection<TDocument, TSchema> {
 	const build = (pipeline: Pipeline<TDocument>): DocsContentSource<TDocument> => {
-		const engine = createDocsContentSource({ config: options.config, documents: pipeline.documents });
+		const engine = createDocsContentSource({
+			config: options.config,
+			documents: pipeline.documents,
+			sectionOrder: options.loader.sectionOrder
+		});
 		return {
 			...engine,
 			diagnostics: [...pipeline.diagnostics, ...engine.diagnostics]

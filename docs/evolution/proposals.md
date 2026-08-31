@@ -14,7 +14,7 @@ Live status of every idea and decision from the [session ledger](./sessions.md).
 | P7 | Clamped shell width (`clamped` prop + `--acrolls-docs-max-width`) | `proposed` | S2 | Option A only; small CSS + prop |
 | P8 | Docs vs section page-type store | `proposed` | S2 | per-route `$state`; backed by existing shell props |
 | P9 | Docs source location default | `clarified` | S2 | stays `project/docs`; not enforced |
-| P10 | Empty-corpus: runtime empty-state + optional `acrolls docs init` scaffold | `accepted` | S2 | replaces manual content step; `index.md` not `BLANK.md`; guidance-only preserved |
+| P10 | Empty-corpus: runtime empty-state + optional `acrolls docs init` scaffold | `partially shipped` | S2→S12 | `docs init` shipped S12 (content-only per D7: starter `index.md`, `--docs-dir`/`--dry-run`, never overwrites, starter constant shared with onboarding, plan v3). Runtime empty-state placeholder + the onboarding optional flip remain (frontend closure) |
 | P11 | Step 8 dual layout options in onboarding (DocsShell / DocsSidebar) | `proposed` | S2 | demonstrated in the prototype only; the CLI plan still emits one layout — fold into `onboarding.ts` + docs when built |
 | P12 | Base href as the variable — no hardcoded routes in logic/prose | `shipped` | S3 | `docs.nav.baseHref`-derived `isIndex` in snippets, `docs-shell.md`, `onboarding.ts`, example docs layout; base-href prose; CLI tests pass |
 | P13 | CLI test asserting generated layout derives `isIndex` from `docs.nav.baseHref` | `proposed` | S4 | regression guard so a future edit can't reintroduce a hardcoded route |
@@ -24,14 +24,14 @@ Live status of every idea and decision from the [session ledger](./sessions.md).
 | P17 | OG images — build-time PNG per page (satori+resvg), fed from the `content()` tree, per-page `seo.image` override; optional | `shipped` | S5→S8 | `og.ts` (`acrollsOgCard` element tree — no satori dep — + `docsOgImagePath`/`docsOgSlug`/`docsOgEntries`); example `og/[slug]` prerendered endpoint (satori+resvg+Inter woff devDeps); og/twitter:image wired, twitter card → summary_large_image. Verified: 5 valid 1200×630 PNGs. Flat slugs avoid prerender conflicts |
 | P18 | AI features — static tier now (llms.txt + llms-full.txt, per-page `.md`, copy-as-markdown, `ai.exclude`); server tier later (Ask chat, MCP) | `shipped` (static tier) | S5→S6 | `ai.ts` + `CopyPageMarkdown.svelte` + `markdownRaw` helper; example routes /llms.txt, /llms-full.txt; server tier still deferred |
 | P19 | `site` origin config primitive (absolute URLs for canonical/OG/sitemap/llms) | `shipped` | S5→S6 | `site?` on `DocsContentConfig` + `DocsNav`, surfaced as `docs.nav.site`; used by SEO + AI helpers |
-| P20 | Frontmatter breadth — adopt Blume's optional nested fields (`seo`/`search`/`ai`/`draft`/`date`/`lastModified`/`sidebar`) while keeping title-required-in-authored | `proposed` | S5 | **decision to lock:** IA precedence = host config > frontmatter `sidebar.{order,label,…}` > inferred |
+| P20 | Frontmatter breadth — adopt Blume's optional nested fields (`seo`/`search`/`ai`/`draft`/`date`/`lastModified`/`sidebar`) while keeping title-required-in-authored | `partially shipped` | S5→S12 | `seo`/`ai`/`draft`/`date` shipped (P16/P18). S12: `sidebar.{order,label}` shipped — blessed schema object, frontmatter tier of the IA order chain (flat `order` alias, canonical wins), nav-only labels incl. section naming/positioning via the landing; IA lock (host config > frontmatter sidebar > inferred) spec'd in scenarios.test.ts. `lastModified` deferred (SEO JSON-LD reads it only); `search` waits on P15 Pagefind |
 | P21 | Resolve article component in route `load` (not `{#await}`) so pages prerender with content | `shipped (example); onboarding TODO` | S7 | required for SSR/SEO/Pagefind — `{#await document.loader()}` renders only the pending branch during prerender. Fixed in example; `onboarding.ts` docs`+page`/DocumentPage snippets still teach `{#await}` and should switch |
 | P22 | Multi-source docs — merge N separate content folders into one hierarchy, each set a first-level section (`mergeLoaders`/`mergeRaw` + key prefixing) | `shipped` | S10→S11 | `packages/docs/src/lib/merge.ts` (framework-neutral ContentLoader composition), re-exported via `acrolls/content` + `acrolls/docs`; collision → `DocsContentError`; 9 unit tests. Example merges `src/content` + `src/content-handbook`; verified: 8 pages indexed, handbook routes/nav/crumbs/pager/OG/llms/sitemap all correct. Docs in integrate-sveltekit.md incl. out-of-tree reach strategies |
 
 ## Next to build (accepted, not yet implemented)
 
-- **P10** — empty-state placeholder in `DocumentPage`/`DocsShell` (no writes) + `acrolls docs init`
-  scaffold; update onboarding "create content" step to optional.
+- **P10 (remainder)** — runtime empty-state placeholder in `DocumentPage`/`DocsShell` (no
+  writes), then flip onboarding's "create content" step to optional. `docs init` shipped in S12.
 
 ## Awaiting a decision (proposed)
 

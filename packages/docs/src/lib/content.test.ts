@@ -110,7 +110,10 @@ describe('content source', () => {
 		expect(docs.nav.sections.map((section) => section.title)).toEqual(['Guides', 'Docs']);
 		expect(docs.get('/docs/guides/installation')?.title).toBe('Installation');
 		expect(docs.get('guides/advanced/performance')?.href).toBe('/docs/guides/advanced/performance');
-		expect(docs.nav.sections[0]?.items.map((item) => item.title)).toEqual(['Installation', 'Guides', 'Advanced']);
+		// The guides landing page is the section's link (behavior 7), not a duplicated item.
+		expect(docs.nav.sections[0]?.items.map((item) => item.title)).toEqual(['Installation', 'Advanced']);
+		expect(docs.nav.sections[0]?.href).toBe('/docs/guides');
+		expect(docs.nav.sections[0]?.description).toBe('Start building');
 		expect(docs.nav.sections[1]?.items.map((item) => item.title)).toEqual(['Welcome to Acrolls']);
 	});
 

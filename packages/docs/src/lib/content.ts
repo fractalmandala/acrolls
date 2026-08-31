@@ -256,9 +256,12 @@ function namingDiagnostics<TDocument>(
 export function createDocsContentSource<TDocument>(options: {
 	config: DocsContentConfig;
 	documents: readonly DocsContentInput<TDocument>[];
+	/** Per-section order hints declared by the loader (see `mergeLoaders`), keyed by prefix. */
+	sectionOrder?: Readonly<Record<string, number>>;
 }): DocsContentSource<TDocument> {
 	const baseHref = absolutePath(options.config.baseHref);
 	const config = normalizeConfig(options.config);
+	const sectionOrder = normalizeSectionOrder(options.sectionOrder);
 	const admission = admitDocuments(options.documents, config);
 	const routeOverrides = resolveRouteOverrides(admission.documents, baseHref, config);
 	const landingEntryConfigs = resolveLandingEntryConfigs(config);
@@ -286,12 +289,14 @@ export function createDocsContentSource<TDocument>(options: {
 	const root = createFolder('', '');
 	for (const record of records) insertRecord(root, record);
 
+	assertFolderKeysMatch(config, records);
+
 	const hasDefinition = Object.keys(config.entries ?? {}).length > 0 ||
 		Boolean(config.index) ||
 	Object.values(config.folders ?? {}).some((folder) => Boolean(folder.index));
 	const nav = hasDefinition
-		? buildDefinedNav(records, config, baseHref)
-		: buildNav(root, records, config, baseHref);
+		? buildDefinedNav(records, config, baseHref, sectionOrder)
+		: buildNav(root, records, config, baseHref, sectionOrder);
 	if (config.site) nav.site = config.site.replace(/\/+$/, '');
 	const documents = [...records].sort(compareDocuments);
 	const diagnostics = [
@@ -486,16 +491,78 @@ function resolveMarkdownDocLink(sourceKey: string, link: string, baseHref: strin
 function normalizeConfig(config: DocsContentConfig): DocsContentConfig {
 	return {
 		...config,
-		folders: Object.fromEntries(
-			Object.entries(config.folders ?? {}).map(([key, value]) => [normalizeConfigPath(key), value])
-		),
-		documents: Object.fromEntries(
-			Object.entries(config.documents ?? {}).map(([key, value]) => [normalizeConfigPath(key), value])
-		),
+		folders: aliasConfigKeys(config.folders ?? {}),
+		documents: aliasConfigKeys(config.documents ?? {}),
 		entries: Object.fromEntries(
 			Object.entries(config.entries ?? {}).map(([key, value]) => [normalizeEntryKey(key), value])
 		)
 	};
+}
+
+/**
+ * Register a config map under both its raw path keys and their slug-space equivalents, so
+ * `folders: { myFolder: … }` matches the folder the tree built as `my-folder`. Keys that match no
+ * discovered folder are rejected separately (see `assertFolderKeysMatch`), so aliasing can only
+ * add matches, never hide a misspelling.
+ */
+function aliasConfigKeys<TValue>(map: Record<string, TValue>): Record<string, TValue> {
+	const aliased: Record<string, TValue> = {};
+	for (const [key, value] of Object.entries(map)) {
+		const raw = normalizeConfigPath(key);
+		aliased[raw] = value;
+		const slug = slugKey(raw);
+		if (slug && slug !== raw) aliased[slug] = value;
+	}
+	return aliased;
+}
+
+/** Slug-space form of a config path: each segment resolves through the same pipeline as routes. */
+function slugKey(path: string): string {
+	const segments = path.split('/').filter(Boolean);
+	return segments.length === 0 ? '' : segments.map((segment) => routeSegment(segment)).join('/');
+}
+
+/** Loader-declared section hints, keyed by their slug-space prefix so they match folder paths. */
+function normalizeSectionOrder(hints?: Readonly<Record<string, number>>): Map<string, number> {
+	const normalized = new Map<string, number>();
+	for (const [prefix, order] of Object.entries(hints ?? {})) {
+		const key = slugKey(normalizeConfigPath(prefix));
+		if (key) normalized.set(key, order);
+	}
+	return normalized;
+}
+
+/** Every folder path the discovered records materialize, including all ancestor prefixes. */
+function folderPathsOf<TDocument>(records: readonly SourceRecord<TDocument>[]): Set<string> {
+	const paths = new Set<string>();
+	for (const record of records) {
+		const segments = record.folderPath.split('/').filter(Boolean);
+		for (let index = 1; index <= segments.length; index += 1) {
+			paths.add(segments.slice(0, index).join('/'));
+		}
+	}
+	return paths;
+}
+
+/**
+ * A folders config key that matches no discovered folder can never apply — reject it loudly
+ * instead of silently no-oping. Keys may be written in raw path casing ('myFolder'); both that
+ * form and its slug-space form ('my-folder') count as a match.
+ */
+function assertFolderKeysMatch<TDocument>(
+	config: DocsContentConfig,
+	records: readonly SourceRecord<TDocument>[]
+): void {
+	const folderPaths = folderPathsOf(records);
+	for (const key of Object.keys(config.folders ?? {})) {
+		const raw = normalizeConfigPath(key);
+		if (!raw) continue;
+		if (!folderPaths.has(raw) && !folderPaths.has(slugKey(raw))) {
+			throw new DocsContentError(
+				`Docs folder config "${key}" matches no discovered folder. Folder keys resolve through the same slug pipeline as routes ('myFolder' → 'my-folder'), so check spelling and casing.`
+			);
+		}
+	}
 }
 
 function resolveRouteOverrides<TDocument>(
@@ -600,8 +667,14 @@ function toSourceRecord<TDocument>(
 		: entryConfig?.title ?? landingEntryConfig?.title ?? documentConfig?.title ?? stringMetadata(metadata, 'title') ?? fallbackTitle(routeSegments, config.title);
 	const description = entryConfig?.description ?? landingEntryConfig?.description ?? documentConfig?.description ?? stringMetadata(metadata, 'description') ?? stringMetadata(metadata, 'brief');
 	// A leaf's own segment order (last route segment) is the fallback when no config/frontmatter order.
+	// Frontmatter tier: canonical `sidebar.order` first, flat `order` as the working alias (P20 IA lock).
+	const sidebar = sidebarOf(metadata);
 	const order =
-		entryConfig?.order ?? documentConfig?.order ?? numberMetadata(metadata, 'order') ?? segmentOrders.at(-1);
+		entryConfig?.order ??
+		documentConfig?.order ??
+		(sidebar ? numberMetadata(sidebar, 'order') : undefined) ??
+		numberMetadata(metadata, 'order') ??
+		segmentOrders.at(-1);
 
 	return {
 		key,
@@ -662,7 +735,8 @@ function insertRecord<TDocument>(root: FolderRecord<TDocument>, record: SourceRe
 function buildDefinedNav<TDocument>(
 	records: readonly SourceRecord<TDocument>[],
 	config: DocsContentConfig,
-	baseHref: string
+	baseHref: string,
+	sectionOrder: ReadonlyMap<string, number>
 ): DocsNav {
 	const recordByKey = new Map(records.map((record) => [record.key.slice(0, -3), record]));
 	const groups = new Map<string, ResolvedGroup<TDocument>>();
@@ -735,7 +809,8 @@ function buildDefinedNav<TDocument>(
 	const sections: Array<DocsNavSection & { order?: number; path: string }> = [];
 	const rootPages = definedChildrenNodes(
 		root.children.filter((child): child is SourceRecord<TDocument> => isSourceRecord(child) && !child.hidden),
-		config
+		config,
+		sectionOrder
 	);
 	if (rootPages.length > 0) {
 		sections.push({
@@ -749,7 +824,7 @@ function buildDefinedNav<TDocument>(
 	}
 
 	for (const group of root.children.filter(isResolvedGroup)) {
-		const node = definedGroupNode(group, config);
+		const node = definedGroupNode(group, config, sectionOrder);
 		if (!node && !visibleLanding(group)) continue;
 		sections.push({
 			id: `section-${stableId(group.key || group.name)}`,
@@ -760,7 +835,7 @@ function buildDefinedNav<TDocument>(
 			badge: groupBadge(group),
 			defaultOpen: group.config?.defaultOpen ?? group.folderConfig?.defaultOpen ?? true,
 			items: node?.children ?? [],
-			order: groupOrder(group),
+			order: groupOrder(group, sectionOrder),
 			path: group.key
 		});
 	}
@@ -820,9 +895,13 @@ function validateGroupParents<TDocument>(groups: Map<string, ResolvedGroup<TDocu
 	}
 }
 
-function definedGroupNode<TDocument>(group: ResolvedGroup<TDocument>, config: DocsContentConfig): DocsNavNode | null {
+function definedGroupNode<TDocument>(
+	group: ResolvedGroup<TDocument>,
+	config: DocsContentConfig,
+	sectionOrder: ReadonlyMap<string, number>
+): DocsNavNode | null {
 	if (group.config?.hidden === true || group.folderConfig?.hidden === true) return null;
-	const children = definedChildrenNodes(group.children, config);
+	const children = definedChildrenNodes(group.children, config, sectionOrder);
 	const landing = visibleLanding(group);
 	if (!landing && children.length === 0) return null;
 	return {
@@ -843,7 +922,7 @@ function definedPageNode<TDocument>(record: SourceRecord<TDocument>, config: Doc
 	const documentConfig = config.documents?.[sourceKey] ?? config.documents?.[record.slug];
 	return {
 		id: documentConfig?.id ?? `page-${stableId(record.slug || 'index')}`,
-		title: entry?.title ?? documentConfig?.title ?? record.title,
+		title: entry?.title ?? documentConfig?.title ?? navLabelOf(record.metadata) ?? record.title,
 		href: record.href,
 		slug: record.slug,
 		description: entry?.description ?? documentConfig?.description ?? record.description,
@@ -853,19 +932,20 @@ function definedPageNode<TDocument>(record: SourceRecord<TDocument>, config: Doc
 
 function definedChildrenNodes<TDocument>(
 	children: Array<ResolvedGroup<TDocument> | SourceRecord<TDocument>>,
-	config: DocsContentConfig
+	config: DocsContentConfig,
+	sectionOrder: ReadonlyMap<string, number>
 ): DocsNavNode[] {
 	const candidates: DefinedNavCandidate[] = [];
 	for (const child of children) {
 		const node = isResolvedGroup(child)
-			? definedGroupNode(child, config)
+			? definedGroupNode(child, config, sectionOrder)
 			: child.hidden
 				? null
 				: definedPageNode(child, config);
 		if (!node) continue;
 		candidates.push({
 			node,
-			order: isResolvedGroup(child) ? groupOrder(child) : definedRecordOrder(child, config),
+			order: isResolvedGroup(child) ? groupOrder(child, sectionOrder) : definedRecordOrder(child, config),
 			path: isResolvedGroup(child) ? child.key : child.slug,
 			title: node.title
 		});
@@ -887,7 +967,14 @@ function visibleLanding<TDocument>(group: ResolvedGroup<TDocument>): SourceRecor
 }
 
 function groupTitle<TDocument>(group: ResolvedGroup<TDocument>): string {
-	return group.config?.title ?? group.folderConfig?.title ?? visibleLanding(group)?.title ?? group.name;
+	const landing = visibleLanding(group);
+	return (
+		group.config?.title ??
+		group.folderConfig?.title ??
+		(landing ? navLabelOf(landing.metadata) : undefined) ??
+		landing?.title ??
+		group.name
+	);
 }
 
 function groupDescription<TDocument>(group: ResolvedGroup<TDocument>): string | undefined {
@@ -898,8 +985,16 @@ function groupBadge<TDocument>(group: ResolvedGroup<TDocument>): string | undefi
 	return group.config?.badge ?? group.folderConfig?.badge;
 }
 
-function groupOrder<TDocument>(group: ResolvedGroup<TDocument>): number | undefined {
-	return group.config?.order ?? group.folderConfig?.order ?? visibleLanding(group)?.order;
+function groupOrder<TDocument>(
+	group: ResolvedGroup<TDocument>,
+	sectionOrder: ReadonlyMap<string, number>
+): number | undefined {
+	return (
+		group.config?.order ??
+		group.folderConfig?.order ??
+		visibleLanding(group)?.order ??
+		sectionOrder.get(group.key)
+	);
 }
 
 function isSourceRecord<TDocument>(value: ResolvedGroup<TDocument> | SourceRecord<TDocument>): value is SourceRecord<TDocument> {
@@ -933,7 +1028,8 @@ function buildNav<TDocument>(
 	root: FolderRecord<TDocument>,
 	records: readonly SourceRecord<TDocument>[],
 	config: DocsContentConfig,
-	baseHref: string
+	baseHref: string,
+	sectionOrder: ReadonlyMap<string, number>
 ): DocsNav {
 	const sections: Array<DocsNavSection & { order?: number; path: string }> = [];
 	const visibleRootDocuments = root.documents.filter((document) => !document.hidden);
@@ -950,16 +1046,26 @@ function buildNav<TDocument>(
 
 	for (const folder of root.children.values()) {
 		if (folderHidden(config, folder.path)) continue;
-		const items = buildFolderItems(folder, config);
-		if (items.length === 0) continue;
+		// The folder's landing page becomes the section's link (behavior 7) instead of a duplicated
+		// item, matching how buildDefinedNav treats group landings. Without a landing every item
+		// stays — including groups whose own slug is undefined.
+		const index = folder.documents.find((document) => document.isIndex && !document.hidden);
+		const candidates = buildFolderItems(folder, config);
+		const items = index ? candidates.filter((node) => node.slug !== index.slug) : candidates;
+		if (items.length === 0 && !index) continue;
 		const folderConfig = config.folders?.[folder.path];
 		sections.push({
 			id: folderConfig?.id ?? sectionId(folder.path, sections),
-			title: folderConfig?.title ?? humanize(folder.name),
+			// The landing's sidebar.label names the section; its order positions it when no
+			// folders[].order encodes one (the landing record order falls back to the folder prefix).
+			title: folderConfig?.title ?? (index ? navLabelOf(index.metadata) : undefined) ?? humanize(folder.name),
+			href: index?.href,
+			slug: index?.slug,
+			description: folderConfig?.description ?? index?.description,
 			badge: folderConfig?.badge,
 			defaultOpen: folderConfig?.defaultOpen ?? true,
 			items,
-			order: folderConfig?.order ?? folder.order,
+			order: folderConfig?.order ?? index?.order ?? folder.order ?? sectionOrder.get(folder.path),
 			path: folder.path
 		});
 	}
@@ -994,10 +1100,12 @@ function buildFolderItems<TDocument>(
 	for (const document of folder.documents) {
 		if (document.hidden) continue;
 		const documentConfig = config.documents?.[document.key.slice(0, -3)] ?? config.documents?.[document.slug];
+		// Nav label tier: host config title > sidebar.label > the page's title (P20 IA lock).
+		const title = documentConfig?.title ?? navLabelOf(document.metadata) ?? document.title;
 		candidates.push({
 			node: {
 				id: documentConfig?.id ?? `page-${stableId(document.slug || 'index')}`,
-				title: document.title,
+				title,
 				href: document.href,
 				slug: document.slug,
 				description: document.description,
@@ -1005,7 +1113,7 @@ function buildFolderItems<TDocument>(
 			},
 			order: document.order,
 			path: document.slug,
-			title: document.title
+			title
 		});
 	}
 
@@ -1077,6 +1185,8 @@ function fallbackTitle(routeSegments: readonly string[], docsTitle: string): str
 
 function humanize(value: string): string {
 	const words = value
+		// camelCase word boundaries become title words: 'packageA' → 'Package A', never 'Packagea'.
+		.replaceAll(/([a-z0-9])([A-Z])/g, '$1 $2')
 		.replaceAll(/[-_]+/g, ' ')
 		.trim()
 		.split(/\s+/)
@@ -1119,6 +1229,22 @@ function normalizeLookup(value: string, baseHref: string): string {
 	const prefix = baseHref === '/' ? '/' : `${baseHref}/`;
 	if (path.startsWith(prefix)) return path.slice(prefix.length);
 	return path.replace(/^\/+/, '');
+}
+
+/** The page's `sidebar` frontmatter object (P20 IA hints), shape-checked. */
+function sidebarOf(metadata: DocsMetadata): Record<string, unknown> | undefined {
+	const sidebar = metadata['sidebar'];
+	if (sidebar === undefined || sidebar === null) return undefined;
+	if (typeof sidebar !== 'object' || Array.isArray(sidebar)) {
+		throw new DocsContentError('Docs metadata field "sidebar" must be an object.');
+	}
+	return sidebar as Record<string, unknown>;
+}
+
+/** The nav-only display label: `sidebar.label` overrides the page title in nav trees only. */
+function navLabelOf(metadata: DocsMetadata): string | undefined {
+	const sidebar = sidebarOf(metadata);
+	return sidebar ? stringMetadata(sidebar, 'label') : undefined;
 }
 
 function stringMetadata(metadata: DocsMetadata, key: string): string | undefined {
