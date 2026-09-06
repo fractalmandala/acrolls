@@ -11,40 +11,245 @@ scope:
     - "**/dist/**"
     - "**/.svelte-kit/**"
     - pnpm-lock.yaml
+    - static/fonts/**
+    - examples/holocron-main.zip
 
 repowiki:
-  template: architecture
+  # Preset "architecture" was removed intentionally: this wiki is a capability
+  # inventory + competitive comparison + launch plan, not a code-architecture
+  # analysis. Every page below carries its own explicit `template` skeleton.
+  template: ""
   notes:
     - text: "Acrolls is an open-source SvelteKit publishing + docs framework (the Fumadocs/Starlight equivalent for Svelte): it turns plain Markdown/mdsvex (.md/.svx) into publication-grade articles plus a full docs shell. It is NOT a CMS, hosted product, or website builder; hosts keep routing, auth, deployment, and content storage."
     - text: "Responsibility boundary: Acrolls owns mdsvex compilation semantics, the Publication article UI, compile-time code highlighting, docs-shell chrome, and CLI tooling. The host owns routing, deployment, SEO policy, content location, global navigation, and theme-toggle persistence."
-    - text: "Current stage: Alpha. v0 scope (reader surface, author CLI, Studio) plus the docs shell with generated content source are implemented, and the fractalthemer theming kit (acrolls/styles/theme) has shipped. Remaining roadmap: the Acrolls docs/marketing site, the npm release sequence, 'acrolls docs init' scaffold, optional search — do not describe npm publishing as already done."
-    - text: "Consumer contract: external hosts install only the public npm package 'acrolls' (pnpm add acrolls@latest) and import through supported 'acrolls/*' entrypoints. Scoped @acrolls/* packages (packages/mdsvex, svelte, styles, docs, sveltekit, cli) are internal bundled implementation units — never direct consumer dependencies, and hosts must not add workspace/clone/file: dependencies."
-    - text: "Monorepo: pnpm workspaces, Node >= 20.19, Svelte 5 runes, SvelteKit 2.62+, TypeScript; tsup for TS libs and svelte-package for Svelte packages. All packages live under packages/; the public package is packages/acrolls and the CLI implementation is packages/cli."
-    - text: "Key commands: pnpm install; pnpm build; pnpm check; pnpm test; pnpm --filter @acrolls/docs test; pnpm dev:docs runs the docs watcher + example host at http://127.0.0.1:5173/docs; validate content with node ./packages/cli/dist/index.js validate examples/starter/article.md."
-    - text: "Forbidden patterns: no default mdsvex layout that wraps every site .md (scope Publication to blog/docs routes); avoid frontmatter key 'metadata' (clashes with the mdsvex export) — use 'reading'; escape { and } in Shiki HTML for Svelte compile; Tailwind is not part of the styling direction — custom CSS and pure indented SASS aligned with CUBE CSS."
-    - text: "Authoritative docs for humans and integrating agents: start at llms.txt (repo root) for agent reading order, docs/README.md for the handbook, then docs/getting-started.md, local-install.md, integrate-sveltekit.md, docs-shell.md, content-authoring.md, cli.md, troubleshooting.md, checklist.md. Product intent lives in docs/VISION.md, PRODUCT.md, and TECH.md."
-    - text: "ref/ and temp/ are third-party reference snapshots and scratch space, not Acrolls product code. examples/ holds demo hosts: kit-consumer is the working example (with the /acceptance smoke route), starter holds sample content."
+    - text: "Roadmap prose in the repo LAGS the code. docs/VISION.md still lists themes, npm releases, `acrolls docs init`, and search as 'Next', but all four now exist in source. Any 'what is done' claim must be derived from packages/*/src, the example host routes, package.json scripts, and .test.ts files — never from roadmap wording."
+    - text: "Release status: the public npm package `acrolls` is published (version 0.1.4 at the time of planning, Apache-2.0, repo github.com/fractalmandala/Acrolls). The release/publish procedure is documented in docs/release.md and the packed-consumer gate is `pnpm verify:packed-consumer` (scripts/verify-packed-consumer.mjs). Do not describe publishing as unstarted; do not describe the API as 1.0-stable either."
+    - text: "Language rule for capability pages: say 'implemented in code at <path>' or 'present but not yet exercised by <gate>'. Never write 'verified', 'proven', or 'done' as the wiki's own claim — the project owner is the sole authority for declaring completion. Open work items must be quoted from the unchecked boxes in tasks/todo.md and tasks/*.md."
+    - text: "Competitor facts are external, dated, and must be attributed as such (captured 2026-09-06 from the public sites). Blume (useblume.dev): Astro+Vite markdown-first docs framework, zero-config down to the template, `blume` CLI owns the site (`init`/`dev`/`build`/`eject`), MDX-first, built-in component library (cards, steps, tabs, accordions, badges, code groups, frames, trees, type tables, live previews, diffs), islands auto-hydration, includes/transclusion, math, content sources (local/remote repo/custom backend), folder `meta.ts`, versioning with switcher, i18n with locale routing, client search plus optional hosted/semantic backends, llms.txt + `.md` mirrors + hosted MCP server + agent skills + evals + `blume translate`, analytics (Vercel/PostHog), PDF/EPUB export, SEO layer (OG images, RSS, JSON-LD), OpenAPI/AsyncAPI and GraphQL API references, changelog + blog genres, registry components and custom pages. Never imply Acrolls implements any of these unless source proves it."
+    - text: "Scribe (scribeit.dev) positioning, external and dated: 'a publishing layer for the site you already own' — open source, Markdown/MDX source stays authoritative and local in your repo, compile-time output, no hosted CMS, no runtime lock-in, supports Next.js and Vite today, single-command onboarding `bunx @scribe-sdk/cli@beta integrate`, public beta stage, GitHub-open with a roadmap page. Acrolls occupies the same 'own your content, compile into your site' position but is SvelteKit/Svelte-native; that overlap is the core of the comparison."
+    - text: "Comparison honesty constraints: Acrolls renders Markdown/mdsvex + `.svx` (Svelte components in content), not MDX — so its 'interactive component' story is Svelte-native rather than a Blume-style component registry. Acrolls has NO i18n/locale routing, NO doc versioning/switcher, NO RSS feed, NO OpenAPI/GraphQL reference generator, NO MCP server or Ask-AI, NO analytics, NO PDF/EPUB export, NO includes/transclusion, NO tabs/steps/cards/code-group content components (only Callout, Figure, Video, Banner, Publication, PublicationLayout, ZoomableImage, plus nav-only DocsAccordion). State absences plainly as 'not found in the repo'."
+    - text: "Acrolls capabilities that ARE in source and should be credited in comparisons: Pagefind-based full-text search (`DocsSearch.svelte` loads the host's post-build pagefind bundle; Acrolls ships no pagefind dependency, `DocsShell` emits `data-pagefind-body`/`data-pagefind-ignore`), SEO helpers (`seo.ts`: buildDocsSeo, docsSitemap, docsRobots + `DocsSeo.svelte`), OG image cards (`og.ts`: acrollsOgCard/docsOgImagePath, satori-node based), agent surface static tier (`ai.ts`: docsLlmsTxt, docsLlmsFullTxt, docsPageMarkdown, `ai.exclude` frontmatter opt-out) all wired as routes in examples/kit-consumer (/llms.txt, /llms-full.txt, /sitemap.xml, /robots.txt, /og), CopyPageMarkdown, `Read more` TOC/pager/breadcrumbs, and the fractalthemer theming kit under acrolls/styles/theme."
+    - text: "Content-source facts to keep straight: the modern surface is the collection API `content({ loader, config, schema })` in packages/docs/src/lib/collection.ts with Standard Schema validation (dependency-free, hand-written), blessed genre schemas `acrollsFields.page|post|change` (fields.ts), loader composition `mergeLoaders`/`mergeRaw` (merge.ts), naming conventions `numbered()`/`dated()`/`passthroughNaming`, `hidden` (unlisted but routeable) vs `filter` (fully unreachable) semantics, and a pluggable loader seam where remote/CMS sources are host-owned work. The older `createDocsContentSource` remains supported and is documented as deprecated."
+    - text: "CLI surface in packages/cli/src is: onboard (with --check/--json/--interactive/--non-interactive), integrate (default dry-run, only mutating command), init, docs init, validate (file or directory, authored vs migration mode, fail vs error-page policy, stable diagnostic codes), studio (localhost source-authoritative preview). Exit codes 0/1/2 are a stable contract."
+    - text: "Consumer contract: external hosts install only the public npm package `acrolls` and import through the supported `acrolls/*` entrypoints declared in packages/acrolls/package.json (./mdsvex, ./svelte, ./docs, ./docs/content, ./content, ./sveltekit, ./styles/*, ./docs/styles). Scoped @acrolls/* packages are bundled implementation units (bundledDependencies), never direct consumer dependencies."
+    - text: "Monorepo: pnpm workspaces, Node >= 20.19, Svelte 5 runes, SvelteKit 2.62+, TypeScript; tsup for TS libs and svelte-package for Svelte packages. All packages live under packages/; the public package is packages/acrolls and the CLI implementation is packages/cli. Key commands: pnpm install; pnpm build; pnpm check; pnpm test; pnpm dev:docs (docs watcher + example host at http://127.0.0.1:5173/docs); pnpm dev:ui (root playset app); pnpm verify:packed-consumer."
+    - text: "Forbidden patterns: no default mdsvex layout that wraps every site .md (scope Publication to blog/docs routes); avoid frontmatter key 'metadata' (clashes with the mdsvex export) — use 'reading'; escape { and } in Shiki HTML for Svelte compile; Tailwind is not part of the styling direction — custom CSS and pure indented SASS aligned with CUBE CSS; no inline style attributes or component <style> blocks in Acrolls-owned scope (this is an open audit item, not a guarantee)."
+    - text: "Authoritative in-repo evidence for writers of this wiki: llms.txt (agent reading order), docs/README.md handbook, docs/getting-started.md, local-install.md, integrate-sveltekit.md, docs-shell.md, content-authoring.md, cli.md, styles.md, release.md, troubleshooting.md, checklist.md; PRODUCT.md + TECH.md + docs/VISION.md for intent; docs/adr/0001..0004 for pinned decisions (CLI-first onboarding, CUBE composable styling, fractalthemer kit, theme builder as optional add-on); tasks/plan.md + tasks/todo.md for open gates. ref/ and temp/ are reference snapshots and scratch space, not product code."
   documents:
-    - title: "Project Overview & Current Status"
-      goal: "Give a brand-new agent the fastest possible understanding: the objective (what Acrolls is), what is being built, the Acrolls-vs-host responsibility boundary, and the current development stage (Alpha — what has shipped vs. what remains on the roadmap)."
+    # ── 1. Capability inventory: what already exists ─────────────────────────
+    - title: "Capability Inventory: What Is Already Built"
+      goal: "Headline index of the shipped surface: one glanceable matrix of every capability area below with its implementing package path, its evidence (source + test + example route), and its remaining gate. Frame it as 'implemented in code, pending owner evaluation'."
+      hints: "Point readers into the six child pages; do not restate them."
       template: |
-        ## Objective
-        ## What Is Being Built
-        ## Responsibility Boundary (Acrolls vs. Host)
-        ## Current Stage & Roadmap
-    - title: "Package Architecture"
-      goal: "Map every package under packages/ (acrolls, cli, docs, mdsvex, styles, svelte, sveltekit): responsibility, key exports, build tooling, and how the public 'acrolls' package exposes supported 'acrolls/*' entrypoints backed by the scoped internal packages."
-      hints:
-        - "State the dependency direction explicitly: acrolls (public) -> @acrolls/* (internal), and that external hosts may only depend on the public package."
-    - title: "Content Pipeline & Docs Shell"
-      goal: "Explain the mdsvex compile pipeline (GFM, frontmatter, heading slugs, tables, Shiki dual themes, fence meta, renderAcrollsArticleHtml), the Publication component surface, and the docs shell: content-source discovery, generated DocsNav, routes, breadcrumbs, pager, TOC, and open-state persistence."
-    - title: "Consumer Integration & CLI"
-      goal: "Describe how an external SvelteKit host adopts Acrolls: the public 'acrolls' install contract, CLI commands (onboard, init, integrate, validate, studio), corpus preflight authored/migration modes with fail/error-page policies, and the agent-friendly --json onboarding plan."
-    - title: "Development Workflow"
-      goal: "Document monorepo development: build/check/test commands, the example host and /acceptance route, the fractalthemer theming kit, styling conventions (indented SASS, CUBE CSS, no Tailwind), and the authoritative handbook under docs/ plus llms.txt for agents."
+        ## Shipped-Capability Matrix
+        ## Evidence Model (how a claim in this wiki is backed)
+        ## What This Inventory Does Not Claim
+        ## Where the Code Lives (package -> responsibility)
+    - title: "Compilation Pipeline — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the mdsvex compile layer as shipped: GFM, frontmatter handling, heading slugs/anchors, semantic table wrapping, Shiki dual-theme code frames, fence metadata, mermaid guard, HTML rendering parity for Studio/validate, and source-safety diagnostics — each with its file in packages/mdsvex/src."
+      hints: "packages/mdsvex/src: index.ts, frontmatter.ts, highlighter.ts, code-meta.ts, remark-code-meta.ts, rehype-headings.ts, rehype-heading-anchors.ts, rehype-table-wrap.ts, rehype-code.ts, remark-mermaid-guard.ts, render-html.ts, document-facts.ts, document-diagnostics.ts, source-safety.ts"
+      template: |
+        ## Capability
+        ## Implementing Source
+        ## Test Coverage Present
+        ## Known Limits / Open Gates
+    - title: "Article Components & Styling System — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the reader-facing component surface (Publication, PublicationLayout, Banner, Callout, Figure, Video, ZoomableImage, code-frame and mermaid client enhancers) and the styling layers (foundation/default/colors/theme/docs/tokens SASS + CSS entrypoints, fractalthemer theming kit, CUBE CSS discipline)."
+      hints: "packages/svelte/src/lib components; packages/styles/src/*.sass; packages/acrolls/package.json ./styles/* exports; docs/adr/0002 and 0003."
+      template: |
+        ## Component Surface
+        ## Style Entrypoints & Layers
+        ## Theming Kit
+        ## Accessibility & Behavior Guarantees In Code
+        ## Styling-Rule Audit Status
+    - title: "Docs Shell & Navigation — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the docs chrome that exists: DocsShell and the sidebar-only composition, accordion nav tree, breadcrumbs, pager, TOC, page header, mobile drawer, localStorage open-state persistence, and the pure nav helpers with deterministic node identity."
+      hints: "packages/docs/src/lib: DocsShell.svelte, DocsSidebar.svelte, DocsAccordion.svelte, DocsNavTree.svelte, DocsBreadcrumbs.svelte, DocsPager.svelte, DocsToc.svelte, DocsPageHeader.svelte, nav.ts, toc.ts, storage.ts, nav-path.ts."
+      template: |
+        ## Shell Compositions
+        ## Navigation Behaviors Present in Code
+        ## Pure Helpers & Determinism
+        ## Persistence
+        ## Browser Acceptance Status
+    - title: "Content Source & Collection API — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory how a host declares its corpus today: the collection API with optional Standard Schema validation, blessed page/post/changelog field schemas, loader merging, naming conventions, hidden-vs-filter semantics, the pluggable loader seam, and the deprecated generated-source helper still in support."
+      hints: "packages/docs/src/lib: collection.ts, fields.ts, merge.ts, content.ts, types.ts; tests collection.test.ts, fields.test.ts, merge.test.ts, naming.engine.test.ts, scenarios.test.ts; PRODUCT.md behaviors 66-71."
+      template: |
+        ## Public API
+        ## Genre Schemas
+        ## Loader Seam & Composition
+        ## Publication Semantics (hidden vs filter)
+        ## Not Implemented (remote sources, live())
+    - title: "SEO, Search, OG & Agent Surface — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the discoverability layer that ships: SEO builder plus sitemap/robots, the DocsSeo component, OG card generation, Pagefind-integrated search with the body/ignore markers, copy-page-markdown, and the llms.txt / llms-full.txt / per-page Markdown agent surface — including how examples/kit-consumer wires each as a route."
+      hints: "packages/docs/src/lib: seo.ts, DocsSeo.svelte, og.ts, DocsSearch.svelte, CopyPageMarkdown.svelte, ai.ts; routes under examples/kit-consumer/src/routes (llms.txt, llms-full.txt, sitemap.xml, robots.txt, og); build script 'vite build && pagefind --site build'."
+      template: |
+        ## SEO & Metadata
+        ## Search (Pagefind Integration Model)
+        ## Open Graph Images
+        ## Agent-Facing Surface
+        ## Example-Host Wiring
+        ## Explicit Absences (MCP, Ask-AI, RSS, analytics, export)
+    - title: "CLI, Studio & Corpus Preflight — Implemented"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the author/tooling surface that ships: onboard checkpoints and modes, integrate as the single reviewed mutation path, init and docs init, validate with authored/migration modes and error-page policy, and the localhost Studio preview — with the stable exit-code and JSON contracts."
+      hints: "packages/cli/src: index.ts, onboarding.ts, integrate.ts, validate.ts, studio.ts, docs-init.ts, starter.ts, util.ts plus matching .test.ts files; docs/cli.md; docs/adr/0001."
+      template: |
+        ## Commands Shipped
+        ## Modes & Policies
+        ## Output Contracts (human / --json / exit codes)
+        ## Studio Preview
+        ## Test Coverage Present
+    - title: "Package Surface, Release & Evidence Harness"
+      parent: "Capability Inventory: What Is Already Built"
+      goal: "Inventory the distribution and proof machinery: the public entrypoint list, bundledDependencies layout, published version on npm, the documented release sequence, the packed-consumer verification script, the example host with its /acceptance smoke route, and the per-package test files that exist."
+      hints: "packages/acrolls/package.json exports/files/bundledDependencies; docs/release.md; scripts/verify-packed-consumer.mjs; examples/kit-consumer/src/routes/acceptance; root package.json scripts."
+      template: |
+        ## Public Entrypoints
+        ## Packaging & Bundling
+        ## Release Procedure as Documented
+        ## Verification Harness
+        ## Sample Content & Playset
+    # ── 2. Comparative analysis vs Blume and Scribe ──────────────────────────
+    - title: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Headline page for the comparative axis: what each product is for, who owns the site, and where the three overlap or diverge. Establish the comparison method (repo evidence vs. dated external claims) before any matrix."
+      hints: "External claims dated 2026-09-06 from useblume.dev and scribeit.dev; Acrolls claims from packages/ and examples/."
+      template: |
+        ## The Three Products in One Paragraph Each
+        ## Comparison Method & Provenance
+        ## Overlap Zone (shared philosophy)
+        ## Divergence Zone (irreducible differences)
+        ## How to Read the Child Comparisons
+    - title: "Positioning & Operating Model"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Compare operating models: Blume as a zero-config CLI-driven Astro site the tool owns (with eject), Scribe as a compile-time publishing layer for a Next.js/Vite site you own, Acrolls as a SvelteKit-native publishing SDK where the host keeps routing and the framework owns article and docs-shell rendering."
+      template: |
+        ## Who Owns the Site
+        ## Config-Driven vs. Code-Driven
+        ## Framework Support
+        ## Lock-In & Exit Story
+        ## Stage & Install Path
+    - title: "Authoring & Rendering Features"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Compare the authoring experience feature by feature: content format (MDX vs Markdown/mdsvex/.svx), component availability inside content, islands/auto-hydration, includes, math, callout/syntax breadth, code-block capabilities (highlighting, filename, line actions, copy/wrap), tables, and images/video."
+      hints: "Acrolls side: packages/mdsvex/src fence meta, packages/svelte/src/lib primitives. External side: Blume syntax/components/islands/includes pages."
+      template: |
+        ## Content Format & Component Model
+        ## Built-In Component Breadth
+        ## Code Rendering
+        ## Prose Semantics (tables, anchors, math)
+        ## Verdict Table per Feature
+    - title: "Site Structure: Navigation, Versioning, i18n, Sources"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Compare information-architecture features: file-convention nav vs Acrolls' explicit host-defined page tree, folder meta overrides, breadcrumbs/pager/TOC, multi-source content (local/remote/backend), docs versioning and locale routing, and where Acrolls is ahead or simply absent."
+      hints: "Acrolls side: collection.ts, content.ts naming conventions, nav.ts, hidden vs filter. External: Blume navigation/meta/i18n/versioning/sources."
+      template: |
+        ## Navigation Model
+        ## Ordering, Labels & Metadata
+        ## Content Sources
+        ## Versioning
+        ## Internationalization
+        ## Gap Summary
+    - title: "Discoverability, SEO & AI-Agent Surfaces"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Compare the machine-readability and growth layer: SEO metadata, sitemap/robots, OG images, RSS, JSON-LD, analytics, search (client vs hosted vs semantic), llms.txt and Markdown mirrors, MCP servers, in-page Ask AI, doc evals, translation automation, and PDF/EPUB export — crediting what Acrolls already ships and naming what it does not."
+      hints: "Acrolls side: seo.ts, og.ts, ai.ts, DocsSearch.svelte, CopyPageMarkdown.svelte, kit-consumer routes. External: Blume seo/ai/analytics/search/export/eval/translate pages."
+      template: |
+        ## SEO & Feeds
+        ## Search
+        ## Agent-Facing Surface
+        ## AI Tooling (Ask, MCP, Evals, Translate)
+        ## Export & Analytics
+        ## Gap Summary
+    - title: "CLI, Configuration & Extensibility"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Compare the operator experience: single-command onboarding (blume init, scribe integrate, acrolls onboard/integrate), config surface (blume.config.ts vs code + entrypoints), customization depth (component overrides, registry, custom pages, eject vs host-owned components), theming story, and agent-readiness of each CLI."
+      hints: "Acrolls side: packages/cli/src, packages/acrolls/package.json exports, docs/adr/0001 and 0004. External: Blume configuration/customization/skills/cli reference."
+      template: |
+        ## Onboarding Path
+        ## Configuration Surface
+        ## Customization & Escape Hatches
+        ## Theming
+        ## Agent-Readable Tooling
+    - title: "Gap Analysis Matrix & Differentiators"
+      parent: "Feature Comparison: Acrolls vs. Blume vs. Scribe"
+      goal: "Consolidate every child comparison into one matrix (shipped / partial / absent per product) and then argue the differentiators Acrolls can actually defend: Svelte-native rendering with no runtime lock-in, article typography and accessibility depth, compile-time Shiki, corpus preflight with migration policy, CUBE-aligned SASS theming, and deterministic host-owned page trees."
+      template: |
+        ## Consolidated Matrix
+        ## Where Acrolls Leads
+        ## Where Acrolls Trails
+        ## Where the Comparison Is Not Apples-to-Apples
+        ## Strategic Implications for Launch
+    # ── 3. Launch-readiness plan ─────────────────────────────────────────────
+    - title: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Headline page for the launch axis: define what 'industry-class' means as measurable gates, summarize the P0 blocker set, and give the ordered path through the child workstreams with dependencies between them."
+      hints: "Seed from the unchecked items in tasks/todo.md and the Deferred list in PRODUCT.md; keep gates measurable."
+      template: |
+        ## Definition of Launch-Ready
+        ## Workstream Overview & Dependencies
+        ## P0 Blockers
+        ## Sequenced Milestones
+        ## Go / No-Go Gate List
+    - title: "P0 Blockers & Repair Sequence"
+      parent: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Turn the currently open, evidence-less items into an ordered, gated sequence: packed CLI and public-package verification, reconciliation of stale task/checklist/onboarding guidance with the implemented content API, source-level styling-rule audit, and full browser acceptance of nav, TOC, pager, persistence, accessibility, and console errors."
+      hints: "tasks/todo.md unchecked boxes; tasks/plan.md repair order and acceptance criteria."
+      template: |
+        ## Blocker
+        ## Current Evidence State
+        ## Required Action
+        ## Acceptance Gate
+        ## Order Rationale
+    - title: "Release Engineering & Distribution"
+      parent: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Specify the engineering work required to ship credibly at scale: versioning and changelog policy, CI matrix (OS + package manager + packed-consumer install/build), release automation, tarball contents audit, deprecation policy for the legacy generated-source helper, and support infrastructure (issues, discussions, CONTRIBUTING, security posture)."
+      hints: "docs/release.md, scripts/verify-packed-consumer.mjs, PRODUCT.md deferred items 'Packed consumer CI matrix across OS' and 'npm publish automation'."
+      template: |
+        ## Version & Changelog Policy
+        ## CI Gates
+        ## Publish Automation
+        ## Compatibility & Deprecation Contract
+        ## Support Infrastructure
+    - title: "Feature Parity Workplan"
+      parent: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Lay out the feature work needed to compete with the compared products, each item sized and ordered with its entry point in the existing code: search packaging beyond raw Pagefind, RSS feeds, blog/changelog index pages, doc versioning, i18n, a content-component set (tabs, steps, cards, code groups), API-reference generation, MCP/agent surface beyond the static tier, and a `create acrolls` scaffold plus a docs/marketing site."
+      hints: "Anchor each item on the module that would own it (docs, svelte, mdsvex, styles, cli) so work stays inside the existing boundary."
+      template: |
+        ## Feature
+        ## Competitive Driver
+        ## Owning Module & Entry Point
+        ## Scope Cuts (v1 vs later)
+        ## Effort & Risk
+    - title: "Quality Bar: Accessibility, Performance, Types & DX"
+      parent: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Define the non-functional bar an industry-class framework is judged on and the current gap: keyboard/screen-reader coverage for generated nav, reduced-motion and print behavior, JS payload and lazy-loading budgets, SSR/prerender correctness, type surface quality for hosts, and documentation/DX polish (handbook, snippets, examples, llms.txt freshness)."
+      hints: "Publication a11y/print behavior in packages/svelte, lazy body loaders in collection.ts, chunk-size budget work recorded in tasks/todo.md, docs/snippets and docs/handbook pages."
+      template: |
+        ## Accessibility Bar
+        ## Performance Bar
+        ## Type Safety & API Ergonomics
+        ## Documentation & Examples Bar
+        ## Measurement Plan
+    - title: "Launch Checklist & Go/No-Go Criteria"
+      parent: "Launch Readiness: Path to an Industry-Class Docs Framework"
+      goal: "Close the wiki with a single executable launch checklist: prerequisite gates from the blocker workstream, the docs/marketing site, first-host case studies, announcement assets, and explicit no-go conditions — written so a third party can run it without inference."
+      template: |
+        ## Prerequisite Gates
+        ## Launch Assets
+        ## Public Announce Sequence
+        ## Explicit No-Go Conditions
+        ## Post-Launch Ownership
 
 knowledgecard:
   notes:
     - text: "Organize knowledge cards per package under packages/ (acrolls, cli, docs, mdsvex, styles, svelte, sveltekit); each card should state the package's responsibility, key exports, and its relationship to the public 'acrolls' entrypoints."
     - text: "Never treat ref/ or temp/ contents as product code — they are third-party reference snapshots and scratch space, and must not appear as knowledge cards."
     - text: "docs/ is the canonical consumer/agent integration handbook; knowledge cards should cite those docs rather than duplicating their content."
+    - text: "Capability claims must resolve to source: cite packages/*/src files and, where present, the .test.ts that covers them or the examples/kit-consumer route that exercises them. Roadmap prose (docs/VISION.md, tasks/*.md) is history, not current state."
+    - text: "Competitor material (useblume.dev, scribeit.dev) is external and dated — it may inform comparison cards but must never be stored as an Acrolls capability or code fact."
+    - text: "Keep the docs package's add-on layers distinguishable as separate cards: content source / collection API (collection.ts, fields.ts, merge.ts, content.ts), navigation chrome (nav.ts, storage.ts, toc.ts, the Docs*.svelte components), and the discoverability layer (seo.ts, og.ts, ai.ts, DocsSearch.svelte)."

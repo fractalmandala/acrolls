@@ -54,6 +54,56 @@ Mermaid fallbacks in the SSR HTML. A `svelte` fence added to `getting-started.md
 specimen (`acrolls-code-frame__pre shiki shiki-themes …` dual-theme CSS vars) for the upcoming
 docs-content styling pass.
 
+**Same-day follow-up: first external-host test run (fractalsvelte).** Consumed acrolls from the
+npm registry (0.1.4, published 08-14) in `/fractalsvelte` — copied the `fractal-agentic/docs`
+corpus (63 md) to `src/docs/fractalagentic`, `pnpm add acrolls`, swapped the host's vanilla
+`mdsvex()` preprocessor for `createAcrollsSvelteKitMdsvexPreprocessor`, and loaded the corpus via
+`createAcrollsDocsSource({ modules, metadata, contentRoot, config })` in `src/lib/docs/fractalagentic.ts`
+(`baseHref: '/docs/fractalagentic'`). Findings: (1) 0.1.4 predates `./content` (umbrella shim),
+`markdownGlob`, heading facts, landing section hrefs, and `naming: numbered()` — hosts use
+`createAcrollsDocsSource` until the next release; (2) hosts that force runes mode must exempt
+`.md`/`.svx` (mdsvex's generated layout wrapper uses legacy `$$props`) — patched into the host's
+`compilerOptions.runes`; (3) the fork handles every prose brace hazard in the corpus (raw JSON
+block, `${VAR}` bash, `{@render}` in inline code) — 63/63 compiled, zero diagnostics; (4) folder
+`INDEX.md` correctly became `<folder>/index` landings. Verified via a temporary JSON inspection
+endpoint (`/docs/fractalagentic-data.json`, for the user to delete once pages consume the source):
+200, 6 sections, 63 documents, 0 diagnostics. One cosmetic stable-id artifact (`section-svelte-19-framework`).
+Edit tools cannot reach outside the registered workspaces, so the host-side edits ran through
+`temp/patch-*.mjs` scripts (kept as the change record). Dev server killed after verification.
+
+**Same-day follow-up: display built for the host.** Filled the user's empty
+`fractalagentic/+page.svelte` stub as a full-corpus index (hero + one card per nav section, items
+and children as links — all 63 documents listed) and added `fractalagentic/[...doc]/+page.ts` +
+`+page.svelte` (kit-consumer load pattern: `get(pathname)` with a `documents.find` fallback,
+`Article: await document.loader()`, serializable doc summary through data). Composition uses only
+fractalstyler2 registry classes verified present in the host's compiled CSS (`page-shell`, `hero`,
+`eyebrow`, `card`, `badge`, `prose`, `content-shell`, text/weight/gap utilities) — zero new
+classes. Two engine-facing adjustments: suppressed 0.1.4's injected publication banner layout
+(`createAcrollsSvelteKitMdsvexPreprocessor({ layout: false })` — it duplicated the host header
+with `acrolls-banner__title`) and wrapped the article in `<Publication>` host-side, keeping the
+code-frame/mermaid enhancer hook. Verified on a temporary server: index 200 with 63 doc links,
+doc pages (root, nested `svelte-framework/how-to/…`, `wiki/INDEX` — lenient case-insensitive
+lookup) 200 with prose + heading anchors in SSR, hazard docs render, unknown paths get a styled
+not-found card. Known duplication for the prose pass: each md's own `#` H1 repeats the composed
+header title. Server killed after verification.
+
+**Same-day follow-up (Sep 3): a11y flood quieted host-side; dev-server zombie forensics.** The
+host terminal flooded with ~570 `a11y_no_noninteractive_tabindex` warnings per compile wave:
+`rehypeAcrollsTableWrap()` wraps md tables in `role="region" tabindex="0"` scroll regions — the
+correct ARIA pattern for scrollable regions, but Svelte's rule has no `region` allowlist (known
+false positive). Mitigated in fractalsvelte `vite.config.ts` via `vitePlugin: { onwarn }` dropping
+that one code for `.md`/`.svx` filenames only (Kit omits bare `onwarn` from inline `sveltekit()`
+options; `vitePlugin` is the typed passthrough and wins the spread order). Receipts: full 63-doc
+compile wave with the filter logs zero a11y lines; the host's own server serves index + the
+table-heavy docs 200. Engine-side durable fix candidate for the next release: inject
+`<!-- svelte-ignore a11y_no_noninteractive_tabindex -->` from `rehypeAcrollsTableWrap` so hosts
+need no onwarn config. Separate finding: the accompanying "requests hang at 000" episodes were
+NOT the filter — SIGTERM never lands on a dev server whose event loop has deadlocked, leaving
+zombie vite processes squatting on ports and contending on the shared `node_modules/.vite` cache
++ `.svelte-kit` sync; two concurrent dev servers on one project deadlock each other. Remediation:
+`kill -9` the vite child pids, quarantine the stale cache (`node_modules/.vite-stale-backup`,
+user-deletable), one-server-per-project.
+
 ---
 
 ## 2026-08-31 · S12 — Backend closure: audit findings and scaffold (D1–D8)
