@@ -1,0 +1,1 @@
+Markdown authored for mdsvex rendering within a SvelteKit project; includes Mermaid diagrams and fenced Svelte/TS code blocks.

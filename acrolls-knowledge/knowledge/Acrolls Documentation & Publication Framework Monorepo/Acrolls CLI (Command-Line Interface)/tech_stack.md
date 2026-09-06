@@ -1,0 +1,1 @@
+TypeScript compiled to ESM via tsup; Node built-ins (`node:fs/promises`, `node:path`, `node:http`, `node:child_process`) for filesystem and process control; mdsvex + Svelte compiler for document compilation; Vitest for tests; `@acrolls/mdsvex` provides the canonical compile/normalize/render pipeline consumed by both `validate` and `studio`.

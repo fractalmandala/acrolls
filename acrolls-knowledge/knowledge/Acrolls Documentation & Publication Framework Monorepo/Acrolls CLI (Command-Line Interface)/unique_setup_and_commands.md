@@ -1,0 +1,1 @@
+Build: `pnpm build` runs `tsup src/index.ts --format esm --clean` then executes `scripts/binify.mjs` to inject a shebang into the dist entry. Test: `pnpm test` runs `vitest run`. Requires Node ≥20.19.0. The CLI is invoked through the unscoped `acrolls` wrapper package; this workspace package is installed privately as `@acrolls/cli`.

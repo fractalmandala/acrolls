@@ -1,0 +1,1 @@
+Authoritative handbook, ADRs, playset samples, and integration snippets that guide SvelteKit hosts in installing and wiring the Acrolls docs + publication framework.

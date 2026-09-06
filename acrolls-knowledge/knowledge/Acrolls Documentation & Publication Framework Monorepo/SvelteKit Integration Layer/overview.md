@@ -1,0 +1,1 @@
+Bridges Acrolls docs and mdsvex into SvelteKit by exposing preprocessor factories, Vite glob-based content loaders, and a re-exported content collection API.

@@ -1,0 +1,1 @@
+Zero runtime dependencies; validation is vendor-neutral via the structural `StandardSchemaV1` interface (v1 spec) so hosts supply their own schema library. Uses TypeScript utility types (`UnionToIntersection`, `InferredData`) to infer merged schema output types at compile time.

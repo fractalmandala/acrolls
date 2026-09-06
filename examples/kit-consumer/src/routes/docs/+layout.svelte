@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { DocsShell, DocsSeo, DocsSearch, docsOgImagePath } from 'acrolls/docs';
+	import { DocsShell, DocsSeo, docsOgImagePath } from 'acrolls/docs';
 	import type { DocsTocItem } from 'acrolls/docs';
 	import { docs } from '../../lib/docs/source';
 	import type { Snippet } from 'svelte';
@@ -37,9 +37,9 @@
 	showPager={!isIndex}
 	{headings}
 	{searchable}
+	siteName="Acrolls"
+	githubUrl="https://github.com/fractalmandala/acrolls"
+	showThemeToggle={false}
 >
-	{#snippet header()}
-		<DocsSearch />
-	{/snippet}
 	{@render children()}
 </DocsShell>

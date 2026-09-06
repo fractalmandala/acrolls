@@ -22,6 +22,7 @@ reference when a host needs a deliberate customization.
 
 | If you want… | Read |
 |---|---|
+| A brand-new SvelteKit docs project scaffolded for you | [CLI create](./cli.md#create) |
 | A CLI-led drop-in to an existing SvelteKit site | [CLI onboarding](./cli.md#onboard) |
 | Manual integration details and snippets | [Getting started](./getting-started.md) |
 | Exact SvelteKit file changes | [Integrate into SvelteKit](./integrate-sveltekit.md) |
@@ -30,7 +31,7 @@ reference when a host needs a deliberate customization.
 | Writing `.md` / `.svx` content | [Content authoring](./content-authoring.md) |
 | Sidebar, TOC, multi-section docs | [Docs shell](./docs-shell.md) |
 | Foundation vs default CSS | [Styles](./styles.md) |
-| `onboard` / `validate` / `studio` / `integrate` | [CLI reference](./cli.md) |
+| `create` / `onboard` / `validate` / `studio` / `integrate` / `search-index` / `api-ref` | [CLI reference](./cli.md) |
 | Package map & exports | [Packages reference](./packages.md) |
 | Build fails / weird HTML | [Troubleshooting](./troubleshooting.md) |
 | Install the published package | [Install from npm](./local-install.md) |

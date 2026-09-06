@@ -1,0 +1,1 @@
+Svelte components paired with plain TypeScript utilities; browser storage via `localStorage` gated by a `browser` runtime check; heading scanning via DOM `querySelectorAll`.

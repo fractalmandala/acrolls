@@ -109,9 +109,22 @@ writeFileSync(
 	join(consumerDirectory, 'vite.config.js'),
 	`import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { NodePackageImporter } from 'sass';
 import { createAcrollsSvelteKitMdsvexPreprocessor } from 'acrolls/sveltekit';
 
 export default defineConfig({
+  css: {
+    // Acrolls ships its SASS entrypoints as package subpath exports (e.g.
+    // 'acrolls/docs/styles' -> styles/docs.sass) that @forward a bundled
+    // @acrolls/styles nested under node_modules/acrolls/node_modules. Only an
+    // exports-aware resolver that walks nested node_modules can load them, which
+    // is exactly what Vite (plus the Node package importer, as the example host
+    // wires) does. The raw sass CLI with --load-path cannot: it resolves neither
+    // package subpath exports nor a nested bundled dependency.
+    preprocessorOptions: {
+      sass: { importers: [new NodePackageImporter()] }
+    }
+  },
   plugins: [
     svelte({
       extensions: ['.svelte', '.md'],
@@ -158,6 +171,7 @@ writeFileSync(
 	join(consumerDirectory, 'src/main.js'),
 	`import 'acrolls/styles/default.css';
 import 'acrolls/docs/styles.css';
+import './styles.sass';
 import { mount } from 'svelte';
 import App from './App.svelte';
 
@@ -230,7 +244,10 @@ console.log(JSON.stringify({ labels, documentSlug: docs.documents[0].slug, compi
 
 run('pnpm', ['install', '--config.node-linker=isolated', '--ignore-scripts', '--no-frozen-lockfile'], consumerDirectory);
 run('node', ['probe.mjs'], consumerDirectory);
-run('pnpm', ['exec', 'sass', '--load-path=node_modules', 'src/styles.sass', 'dist/styles.css', '--no-source-map'], consumerDirectory);
+// The SASS entrypoints are compiled through Vite (via the './styles.sass' import in
+// main.js), not the raw sass CLI: they are package subpath exports that forward a
+// bundled @acrolls/styles, which only an exports-aware bundler resolves. This is the
+// same path the example host and every real consumer use.
 run('pnpm', ['exec', 'vite', 'build'], consumerDirectory);
 
 console.log(

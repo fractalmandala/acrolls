@@ -27,8 +27,19 @@
     "mdsvex": "^0.12.6",
     "svelte": "^5.38.1"
   },
+  "peerDependencies": {
+    "pagefind": ">=1.0.0",
+    "yaml": ">=2.0.0",
+    "graphql": ">=16.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pagefind": { "optional": true },
+    "yaml": { "optional": true },
+    "graphql": { "optional": true }
+  },
   "devDependencies": {
     "@types/node": "^22.17.2",
+    "pagefind": "^1.5.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

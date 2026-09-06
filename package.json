@@ -17,6 +17,7 @@
 		"test": "pnpm -r --if-present --filter './packages/*' run test",
 		"release:pack": "pnpm --config.node-linker=hoisted --filter acrolls pack",
 		"verify:packed-consumer": "node ./scripts/verify-packed-consumer.mjs",
+		"verify:fresh-consumer": "node ./scripts/verify-fresh-consumer.mjs",
 		"release": "pnpm --config.node-linker=hoisted --filter acrolls publish --access public",
 		"cli": "node ./packages/cli/dist/index.js",
 		"acrolls": "node ./packages/acrolls/bin/acrolls.mjs"

@@ -33,9 +33,10 @@ an author warning. Acrolls renders the resolved title and optional description t
 `DocsPageHeader`; an initial Markdown H1 is removed. A different initial H1 emits an author
 warning in `acrolls validate`, CI output, and `docs.diagnostics`, never to documentation readers.
 
-Declare the corpus as one collection, as in the kit example. The eager `modules` glob carries
-both frontmatter and the preprocessor's static document facts, so no separate facts glob is
-needed:
+Declare the corpus as one collection, as in the kit example. All three globs share the identical
+pattern string: a lazy `body` glob keeps compiled document bodies out of the eager module graph,
+while eager `metadata` and `facts` globs supply frontmatter and the preprocessor's static document
+facts without eagerly importing the article component or its Shiki runtime:
 
 ```ts
 import { content, markdownGlob } from 'acrolls/content';
@@ -44,7 +45,8 @@ import { defineDocsConfig } from 'acrolls/docs/content';
 export const docs = content({
   loader: markdownGlob({
     body: import.meta.glob('../../content/**/*.md', { import: 'default' }),
-    modules: import.meta.glob('../../content/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../content/**/*.md', { eager: true, import: 'metadata' }),
+    facts: import.meta.glob('../../content/**/*.md', { eager: true, import: '__acrollsDocument' }),
     root: '../../content'
   }),
   config: defineDocsConfig({ /* convention: { mode: 'authored' }, … */ })

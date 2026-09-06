@@ -48,7 +48,17 @@ const VALUE_FLAGS = new Set([
 	'port',
 	'cwd',
 	'on-invalid',
-	'style'
+	'style',
+	'site',
+	'output',
+	'glob',
+	'bundle-path',
+	'out',
+	'format',
+	'slug',
+	'name',
+	'title',
+	'package-manager'
 ]);
 
 export function parseArgs(argv: string[]): Args {

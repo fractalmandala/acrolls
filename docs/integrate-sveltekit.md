@@ -6,7 +6,7 @@ Step-by-step host wiring. Assumes packages are already installed ([local-install
 
 ## A. Compiler (`vite.config.ts`)
 
-Use **`createAcrollsMdsvexPreprocessor` from `acrolls/mdsvex`** (not `acrolls/sveltekit` until published). It normalizes unsafe Markdown before mdsvex parses it.
+Use **`createAcrollsMdsvexPreprocessor` from `acrolls/mdsvex`**. It normalizes unsafe Markdown before mdsvex parses it.
 
 ```ts
 import adapter from '@sveltejs/adapter-auto'; // or adapter-vercel, etc.
@@ -211,7 +211,8 @@ export const docs = content({
       string,
       () => Promise<DocsArticle>
     >,
-    modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../docs/**/*.md', { eager: true, import: 'metadata' }),
+    facts: import.meta.glob('../../docs/**/*.md', { eager: true, import: '__acrollsDocument' }),
     root: '../../docs'
   }),
   config: defineDocsConfig({
@@ -222,12 +223,15 @@ export const docs = content({
 }).sourceSync();
 ```
 
-Both globs use the **identical pattern string**. `body` is lazy (`{ import: 'default' }`) and
-`modules` is eager (`{ eager: true }`, with no `import` key) — `markdownGlob` reads both
-`metadata` and the preprocessor's static document facts off that one eager module, so the older
-third glob is gone. Two globs is the floor, not a step toward one: Vite needs a separate lazy
-glob to keep document bodies out of the eager module graph. `root` is the directory prefix
-stripped from each glob key; it is the same option the deprecated helper called `contentRoot`.
+All three globs use the **identical pattern string**. `body` is lazy (`{ import: 'default' }`) to
+keep compiled document bodies out of the eager module graph, while `metadata` and `facts` are eager
+named globs (`import: 'metadata'` and `import: '__acrollsDocument'`) that supply frontmatter and the
+preprocessor's static document facts without eagerly importing the article component or its Shiki
+runtime. `root` is the directory prefix stripped from each glob key; it is the same option the
+deprecated helper called `contentRoot`. A legacy two-glob form — a single eager
+`modules: import.meta.glob('…', { eager: true })` that `markdownGlob` reads both `metadata` and
+facts off — is still supported but no longer recommended, because it pulls the compiled component
+and Shiki into the eager graph.
 
 `.sourceSync()` resolves the collection synchronously and returns the same content source the
 rest of this handbook uses. It is legal only for eager loaders such as `markdownGlob`; a
@@ -269,7 +273,8 @@ export const docs = content({
       string,
       () => Promise<DocsArticle>
     >,
-    modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../docs/**/*.md', { eager: true, import: 'metadata' }),
+    facts: import.meta.glob('../../docs/**/*.md', { eager: true, import: '__acrollsDocument' }),
     root: '../../docs'
   }),
   schema,
@@ -400,14 +405,15 @@ export const docs = createAcrollsDocsSource({
 ```
 
 ```ts
-// After — two globs, one declaration
+// After — three globs, one declaration
 import { content, markdownGlob } from 'acrolls/content';
 import { defineDocsConfig } from 'acrolls/docs/content';
 
 export const docs = content({
   loader: markdownGlob({
     body: import.meta.glob('../../docs/**/*.md', { import: 'default' }),
-    modules: import.meta.glob('../../docs/**/*.md', { eager: true }),
+    metadata: import.meta.glob('../../docs/**/*.md', { eager: true, import: 'metadata' }),
+    facts: import.meta.glob('../../docs/**/*.md', { eager: true, import: '__acrollsDocument' }),
     root: '../../docs'
   }),
   config: defineDocsConfig({ title: 'Documentation', baseHref: '/docs' })
@@ -419,8 +425,8 @@ The mapping is mechanical:
 | Old | New |
 |---|---|
 | `modules` (lazy `default` glob) | `loader.body` |
-| `metadata` (eager `metadata` glob) | folded into `loader.modules` |
-| `facts` (eager `__acrollsDocument` glob) | folded into `loader.modules` |
+| `metadata` (eager `metadata` glob) | `loader.metadata` |
+| `facts` (eager `__acrollsDocument` glob) | `loader.facts` |
 | `contentRoot` | `loader.root` |
 | `config` | `config` (unchanged) |
 | — | `schema`, `filter` (new, both optional) |
@@ -499,7 +505,8 @@ export const docs = content({
       prefix: 'set1',
       loader: markdownGlob<DocsArticle>({
         body: import.meta.glob('../../content-a/**/*.md', { import: 'default' }),
-        modules: import.meta.glob('../../content-a/**/*.md', { eager: true }),
+        metadata: import.meta.glob('../../content-a/**/*.md', { eager: true, import: 'metadata' }),
+        facts: import.meta.glob('../../content-a/**/*.md', { eager: true, import: '__acrollsDocument' }),
         root: '../../content-a'
       })
     },
@@ -507,7 +514,8 @@ export const docs = content({
       prefix: 'set2',
       loader: markdownGlob<DocsArticle>({
         body: import.meta.glob('../../content-b/**/*.md', { import: 'default' }),
-        modules: import.meta.glob('../../content-b/**/*.md', { eager: true }),
+        metadata: import.meta.glob('../../content-b/**/*.md', { eager: true, import: 'metadata' }),
+        facts: import.meta.glob('../../content-b/**/*.md', { eager: true, import: '__acrollsDocument' }),
         root: '../../content-b'
       })
     }

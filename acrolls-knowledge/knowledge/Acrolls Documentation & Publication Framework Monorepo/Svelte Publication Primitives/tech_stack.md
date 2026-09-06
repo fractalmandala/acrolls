@@ -1,0 +1,1 @@
+Svelte 5 (peer dependency) using `$props`, `$state`, `$derived`, and `{@render}` snippets; Mermaid v11 lazy-loaded for diagram rendering; built with `@sveltejs/package` targeting ESM output.

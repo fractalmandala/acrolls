@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-09-06T00:33:42Z"
+exported_at: "2026-09-06T11:38:35Z"
 modules:
     "":
-        dir_name: Acrolls Documentation & Publication Framework Monorepo
-        title: Acrolls Documentation & Publication Framework Monorepo
+        dir_name: Acrolls Documentation Engine Monorepo
+        title: Acrolls Documentation Engine Monorepo
         scope:
             - README.md
             - AGENTS.md

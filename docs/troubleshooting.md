@@ -173,6 +173,27 @@ Studio HTML pipeline strips `<script>` blocks. Use `pnpm dev` for full SVX compo
 
 ---
 
+## Search box says "unavailable" / `/pagefind/*` 404s in preview
+
+`vite preview` serves only the SvelteKit client output (`/_app/...`), not the post-build
+`build/pagefind/` bundle, so search cannot load there and `DocsSearch` falls back to its
+"unavailable" note. This is a preview limitation, not a broken index. Serve the whole build
+directory instead — `pnpm dlx sirv build --port 4173 --cors` — and confirm `build/pagefind/pagefind.js`
+exists (run `acrolls search-index` after `vite build`). A production deploy serves `build/` and works
+without extra wiring. See [Docs shell · Search](./docs-shell.md#search-pagefind).
+
+---
+
+## Code blocks render in one flat colour
+
+Acrolls highlights with Shiki **dual themes** (`defaultColor: false`), emitting per-token
+`--shiki-light` / `--shiki-dark` variables rather than inline colours. The shipped stylesheets
+(`acrolls/styles/foundation.css` or `default.css`, plus `acrolls/docs/styles.css`) map those
+variables to `color`/`background`. If code is monochrome, you are likely importing neither — add
+one base stylesheet and the docs stylesheet. See [Styles](./styles.md).
+
+---
+
 ## Still stuck
 
 1. Minimal repro: one route + one `.md` + `Publication` + `default.css`  

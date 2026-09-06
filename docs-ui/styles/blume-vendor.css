@@ -1,0 +1,46 @@
+/* ============================================================
+   Blume docs — vendor bits (tooltip, swatch, panel-tabs, zoom)
+   Verbatim behaviour from _..CTQipOzc.css + inline zoom style.
+   KaTeX fonts/layout stay in the original compiled CSS copy.
+   ============================================================ */
+
+@import "./theme-tokens.css";
+
+/* Color swatch respects dark theme */
+[data-theme="dark"] [data-blume-color-swatch] {
+  background: var(--blume-color-dark, var(--blume-color-light));
+}
+
+/* Tooltip */
+[data-blume-tooltip-panel] { pointer-events: none; visibility: hidden; }
+[data-blume-tooltip-trigger]:focus + [data-blume-tooltip-panel],
+.group:hover [data-blume-tooltip-panel] { pointer-events: auto; visibility: visible; }
+
+/* Panel tabs: strip nested code chrome */
+blume-panel-tabs pre.astro-code {
+  background: 0 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0.75rem 1rem !important;
+}
+blume-panel-tabs pre.astro-code::before { content: none !important; }
+blume-panel-tabs [data-blume-copy] { display: none !important; }
+
+/* Medium zoom */
+.medium-zoom-overlay {
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.3s;
+  position: fixed;
+  inset: 0;
+}
+.medium-zoom--opened .medium-zoom-overlay { cursor: pointer; cursor: zoom-out; opacity: 1; }
+.medium-zoom-image { cursor: pointer; cursor: zoom-in; transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1) !important; }
+.medium-zoom-image--hidden { visibility: hidden; }
+.medium-zoom-image--opened { cursor: pointer; cursor: zoom-out; will-change: transform; position: relative; }
+.medium-zoom-overlay { backdrop-filter: blur(4px); z-index: 100; }
+.medium-zoom-image--opened { z-index: 101; }
+@media (prefers-reduced-motion: reduce) {
+  html .medium-zoom-image, html .medium-zoom-overlay { transition: none !important; }
+}

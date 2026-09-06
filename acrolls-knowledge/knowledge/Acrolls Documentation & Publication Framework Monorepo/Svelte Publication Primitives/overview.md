@@ -1,0 +1,1 @@
+Svelte 5 component library that renders Acrolls publications with banner, callout, figure, video, image, and layout primitives plus progressive code-frame and Mermaid enhancements.

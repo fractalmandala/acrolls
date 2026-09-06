@@ -1,0 +1,1 @@
+TypeScript module built with tsup to ESM + d.ts; integrates mdsvex for Markdown processing and Vite's `import.meta.glob` for lazy/eager document discovery.

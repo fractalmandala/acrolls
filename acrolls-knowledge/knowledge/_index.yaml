@@ -1,0 +1,177 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-09-06T11:24:46Z"
+modules:
+    "":
+        dir_name: Acrolls Documentation & Publication Framework Monorepo
+        title: Acrolls Documentation & Publication Framework Monorepo
+        scope:
+            - README.md
+            - AGENTS.md
+            - DESIGN.md
+            - PRODUCT.md
+            - TECH.md
+            - SKILL.md
+            - package.json
+            - pnpm-workspace.yaml
+            - tsconfig.base.json
+            - .gitignore
+            - GEMINI.md
+            - LICENSE
+            - PRODUCT-TECH.md
+            - Untitled.md
+            - llms.txt
+            - tsconfig.json
+            - vite.config.ts
+        source_files: []
+        children:
+            - acrolls_entrypoints
+            - cli
+            - docs_package
+            - documentation
+            - examples
+            - mdsvex
+            - styles
+            - svelte_components
+            - sveltekit_integration
+        depends_on: []
+        related_to: []
+    acrolls_entrypoints:
+        dir_name: Acrolls Public Package & CLI Entrypoints
+        title: Acrolls Public Package & CLI Entrypoints
+        scope:
+            - packages/acrolls/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cli
+    cli:
+        dir_name: Acrolls CLI (Command-Line Interface)
+        title: Acrolls CLI (Command-Line Interface)
+        scope:
+            - packages/cli/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: acrolls_entrypoints
+            - path: documentation
+            - path: mdsvex
+    docs_package:
+        dir_name: '@acrolls_docs — SvelteKit Docs Shell Package'
+        title: '@acrolls/docs — SvelteKit Docs Shell Package'
+        scope:
+            - packages/docs/
+        source_files: []
+        children:
+            - docs_package/content_source_collection_api
+            - docs_package/discoverability_layer
+            - docs_package/navigation_chrome
+        depends_on: []
+        related_to:
+            - path: examples
+    docs_package/content_source_collection_api:
+        dir_name: Docs Content Source & Collection API
+        title: Docs Content Source & Collection API
+        scope:
+            - packages/docs/src/lib/collection.ts
+            - packages/docs/src/lib/fields.ts
+            - packages/docs/src/lib/merge.ts
+            - packages/docs/src/lib/content.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sveltekit_integration
+    docs_package/discoverability_layer:
+        dir_name: Docs Discoverability Layer (SEO, OG, AI Surfaces & Search)
+        title: Docs Discoverability Layer (SEO, OG, AI Surfaces & Search)
+        scope:
+            - packages/docs/src/lib/seo.ts
+            - packages/docs/src/lib/og.ts
+            - packages/docs/src/lib/ai.ts
+            - packages/docs/src/lib/DocsSearch.svelte
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: docs_package/navigation_chrome
+    docs_package/navigation_chrome:
+        dir_name: Docs Navigation Chrome & Sidebar State
+        title: Docs Navigation Chrome & Sidebar State
+        scope:
+            - packages/docs/src/lib/nav.ts
+            - packages/docs/src/lib/storage.ts
+            - packages/docs/src/lib/toc.ts
+            - packages/docs/src/lib/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: docs_package/discoverability_layer
+    documentation:
+        dir_name: Acrolls Documentation & Integration Handbook
+        title: Acrolls Documentation & Integration Handbook
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cli
+    examples:
+        dir_name: Acrolls Example Applications & Starter Templates
+        title: Acrolls Example Applications & Starter Templates
+        scope:
+            - examples/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: docs_package
+    mdsvex:
+        dir_name: mdsvex Compile & Source-Safety Pipeline
+        title: mdsvex Compile & Source-Safety Pipeline
+        scope:
+            - packages/mdsvex/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cli
+            - path: sveltekit_integration
+    styles:
+        dir_name: Acrolls Styles (Foundation, Presets & Theme System)
+        title: Acrolls Styles (Foundation, Presets & Theme System)
+        scope:
+            - packages/styles/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: svelte_components
+    svelte_components:
+        dir_name: Svelte Publication Primitives
+        title: Svelte Publication Primitives
+        scope:
+            - packages/svelte/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: styles
+    sveltekit_integration:
+        dir_name: SvelteKit Integration Layer
+        title: SvelteKit Integration Layer
+        scope:
+            - packages/sveltekit/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: docs_package/content_source_collection_api
+            - path: mdsvex

@@ -1,0 +1,1 @@
+pnpm workspaces with hoisted linker for publish, Node ≥20.19, TypeScript with strict + isolatedModules + verbatimModuleSyntax, Svelte 5, SvelteKit 2, Vite 7, mdsvex 0.12, Sass, and fractalthemer for optional theme generation.

@@ -1,0 +1,6 @@
+- Each CLI command is implemented as an exported async function returning a numeric exit code (0 success, 1 error, 2 usage) and is dispatched from `src/index.ts` via a command-name switch.
+- Argument parsing is centralized in `util.parseArgs`, which supports both `--flag value` and `--flag=value` forms and keeps a whitelist of value flags (`content-dir`, `mode`, `base-href`, `docs-dir`, `report`, `port`, `cwd`, `on-invalid`, `style`).
+- Filesystem access goes through the shared `exists()` helper rather than raw try/catch around `access`, keeping I/O error handling uniform across commands.
+- Validation and preview commands delegate document compilation to `@acrolls/mdsvex` (`compile`, `createAcrollsMdsvexOptions`, `normalizeAcrollsMarkdown`, `renderAcrollsArticleHtml`) instead of reimplementing markdown processing.
+- Commands validate their options against explicit allowlists (e.g. `mode` must be `'authored'|'migration'`, `--on-invalid` must be `'fail'|'error-page'`, `--style` must be `'css'|'sass'`) before performing side effects.
+- Starter content and generated snippets are kept as string constants (e.g. `DOCS_STARTER_INDEX_MD` in `starter.ts`, `VITE_CONFIG_SNIPPET` in `integrate.ts`) and written verbatim to disk rather than templated.

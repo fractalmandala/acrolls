@@ -110,3 +110,7 @@ export { default as DocsBreadcrumbs } from './DocsBreadcrumbs.svelte';
 export { default as DocsPager } from './DocsPager.svelte';
 export { default as DocsToc } from './DocsToc.svelte';
 export { default as DocsPageHeader } from './DocsPageHeader.svelte';
+export { default as DocsHeader } from './DocsHeader.svelte';
+export { default as ThemeToggle } from './ThemeToggle.svelte';
+export { default as PageActions } from './PageActions.svelte';
+export { default as PageFeedback } from './PageFeedback.svelte';

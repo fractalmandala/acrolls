@@ -1,0 +1,1 @@
+SvelteKit 2 with Vite 7, Svelte 5 runes, TypeScript; mdsvex for `.md`/`.svx` content processing; pagefind for static search indexing; satori + @resvg/resvg-js for Open Graph image generation; fractalthemer for theme switching.

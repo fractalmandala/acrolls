@@ -1,0 +1,1 @@
+Node.js CLI that onboards, integrates, validates, and previews Acrolls Markdown/SvelteKit docs in an existing host project.

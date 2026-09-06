@@ -1,0 +1,1 @@
+The Pagefind search widget expects a post-build step that emits `pagefind.js` (default path `/pagefind/pagefind.js`); without it the UI shows an 'index not built yet' note. OG images require the host to install `satori` and `@resvg/resvg-js` and render the returned Satori node tree to PNG at routes derived from `docsOgEntries`.

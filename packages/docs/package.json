@@ -38,7 +38,8 @@
     "styles.css",
     "styles.sass",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE.md"
   ],
   "scripts": {
     "build": "svelte-package -i src/lib -o dist && cp styles.css dist/styles.css && cp styles.sass dist/styles.sass",

@@ -98,7 +98,7 @@ import {
 | Export | Use |
 |---|---|
 | `content({ loader, config, schema?, filter? })` | Declare one docs collection; `.sourceSync()` (eager loaders) or `await .source()` |
-| `markdownGlob({ body, modules, root })` | Vite loader over two `import.meta.glob` calls on the identical pattern |
+| `markdownGlob({ body, metadata, facts, root })` | Vite loader over three `import.meta.glob` calls on the identical pattern (a legacy two-glob `modules` form is still supported) |
 | `customSource({ list })` | CMS/database/API loader seam; async-only, and its `live()` hook is unimplemented |
 | `StandardSchemaV1` | Structural Standard Schema type; hosts supply the validator |
 

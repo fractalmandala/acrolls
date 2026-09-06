@@ -1,0 +1,1 @@
+Integration walkthrough uses the published `acrolls` npm package and its CLI: `pnpm add acrolls@latest` followed by `pnpm exec acrolls onboard --docs-dir docs --base-href /docs`; verification command is `pnpm exec acrolls --version`. The third-host trial route requires Node ≥ 20.19, SvelteKit 2.62+/3, and pnpm.

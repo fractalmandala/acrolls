@@ -34,20 +34,20 @@
 	}
 </script>
 
-<ul class="acrolls-docs-tree" class:is-nested={depth > 0} role="list" data-depth={depth}>
+<ul class="acrolls-docs-nav-list" class:is-nested={depth > 0} role="list" data-depth={depth}>
 	{#each nodes as node (node.id ?? node.href ?? node.title)}
-		<li class="acrolls-docs-tree__item">
+		<li class="acrolls-docs-nav-item">
 			{#if node.children?.length}
 				<details
-					class="acrolls-docs-tree__group"
+					class="acrolls-docs-nav-group"
 					class:is-active-branch={nodeContainsPath(node, pathname)}
 					open={isOpen(node)}
 					ontoggle={(e) => node.id && handleToggle(e, node.id)}
 				>
-					<summary class="acrolls-docs-tree__summary">
+					<summary class="acrolls-docs-nav-summary">
 						{#if node.href}
 							<a
-								class="acrolls-docs-tree__link acrolls-docs-tree__link--group"
+								class="acrolls-docs-nav-group-title"
 								class:is-active={isActive(node)}
 								href={node.href}
 								aria-current={isActive(node) ? 'page' : undefined}
@@ -55,37 +55,39 @@
 							>
 								{node.title}
 							</a>
-				{:else}
-					<span class="acrolls-docs-tree__group-label">{node.title}</span>
-				{/if}
-				{#if node.badge}
-					<span class="acrolls-docs-tree__badge">{node.badge}</span>
-				{/if}
-				<span class="acrolls-docs-tree__chevron" aria-hidden="true"></span>
+						{:else}
+							<span class="acrolls-docs-nav-group-title">{node.title}</span>
+						{/if}
+						{#if node.badge}
+							<span class="acrolls-docs-nav-badge">{node.badge}</span>
+						{/if}
+						<span class="acrolls-docs-nav-chevron" aria-hidden="true"></span>
 					</summary>
-					<DocsNavTree
-						nodes={node.children}
-						{pathname}
-						depth={depth + 1}
-						{openMap}
-						{onToggle}
-						{forceOpen}
-					/>
+					<div class="acrolls-docs-nav-body">
+						<DocsNavTree
+							nodes={node.children}
+							{pathname}
+							depth={depth + 1}
+							{openMap}
+							{onToggle}
+							{forceOpen}
+						/>
+					</div>
 				</details>
 			{:else if node.href}
 				<a
-					class="acrolls-docs-tree__link"
+					class="acrolls-docs-nav-link"
 					class:is-active={isActive(node)}
 					href={node.href}
 					aria-current={isActive(node) ? 'page' : undefined}
 				>
-					<span>{node.title}</span>
+					<span class="acrolls-docs-nav-link-text">{node.title}</span>
 					{#if node.badge}
-						<span class="acrolls-docs-tree__badge">{node.badge}</span>
+						<span class="acrolls-docs-nav-badge">{node.badge}</span>
 					{/if}
 				</a>
 			{:else}
-				<span class="acrolls-docs-tree__label">{node.title}</span>
+				<span class="acrolls-docs-nav-label">{node.title}</span>
 			{/if}
 		</li>
 	{/each}

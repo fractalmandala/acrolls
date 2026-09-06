@@ -1,0 +1,1 @@
+Build with `npm run build` which runs `svelte-package -i src/lib -o dist`; type-check with `npm run check` via `svelte-check --tsconfig ./tsconfig.json`. The package is marked private and is consumed internally by other Acrolls packages rather than published directly.

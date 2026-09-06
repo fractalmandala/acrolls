@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: docs_package/content_source_collection_api
+title: Docs Content Source & Collection API
+scope:
+    - packages/docs/src/lib/collection.ts
+    - packages/docs/src/lib/fields.ts
+    - packages/docs/src/lib/merge.ts
+    - packages/docs/src/lib/content.ts
+source_files: []
+depends_on: []
+related_to:
+    - path: sveltekit_integration

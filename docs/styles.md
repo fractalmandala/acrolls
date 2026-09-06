@@ -90,6 +90,11 @@ the same compiled style rules as their CSS counterparts; no separate CSS mechani
 For a host-authored global Sass file, `@use 'acrolls/styles/default'` and
 `@use 'acrolls/docs/styles'` are also supported.
 
+> **Sass pipeline:** these Sass entrypoints are package subpath exports that forward the bundled
+> `@acrolls/styles`, so compile them through your bundler. In Vite, register a Node package importer:
+> `css.preprocessorOptions.sass.importers: [new NodePackageImporter()]`. The raw `sass` CLI with
+> `--load-path` resolves neither the subpath exports nor the nested bundled dependency.
+
 ---
 
 ## Dark mode

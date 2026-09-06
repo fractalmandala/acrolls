@@ -1,0 +1,100 @@
+/* ============================================================
+   Blume docs — theme tokens
+   Extracted from WebMcp.ht_19Qc5.css (@layer theme)
+   Source: Islands - Blume_files / blume-docs-extract/theme-tokens-extract.css
+   ============================================================ */
+
+:root {
+  --blume-background: oklch(100% 0 0);
+  --blume-background-image: none;
+  --blume-background-image-repeat: no-repeat;
+  --blume-background-image-size: cover;
+  --blume-foreground: oklch(14.5% 0 0);
+  --blume-muted: oklch(96.5% 0 0);
+  --blume-muted-foreground: oklch(53% 0 0);
+  --blume-border: oklch(88% 0.006 260 / 0.72);
+  --blume-accent: oklch(60% 0.12 195);
+  --blume-accent-foreground: oklch(100% 0 0);
+  --blume-action: var(--blume-accent);
+  --blume-action-foreground: var(--blume-accent-foreground);
+
+  --blume-code-background: oklch(99% 0 0);
+  --blume-code-highlight: oklch(55% 0.16 255 / 0.1);
+  --blume-code-highlight-border: oklch(55% 0.16 255 / 0.55);
+  --blume-code-add: oklch(72% 0.16 150 / 0.16);
+  --blume-code-add-border: oklch(52% 0.15 150 / 0.7);
+  --blume-code-remove: oklch(66% 0.21 22 / 0.16);
+  --blume-code-remove-border: oklch(55% 0.2 22 / 0.7);
+  --blume-code-word: oklch(55% 0.16 255 / 0.16);
+  --blume-code-word-border: oklch(55% 0.16 255 / 0.5);
+
+  --blume-radius: 0.5rem;
+  --blume-content-width: 42rem;
+
+  --blume-font-body-src: inherit;
+  --blume-font-mono-src: inherit;
+  --blume-font-display-src: inherit;
+  --blume-font-body: var(--blume-font-body-src, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  --blume-font-mono: var(--blume-font-mono-src, ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace);
+  --blume-font-display: var(--blume-font-display-src, var(--blume-font-body));
+
+  /* layout */
+  --blume-drawer-top: 4rem;
+  --blume-ask-width: 42rem;
+  --blume-cols: 1;
+  --blume-diff-color-scheme: light;
+  --blume-step-title-size: 1rem;
+  --blume-step-title-line-height: 1.5;
+
+  --font-sans: var(--blume-font-body);
+  --font-mono: var(--blume-font-mono);
+}
+
+:root[data-theme="dark"] {
+  --blume-background: oklch(8.5% 0 0);
+  --blume-background-image: none;
+  --blume-background-image-repeat: no-repeat;
+  --blume-background-image-size: cover;
+  --blume-foreground: oklch(96% 0 0);
+  --blume-muted: oklch(16% 0 0);
+  --blume-muted-foreground: oklch(68% 0 0);
+  --blume-border: oklch(24% 0 0 / 0.8);
+  --blume-accent: oklch(60% 0.12 195);
+  --blume-accent-foreground: oklch(100% 0 0);
+  --blume-action: var(--blume-accent);
+  --blume-action-foreground: var(--blume-accent-foreground);
+
+  --blume-code-background: oklch(12% 0 0);
+  --blume-code-highlight: oklch(70% 0.14 255 / 0.16);
+  --blume-code-highlight-border: oklch(70% 0.14 255 / 0.6);
+  --blume-code-add: oklch(78% 0.17 150 / 0.2);
+  --blume-code-add-border: oklch(72% 0.16 150 / 0.7);
+  --blume-code-remove: oklch(72% 0.21 22 / 0.22);
+  --blume-code-remove-border: oklch(70% 0.2 22 / 0.7);
+  --blume-code-word: oklch(70% 0.14 255 / 0.22);
+  --blume-code-word-border: oklch(70% 0.14 255 / 0.55);
+
+  --blume-diff-color-scheme: dark;
+}
+
+/* Shiki / Twoslash bridges (from compiled theme) */
+:root {
+  --twoslash-border-color: var(--blume-border);
+  --twoslash-popup-bg: var(--blume-code-background);
+  --twoslash-popup-color: var(--blume-foreground);
+  --twoslash-popup-shadow: 0 6px 24px oklch(0% 0 0 / 0.18);
+  --twoslash-docs-color: var(--blume-muted-foreground);
+  --twoslash-docs-font: var(--font-sans);
+  --twoslash-code-font: var(--font-mono);
+  --twoslash-matched-color: var(--blume-foreground);
+  --twoslash-unmatched-color: var(--blume-muted-foreground);
+  --twoslash-cursor-color: var(--blume-muted-foreground);
+}
+
+:root[data-theme="dark"] .prose :where(pre.astro-code) {
+  color: var(--shiki-dark, var(--blume-foreground)) !important;
+}
+
+:root[data-theme="dark"] blume-diff {
+  --blume-diff-color-scheme: dark;
+}

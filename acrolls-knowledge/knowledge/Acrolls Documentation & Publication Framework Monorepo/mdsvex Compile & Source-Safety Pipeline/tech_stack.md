@@ -1,0 +1,1 @@
+Built on unified/remark/rehype pipeline with `mdsvex` (peer >=0.12), `shiki` for syntax highlighting (github-light/dark themes), `acorn` + `@sveltejs/acorn-typescript` for TypeScript-aware AST analysis of generated Svelte modules, `github-slugger` for heading IDs, and `unist-util-visit` for tree traversal.

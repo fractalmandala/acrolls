@@ -1,0 +1,1 @@
+Canonical CSS and indented Sass style presets for Acrolls, providing a lean light/dark color scheme, semantic surface tokens, and an optional fractalthemer-powered theme builder.

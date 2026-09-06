@@ -1,0 +1,5 @@
+- All component styles are scoped under the `.acrolls` root selector so they can be dropped into any host page without leaking globally.
+- Colors and surfaces are consumed through semantic CSS custom properties (`--acrolls-foreground`, `--acrolls-surface`, `--acrolls-accent`, …) rather than hard-coded values, allowing host overrides on `.acrolls` or ancestors.
+- Dark mode is applied via `[data-theme='dark']`, `[data-mode='dark']`, and `.dark` selectors alongside `prefers-color-scheme: dark`, giving multiple opt-in switches for theme activation.
+- Theme-aware colors use `color-mix(in oklab, var(--acrolls-accent), transparent)` to derive hover, selection, and highlight variants from the active accent token instead of fixed hues.
+- Each public surface has paired source (`src/<name>.sass`) and prebuilt (`<name>.css`) artifacts, with `package.json` exports mapping both forms so consumers can choose Sass compilation or zero-dep CSS.

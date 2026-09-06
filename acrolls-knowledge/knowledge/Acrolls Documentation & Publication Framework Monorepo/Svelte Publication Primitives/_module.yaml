@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: svelte_components
+title: Svelte Publication Primitives
+scope:
+    - packages/svelte/
+source_files: []
+depends_on: []
+related_to:
+    - path: styles

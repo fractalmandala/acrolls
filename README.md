@@ -14,9 +14,13 @@ For the next independent host trial, begin with the [third-host setup path](./do
 For coding agents, start with [`llms.txt`](./llms.txt), then follow the linked integration and
 validation guides in order.
 
-Install the published package in the SvelteKit host, then use the CLI-led onboarding flow:
+Scaffold a brand-new docs project, or add Acrolls to an existing SvelteKit host:
 
 ```bash
+# start from scratch: a pre-wired SvelteKit docs project
+pnpm dlx acrolls create my-docs
+
+# or add to an existing host, then run the CLI-led onboarding flow
 pnpm add acrolls@latest
 pnpm exec acrolls onboard --docs-dir docs --base-href /docs
 ```
@@ -29,10 +33,11 @@ pnpm exec acrolls onboard --docs-dir docs --base-href /docs
 | [Content authoring](./docs/content-authoring.md) | Markdown / SVX / fences |
 | [Docs shell](./docs/docs-shell.md) | Sidebar, TOC, nav, persistence |
 | [Styles](./docs/styles.md) | foundation / default / tokens |
-| [CLI reference](./docs/cli.md) | onboard · validate · studio · integrate |
+| [CLI reference](./docs/cli.md) | create · onboard · validate · studio · integrate · search-index · api-ref |
 | [Troubleshooting](./docs/troubleshooting.md) | Common failures |
 | [Checklist](./docs/checklist.md) | Printable integration list |
 | [Release](./docs/release.md) | Publish order and package-only registry test |
+| [Changelog](./CHANGELOG.md) | Version history (Keep a Changelog) |
 
 Copy-paste: [docs/snippets/](./docs/snippets/).
 

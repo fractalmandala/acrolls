@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: docs_package/discoverability_layer
+title: Docs Discoverability Layer (SEO, OG, AI Surfaces & Search)
+scope:
+    - packages/docs/src/lib/seo.ts
+    - packages/docs/src/lib/og.ts
+    - packages/docs/src/lib/ai.ts
+    - packages/docs/src/lib/DocsSearch.svelte
+source_files: []
+depends_on: []
+related_to:
+    - path: docs_package/navigation_chrome

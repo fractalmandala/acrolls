@@ -1,11 +1,4 @@
 {
   "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "docs-template",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@acrolls/example-docs-template", "dev"],
-      "port": 5173
-    }
-  ]
+  "configurations": []
 }

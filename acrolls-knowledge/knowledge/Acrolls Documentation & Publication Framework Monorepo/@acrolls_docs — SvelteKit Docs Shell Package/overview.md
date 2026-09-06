@@ -1,0 +1,1 @@
+Publishes a unified docs shell for SvelteKit that wires pluggable content sources, navigation chrome components, and discoverability utilities into a single @acrolls/docs package consumed by Acrolls sites.

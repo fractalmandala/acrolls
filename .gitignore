@@ -19,3 +19,8 @@ vite.config.ts.timestamp-*
 # Local research and scratch artifacts
 ref/
 twreplace.css
+
+# Release pack artifacts (`pnpm release:pack` output)
+*.tgz
+temp/
+temp

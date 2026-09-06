@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: docs_package
+title: '@acrolls/docs — SvelteKit Docs Shell Package'
+scope:
+    - packages/docs/
+source_files: []
+depends_on: []
+related_to:
+    - path: examples

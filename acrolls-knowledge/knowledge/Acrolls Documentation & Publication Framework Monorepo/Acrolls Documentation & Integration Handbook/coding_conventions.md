@@ -1,0 +1,4 @@
+- Architecture Decisions are stored as numbered files under `adr/` (e.g., `0001-*.md`) and cross-referenced from `adr/README.md` with title, status, and date columns.
+- Handbook pages use YAML frontmatter (`title`, `description`) and are grouped into numbered topic folders under `playset/` to drive generated navigation ordering.
+- Copy-paste integration code is kept as standalone files under `snippets/` and linked from handbook pages rather than embedded inline.
+- Top-level README serves as the entry point, presenting a table of contents mapping user intents to specific handbook pages and listing requirements (Node ≥ 20.19, SvelteKit 2.62+/3, pnpm).

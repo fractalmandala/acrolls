@@ -33,12 +33,15 @@ documented form. CSS users import the explicit `.css` file. A host chooses one e
 surface and must not import both CSS and its Sass counterpart.
 
 The `theme` surface forwards [fractalthemer](https://www.npmjs.com/package/fractalthemer)'s
-`themes`, `auras`, and `theme-picker` partials via `pkg:` URLs. `fractalthemer` is therefore a
-runtime dependency of both `@acrolls/styles` and the public `acrolls` package. Sass consumers of
-`acrolls/styles/theme` must register a Node package importer (e.g. Vite's
-`css.preprocessorOptions.sass.importers: [new NodePackageImporter()]`); the precompiled
-`theme.css` requires no importer. The `@acrolls/styles` build and check scripts pass
-`--pkg-importer=node` to dart-sass for this reason.
+`themes`, `auras`, and `theme-picker` partials via `pkg:` URLs. Every Sass entrypoint is also a
+package subpath export that `@forward`s the bundled `@acrolls/styles` (nested under
+`node_modules/acrolls/node_modules`), so Sass must be compiled through a bundler with exports-aware
+resolution — in Vite, `css.preprocessorOptions.sass.importers: [new NodePackageImporter()]`. The raw
+`sass` CLI with `--load-path` resolves neither the `acrolls/docs/styles` subpath export nor the
+nested bundled dependency, so it cannot compile these entrypoints; the precompiled `.css`
+entrypoints require no importer. The `@acrolls/styles` build and check scripts pass
+`--pkg-importer=node` to dart-sass to compile the canonical sources, whose internal references are
+relative.
 
 ## Project structure
 

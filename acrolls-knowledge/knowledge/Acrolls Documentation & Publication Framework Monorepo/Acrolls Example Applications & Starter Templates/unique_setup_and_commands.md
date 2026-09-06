@@ -1,0 +1,1 @@
+`kit-consumer`: run `pnpm dev` for development, `pnpm build` which runs `vite build && pagefind --site build` to generate the static site and search index, and `pnpm check` to sync types and run `svelte-check`. `docs-template`: run `pnpm dev` on port 5180 with `--strictPort`. The starter article demonstrates running `pnpm exec acrolls validate ./examples/starter/article.md`.

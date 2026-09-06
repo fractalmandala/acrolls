@@ -1,0 +1,1 @@
+Provides the docs sidebar, breadcrumbs, pager, table-of-contents, and localStorage-backed open-state persistence that power the Svelte-based docs chrome components.

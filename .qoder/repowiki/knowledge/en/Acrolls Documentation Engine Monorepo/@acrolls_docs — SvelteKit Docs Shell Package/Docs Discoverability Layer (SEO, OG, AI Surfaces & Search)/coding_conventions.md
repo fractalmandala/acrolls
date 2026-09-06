@@ -1,0 +1,6 @@
+- Per-page overrides take precedence over document fields, which take precedence over site-level defaults — used consistently for title, description, image, and canonical across `buildDocsSeo`.
+- URL resolution goes through a local `absoluteUrl` helper that accepts both absolute URLs and root-relative paths and falls back to root-relative when `nav.site` is unset.
+- Trailing slashes on site origins are normalized via a shared `stripTrailingSlash` helper before string concatenation.
+- Optional frontmatter flags (`seo.noindex`, `ai.exclude`) are read through a small typed accessor that checks `typeof === 'object'` before accessing properties, rather than assuming shape.
+- Asset-path helpers (`docsOgSlug`, `docsOgImagePath`, `docsOgEntries`) accept either a `DocsContentDocument` or a plain slug string and expose options via an options object with sensible defaults.
+- Each file is documented as 'framework-neutral' and avoids importing any SvelteKit/runtime code, keeping the layer composable inside any host build pipeline.

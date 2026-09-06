@@ -27,6 +27,16 @@ below; this section records the current repair sequence and its acceptance gates
 - The packed public package contains its documented exports and a fresh consumer can install and build.
 - Browser checks cover docs root, nested navigation, persisted open state, TOC, pager, and console errors.
 
+## Repair status
+
+All acceptance criteria above are met as of the 0.8.0 release-prep pass (per-item evidence lives in
+[todo.md](./todo.md)): `pnpm check` / `pnpm test` / `pnpm build` green; the packed-consumer gate and
+the fresh-consumer adoption funnel (`--version` → `create` → `validate` → scaffold build) both pass;
+root-CLI `validate examples/starter/article.md` exits 0; and a headless browser run against the
+served `build/` confirms search, TOC, dual-theme Shiki, tabs/CodeGroup, the mobile drawer, nav
+persistence, and a clean console. Publishing remains a deliberate human step (see
+[docs/release.md](../docs/release.md)).
+
 ## Boundaries
 
 - Always preserve dirty user changes and the public `acrolls/*` entrypoint contract.

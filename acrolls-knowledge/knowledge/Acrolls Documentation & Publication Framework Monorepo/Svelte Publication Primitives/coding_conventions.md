@@ -1,0 +1,5 @@
+- Each component declares props via a TypeScript `Props` interface and destructures them through Svelte 5's `$props()` syntax.
+- Components accept optional `children?: Snippet` and render them with `{@render children()}` or `{@render children?.()}` when present.
+- DOM nodes are styled exclusively via `acrolls-*` BEM class names and `data-*` attributes, keeping all visual rules in host CSS.
+- Progressive enhancement helpers take a `root: HTMLElement`, query for marker elements, attach listeners, and return a cleanup function that removes listeners and restores original markup.
+- Optional heavy dependencies (e.g. mermaid) are loaded via dynamic `import()` inside an async IIFE so they do not block initial bundle size.

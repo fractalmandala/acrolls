@@ -1,0 +1,6 @@
+- Validation errors are reported as structured `DocsContentDiagnostic` objects with `code`, `severity`, `file`, `message`, and optional `remediation` rather than thrown, except for fatal configuration errors which throw `DocsContentError`.
+- Frontmatter schemas are built via the internal `schema(vendor, run)` helper that wraps a `(data) => normalizedFields` function into a `StandardSchemaV1`, spreading unrecognized keys through unchanged so downstream surfaces keep SEO/AI metadata.
+- Configuration maps (`folders`, `documents`, `entries`) accept both raw path keys and slug-space aliases via `aliasConfigKeys`, allowing `myFolder` and `my-folder` to resolve to the same entry.
+- Multi-source composition uses a `prefix` convention: each source's document keys are prefixed with its namespace so merged hierarchies map cleanly to first-level sections.
+- Synchronous and asynchronous processing paths share the same pipeline logic (`runPipelineSync` / `runPipelineAsync` both call `admit`) and diverge only around awaiting `StandardSchemaV1.validate` results.
+- Type inference for layered schemas uses `UnionToIntersection` over `SchemaOutput` of each layer so `content({ schema: [page, post] })` yields an intersection of all validated field types.

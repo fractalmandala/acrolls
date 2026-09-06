@@ -1,0 +1,4 @@
+- Each logical layer lives in its own file under src/lib/ and is re-exported from the top-level index.ts barrel rather than imported directly by consumers.
+- Unit tests are colocated alongside their source as *.test.ts files and executed via vitest.
+- Public APIs expose both runtime values and TypeScript types from the same module, with types grouped under dedicated `export type { ... }` blocks.
+- Cross-layer contracts are centralized in types.ts so content sources, navigation chrome, and discoverability utilities share a single definition of DocsNav, DocsCrumb, DocsTocItem, etc.

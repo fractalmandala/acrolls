@@ -1,0 +1,1 @@
+None — all functions are pure (except `storage.ts` which safely no-ops outside the browser) and are consumed directly by Svelte components without build-time configuration.

@@ -13,11 +13,21 @@
 - [context-map.md](file://tasks/context-map.md)
 - [index.ts](file://packages/cli/src/index.ts)
 - [package.json](file://packages/acrolls/package.json)
+- [test-install-fractaldesign.md](file://docs/evolution/test-install-fractaldesign.md)
+- [patch-fractalsvelte.mjs](file://temp/patch-fractalsvelte.mjs)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive external-host integration test results from fractalsvelte project
+- Updated P0 blockers with critical production readiness issues discovered during integration testing
+- Enhanced measurable gates with real-world validation scenarios
+- Added new workstream for external-host integration validation
+- Updated dependency order to include external-host verification phase
 
 ## Definition of Launch-Ready
 
-“Industry-class” for Acrolls means a SvelteKit publishing + docs framework that a host can install from npm, wire through the documented `acrolls/*` entrypoints, and ship with predictable authoring, validation, navigation, and runtime behavior — without turning into a CMS or hosted product. The gates below are measurable and sourced from the repository’s tasks, plans, CLI surface, and release procedure.
+"Industry-class" for Acrolls means a SvelteKit publishing + docs framework that a host can install from npm, wire through the documented `acrolls/*` entrypoints, and ship with predictable authoring, validation, navigation, and runtime behavior — without turning into a CMS or hosted product. The gates below are measurable and sourced from the repository's tasks, plans, CLI surface, release procedure, and **external-host integration validation**.
 
 ### Measurable Gates
 
@@ -60,6 +70,12 @@
   - Release procedure documented and runnable: pack, inspect tarball, publish, then verify in a fresh site.
   - Only the public `acrolls` package is published; scoped packages are bundled dependencies.
 
+- **External-host integration validation** *(NEW)*
+  - Successfully integrates with real-world SvelteKit projects using latest toolchain (Vite 8, TypeScript 6, Svelte 5.56).
+  - Handles multi-source content corpora (63+ markdown documents) from external repositories.
+  - Validates compatibility with different adapters (adapter-vercel), styling systems (fractalthemer), and build configurations.
+  - Confirms production readiness across diverse host environments and content structures.
+
 **Section sources**
 - [README.md:9-35](file://README.md#L9-L35)
 - [package.json:9-22](file://package.json#L9-L22)
@@ -75,10 +91,12 @@
 - [checklist.md:10-64](file://docs/checklist.md#L10-L64)
 - [todo.md:1-18](file://tasks/todo.md#L1-L18)
 - [plan.md:22-35](file://tasks/plan.md#L22-L35)
+- [test-install-fractaldesign.md:6-33](file://docs/evolution/test-install-fractaldesign.md#L6-L33)
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)
 
 ## Workstream Overview & Dependencies
 
-Acrolls’ launch axis is organized around three workstreams that must converge before the project can be declared industry-class. Each workstream has explicit outputs and depends on earlier fixes so that downstream verification is meaningful.
+Acrolls' launch axis is organized around four workstreams that must converge before the project can be declared industry-class. Each workstream has explicit outputs and depends on earlier fixes so that downstream verification is meaningful.
 
 ```mermaid
 graph TB
@@ -86,7 +104,8 @@ A["Repair Baseline<br/>Type checks, tests, build"] --> B["CLI & Public Package G
 A --> C["Docs Shell & Content Source Acceptance<br/>Browser checks, generated nav, routes"]
 B --> D["Release & Consumer Verification<br/>Pack, publish, fresh-site install"]
 C --> D
-D --> E["Styling & Accessibility Audit<br/>Inline-style cleanup, a11y, console errors"]
+D --> E["External-Host Integration Validation<br/>Real-world host testing, multi-source corpora"]
+E --> F["Styling & Accessibility Audit<br/>Inline-style cleanup, a11y, console errors"]
 ```
 
 **Diagram sources**
@@ -94,6 +113,7 @@ D --> E["Styling & Accessibility Audit<br/>Inline-style cleanup, a11y, console e
 - [plan.md:9-35](file://tasks/plan.md#L9-L35)
 - [release.md:22-85](file://docs/release.md#L22-L85)
 - [checklist.md:52-64](file://docs/checklist.md#L52-L64)
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)
 
 ### Workstream A: Repair Baseline
 
@@ -149,20 +169,40 @@ Acceptance:
 - [PRODUCT.md:440-449](file://PRODUCT.md#L440-L449)
 - [VISION.md:16-25](file://docs/VISION.md#L16-L25)
 
+### Workstream D: External-Host Integration Validation *(NEW)*
+
+- Validate integration with real-world SvelteKit projects using latest toolchain versions (Vite 8, TypeScript 6, Svelte 5.56).
+- Test multi-source content corpora handling (63+ markdown documents from external repositories).
+- Verify compatibility with different adapters (adapter-vercel), styling systems (fractalthemer), and build configurations.
+- Validate production readiness across diverse host environments and content structures.
+
+Acceptance:
+- Successful integration with fractalsvelte project demonstrating real-world usage patterns.
+- Multi-source content setup working across 4 different documentation corpora.
+- Production build succeeds with latest toolchain versions.
+- All 65 pages render correctly with proper navigation, SEO, and functionality.
+
+**Section sources**
+- [test-install-fractaldesign.md:6-33](file://docs/evolution/test-install-fractaldesign.md#L6-L33)
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)
+- [patch-fractalsvelte.mjs:1-98](file://temp/patch-fractalsvelte.mjs#L1-L98)
+
 ### Dependency Order
 
 1. Repair baseline must pass before CLI and consumer verification are meaningful.
 2. CLI and packed-consumer gates must pass before release packaging is trusted.
 3. Browser acceptance must be evidenced against the built example, not inferred from static checks.
-4. Styling and accessibility audit should follow once functional gates are green.
+4. **External-host integration validation must demonstrate real-world production readiness.** *(UPDATED)*
+5. Styling and accessibility audit should follow once functional gates are green.
 
 **Section sources**
 - [plan.md:9-35](file://tasks/plan.md#L9-L35)
 - [todo.md:1-18](file://tasks/todo.md#L1-L18)
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)
 
 ## P0 Blockers
 
-The following items block declaring the framework industry-class because they prevent reliable authoring, installation, and verification by hosts.
+The following items block declaring the framework industry-class because they prevent reliable authoring, installation, and verification by hosts. **Updated with critical findings from external-host integration testing.**
 
 | Blocker | Why it blocks launch | Evidence / Location |
 |---|---|---|
@@ -170,12 +210,16 @@ The following items block declaring the framework industry-class because they pr
 | Stale task/checklist and onboarding guidance not reconciled with implemented content API | Hosts may follow outdated steps instead of the collection API and generated source pattern. | Explicitly listed as a remaining task. | [todo.md:12-13](file://tasks/todo.md#L12-L13) |
 | Styling-rule violations still present in Acrolls-owned scope | Violates the approved class/style boundaries and risks inconsistent rendering across hosts. | Audit item remains open. | [todo.md:14-15](file://tasks/todo.md#L14-L15) |
 | Browser acceptance not completed for docs navigation, TOC, pager, persistence, accessibility, and console errors | Functional features exist but lack evidence against the built example. | Open task requires built-example verification. | [todo.md:16-17](file://tasks/todo.md#L16-L17) |
+| **Published package version mismatch with local development** *(NEW - CRITICAL)* | Published `acrolls@0.1.4` is stale but shares the local version number, causing consumers to install old code under current version. | External-host test revealed missing exports and features. | [test-install-fractaldesign.md:38-49](file://docs/evolution/test-install-fractaldesign.md#L38-L49) |
+| **Source-safety validation fails on nested object literals** *(NEW - CRITICAL)* | Default `onInvalidDocument: 'fail'` causes entire production build to fail on single malformed document containing nested config examples. | Real-world corpus integration exposed this critical issue. | [test-install-fractaldesign.md:145-168](file://docs/evolution/test-install-fractaldesign.md#L145-L168) |
+| **Onboarding plan predates shipped features** *(NEW - HIGH)* | Guided CLI cannot express multi-source setups or any add-on features (search, SEO, OG images, AI/LLMs). | External-host test with 4 different doc sources exposed this limitation. | [test-install-fractaldesign.md:62-76](file://docs/evolution/test-install-fractaldesign.md#L62-L76) |
 
 These blockers map directly to the repair sequence and acceptance criteria defined in the plan. Until they are closed, the framework cannot be confidently recommended for production hosts.
 
 **Section sources**
 - [todo.md:10-17](file://tasks/todo.md#L10-L17)
 - [plan.md:22-35](file://tasks/plan.md#L22-L35)
+- [test-install-fractaldesign.md:38-168](file://docs/evolution/test-install-fractaldesign.md#L38-L168)
 
 ## Sequenced Milestones
 
@@ -221,7 +265,22 @@ Acceptance:
 - [todo.md:12-13](file://tasks/todo.md#L12-L13)
 - [checklist.md:10-64](file://docs/checklist.md#L10-L64)
 
-### Milestone 4: Styling and Accessibility Audit
+### Milestone 4: External-Host Integration Validation *(NEW)*
+
+- Validate integration with real-world SvelteKit projects using latest toolchain versions.
+- Test multi-source content corpora handling from external repositories.
+- Verify production readiness across diverse host environments.
+
+Acceptance:
+- Successful integration with fractalsvelte project (65 pages, 4 doc sources).
+- Production build succeeds with Vite 8, TypeScript 6, Svelte 5.56.
+- All pages render correctly with proper navigation, SEO, and functionality.
+
+**Section sources**
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)
+- [patch-fractalsvelte.mjs:1-98](file://temp/patch-fractalsvelte.mjs#L1-L98)
+
+### Milestone 5: Styling and Accessibility Audit
 
 - Audit and repair source-level styling-rule violations within approved class/style boundaries.
 - Complete browser acceptance for docs navigation, TOC, pager, persistence, accessibility, and console errors.
@@ -234,7 +293,7 @@ Acceptance:
 - [todo.md:14-17](file://tasks/todo.md#L14-L17)
 - [VISION.md:26-27](file://docs/VISION.md#L26-L27)
 
-### Milestone 5: Release and Fresh-Site Verification
+### Milestone 6: Release and Fresh-Site Verification
 
 - Follow the documented release procedure: pack, inspect, publish, then verify in a new SvelteKit site.
 - Confirm only the public `acrolls` package is installed and used by the host.
@@ -265,6 +324,9 @@ Use this gate list to decide whether Acrolls is ready for production recommendat
 | Styling rules | No inline styles or component style blocks in Acrolls-owned scope | Audit result against approved boundaries |
 | Release artifact | Tarball includes exports, bundled dependencies, README, license | Inspect `pnpm release:pack` output |
 | Fresh-site install | New SvelteKit site installs `acrolls`, onboards, validates, checks, builds | Follow release verification steps |
+| **External-host integration** *(NEW)* | Real-world host integration succeeds with latest toolchain | Fractalsvelte project integration test |
+| **Multi-source corpora** *(NEW)* | Multiple external doc sources integrate correctly | 4+ doc sources working in single hierarchy |
+| **Production readiness** *(NEW)* | Build succeeds with latest Vite/TypeScript/Svelte versions | Vite 8, TypeScript 6, Svelte 5.56 compatibility |
 
 If any gate fails, record the failing step, reproduce with minimal inputs, and close the associated blocker before retesting.
 
@@ -277,3 +339,4 @@ If any gate fails, record the failing step, reproduce with minimal inputs, and c
 - [index.ts:52-99](file://packages/cli/src/index.ts#L52-L99)
 - [index.ts:118-165](file://packages/cli/src/index.ts#L118-L165)
 - [package.json:72-106](file://packages/acrolls/package.json#L72-L106)
+- [test-install-fractaldesign.md:231-238](file://docs/evolution/test-install-fractaldesign.md#L231-L238)

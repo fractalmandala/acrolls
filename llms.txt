@@ -48,12 +48,17 @@ dependencies. All consumer imports use `acrolls/*`.
 
 ## CLI behavior
 
+- `acrolls create <dir> [--base-href <path>] [--mode foundation|default] [--force|--dry-run]` scaffolds
+  a new pre-wired SvelteKit docs project; it refuses a non-empty target directory unless `--force` is passed.
 - `acrolls onboard [--check|--json|--non-interactive]` is the recommended read-only activation guide.
 - `acrolls validate <file|directory>` checks Markdown/SVX; only `--report` writes a report.
 - `acrolls init` creates a content directory unless `--dry-run` is used.
 - `acrolls integrate` is conservative: dry-run reports a plan; `--yes` refuses non-SvelteKit
   hosts and existing Vite configs.
 - `acrolls studio <file>` serves a loopback-only preview and may save the selected source file.
+- `acrolls search-index [--site <dir>]` builds the Pagefind search bundle from the built site output.
+- `acrolls api-ref <spec|dir> [--out <dir>]` generates Markdown API-reference pages from an OpenAPI,
+  AsyncAPI, or GraphQL spec; JSON needs no dependency, YAML and SDL use optional `yaml`/`graphql` peers.
 - `--cwd <host>` may appear before a command to target another project directory.
 
 ## Content and route defaults

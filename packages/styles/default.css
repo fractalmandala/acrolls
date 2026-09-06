@@ -134,6 +134,12 @@
   font-size: var(--acrolls-code-size);
   line-height: var(--acrolls-code-leading);
   tab-size: 2;
+  background: var(--shiki-light-bg);
+  color: var(--shiki-light);
+}
+
+.acrolls .acrolls-code-frame pre span {
+  color: var(--shiki-light);
 }
 
 .acrolls .acrolls-code-frame[data-wrap=true] pre, .acrolls .acrolls-code-frame[data-wrap=true] code {
@@ -173,6 +179,24 @@
   user-select: none;
 }
 
+[data-mode=dark] .acrolls .acrolls-code-frame pre, [data-theme=dark] .acrolls .acrolls-code-frame pre, .dark .acrolls .acrolls-code-frame pre, .acrolls[data-theme=dark] .acrolls-code-frame pre {
+  background: var(--shiki-dark-bg);
+  color: var(--shiki-dark);
+}
+
+[data-mode=dark] .acrolls .acrolls-code-frame pre span, [data-theme=dark] .acrolls .acrolls-code-frame pre span, .dark .acrolls .acrolls-code-frame pre span, .acrolls[data-theme=dark] .acrolls-code-frame pre span {
+  color: var(--shiki-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(:where([data-mode=light], [data-theme=light], .light)) .acrolls .acrolls-code-frame pre {
+    background: var(--shiki-dark-bg);
+    color: var(--shiki-dark);
+  }
+  :root:not(:where([data-mode=light], [data-theme=light], .light)) .acrolls .acrolls-code-frame pre span {
+    color: var(--shiki-dark);
+  }
+}
 .acrolls :not(pre) > code {
   font-family: var(--acrolls-font-code);
   font-size: var(--acrolls-code-size);
@@ -365,6 +389,241 @@
   margin-inline: auto;
 }
 
+.acrolls .acrolls-tabs {
+  margin-block: 1.25rem;
+  border: 1px solid var(--acrolls-border);
+  border-radius: var(--acrolls-radius);
+  background: var(--acrolls-surface);
+  overflow: hidden;
+}
+
+.acrolls .acrolls-tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.35rem;
+  border-bottom: 1px solid var(--acrolls-border);
+  background: var(--acrolls-surface-strong);
+}
+
+.acrolls .acrolls-tabs__tab {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--acrolls-muted);
+  border-radius: calc(var(--acrolls-radius) * 0.7);
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.acrolls .acrolls-tabs__tab:hover {
+  color: var(--acrolls-foreground);
+  background: color-mix(in oklab, var(--acrolls-foreground) 6%, transparent);
+}
+
+.acrolls .acrolls-tabs__tab:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--acrolls-accent) 60%, transparent);
+  outline-offset: 1px;
+}
+
+.acrolls .acrolls-tabs__tab[data-active=true] {
+  color: var(--acrolls-foreground);
+  background: var(--acrolls-background);
+  border-color: var(--acrolls-border);
+  font-weight: 600;
+}
+
+.acrolls .acrolls-tabs__panel {
+  padding: 1rem;
+}
+
+.acrolls .acrolls-tabs__panel[hidden] {
+  display: none;
+}
+
+.acrolls .acrolls-tabs__panel:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--acrolls-accent) 45%, transparent);
+  outline-offset: -2px;
+}
+
+.acrolls .acrolls-tabs__panel > :first-child {
+  margin-top: 0;
+}
+
+.acrolls .acrolls-tabs__panel > :last-child {
+  margin-bottom: 0;
+}
+
+.acrolls .acrolls-tabs[data-variant=code] .acrolls-tabs__panel {
+  padding: 0;
+}
+
+.acrolls .acrolls-tabs[data-variant=code] .acrolls-tabs__panel > pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.acrolls .acrolls-tabs[data-variant=code] .acrolls-code-frame {
+  margin-block: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.acrolls .acrolls-steps {
+  margin-block: 1.25rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: acrolls-step;
+  border-inline-start: 1px solid var(--acrolls-border);
+}
+
+.acrolls .acrolls-steps__item {
+  position: relative;
+  counter-increment: acrolls-step;
+  padding: 0 0 1.5rem 1.75rem;
+}
+
+.acrolls .acrolls-steps__item:last-child {
+  padding-bottom: 0;
+}
+
+.acrolls .acrolls-steps__item::before {
+  content: counter(acrolls-step);
+  position: absolute;
+  inset-inline-start: -0.875rem;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--acrolls-border);
+  border-radius: 999px;
+  background: var(--acrolls-surface);
+  color: var(--acrolls-foreground);
+  font-family: var(--acrolls-font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.acrolls .acrolls-steps__title {
+  margin: 0 0 0.35rem;
+  font-family: var(--acrolls-font-heading);
+  font-weight: 600;
+  line-height: 1.75rem;
+}
+
+.acrolls .acrolls-steps__body > :first-child {
+  margin-top: 0;
+}
+
+.acrolls .acrolls-steps__body > :last-child {
+  margin-bottom: 0;
+}
+
+.acrolls .acrolls-cards {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.acrolls .acrolls-cards[data-columns="1"] {
+  grid-template-columns: 1fr;
+}
+
+.acrolls .acrolls-cards[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.acrolls .acrolls-cards[data-columns="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.acrolls .acrolls-cards[data-columns="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.acrolls .acrolls-cards__item {
+  display: flex;
+  gap: 0.875rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--acrolls-border);
+  border-radius: var(--acrolls-radius);
+  background: var(--acrolls-surface);
+  color: var(--acrolls-foreground);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.acrolls a.acrolls-cards__item:hover {
+  border-color: color-mix(in oklab, var(--acrolls-accent) 55%, var(--acrolls-border));
+  background: var(--acrolls-surface-strong);
+}
+
+.acrolls .acrolls-cards__item:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--acrolls-accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.acrolls .acrolls-cards__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--acrolls-accent);
+}
+
+.acrolls .acrolls-cards__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.acrolls .acrolls-cards__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.acrolls .acrolls-cards__title {
+  font-family: var(--acrolls-font-heading);
+  font-weight: 600;
+  color: var(--acrolls-foreground);
+}
+
+.acrolls .acrolls-cards__desc {
+  color: var(--acrolls-muted);
+  font-size: 0.92em;
+}
+
+.acrolls .acrolls-cards__body {
+  color: var(--acrolls-foreground);
+  font-size: 0.95em;
+}
+
+.acrolls .acrolls-cards__body > :first-child {
+  margin-top: 0;
+}
+
+.acrolls .acrolls-cards__body > :last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+  .acrolls .acrolls-cards, .acrolls .acrolls-cards[data-columns="2"], .acrolls .acrolls-cards[data-columns="3"], .acrolls .acrolls-cards[data-columns="4"] {
+    grid-template-columns: 1fr;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .acrolls * {
     transition: none !important;
@@ -377,6 +636,9 @@
   }
   .acrolls .acrolls-code-frame {
     box-shadow: none;
+    break-inside: avoid;
+  }
+  .acrolls .acrolls-tabs, .acrolls .acrolls-steps__item, .acrolls .acrolls-cards__item {
     break-inside: avoid;
   }
   .acrolls a[href]::after {

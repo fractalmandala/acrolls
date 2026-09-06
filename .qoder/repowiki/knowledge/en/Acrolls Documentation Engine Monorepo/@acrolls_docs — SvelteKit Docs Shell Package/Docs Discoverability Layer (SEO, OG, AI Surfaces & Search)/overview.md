@@ -1,0 +1,1 @@
+Framework-neutral utilities that generate SEO metadata, Open Graph images, AI-facing llms.txt surfaces, and a client-side Pagefind search widget for Acrolls documentation sites.

@@ -6,6 +6,9 @@ import { cmdIntegrate, detectHost } from './integrate.js';
 import { cmdOnboard } from './onboarding.js';
 import { cmdStudio } from './studio.js';
 import { cmdDocsInit } from './docs-init.js';
+import { cmdSearchIndex } from './search-index.js';
+import { cmdApiRef } from './api-ref.js';
+import { cmdCreate } from './create.js';
 import {
   formatValidationDiagnostic,
   validateCorpus,
@@ -14,7 +17,7 @@ import {
 
 // The private CLI package has its own version, while the public `acrolls` wrapper injects the
 // umbrella package version at runtime. Direct workspace execution keeps the private fallback.
-const VERSION = process.env.ACROLLS_VERSION ?? '0.1.1';
+const VERSION = process.env.ACROLLS_VERSION ?? '0.8.0';
 
 function help() {
   console.log(`acrolls ${VERSION}
@@ -22,12 +25,15 @@ function help() {
 Usage:
   acrolls                        Show project state
   acrolls --cwd <path> <command> Run against a host without changing directories
+  acrolls create <dir> [--name <pkg>] [--title <name>] [--base-href <path>] [--mode foundation|default] [--package-manager npm|pnpm|yarn|bun] [--force] [--dry-run]
   acrolls init [--content-dir <path>] [--dry-run]
   acrolls docs init [--docs-dir <path>] [--dry-run]
   acrolls integrate [--dry-run] [--mode foundation|default] [--style css|sass] [--yes]
   acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--style css|sass] [--check] [--non-interactive|--interactive] [--json]
   acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]
   acrolls studio <file.md|file.svx> [--port <n>] [--no-open] [--mode foundation|default]
+  acrolls search-index [--site <dir>] [--output <dir>] [--glob <pattern>] [--bundle-path <path>] [--verbose]
+  acrolls api-ref <spec|dir> [--out <dir>] [--format openapi|asyncapi|graphql] [--slug <name>] [--dry-run]
   acrolls --help
   acrolls --version
 `);
@@ -144,6 +150,7 @@ async function main() {
   try {
     if (!cmd) code = await cmdStatus();
     else if (cmd === 'init') code = await cmdInit(args);
+    else if (cmd === 'create') code = await cmdCreate(args);
     else if (cmd === 'integrate') code = await cmdIntegrate(args);
     else if (cmd === 'docs' && args._[1] === 'init') code = await cmdDocsInit(args);
     else if (cmd === 'docs') {
@@ -153,6 +160,8 @@ async function main() {
     else if (cmd === 'onboard') code = await cmdOnboard(args);
     else if (cmd === 'validate') code = await cmdValidate(args);
     else if (cmd === 'studio') code = await cmdStudio(args);
+    else if (cmd === 'search-index') code = await cmdSearchIndex(args);
+    else if (cmd === 'api-ref') code = await cmdApiRef(args);
     else {
       console.error(`Unknown command: ${cmd}`);
       help();

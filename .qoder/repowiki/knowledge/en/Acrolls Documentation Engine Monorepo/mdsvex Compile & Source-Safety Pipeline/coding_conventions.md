@@ -1,0 +1,5 @@
+- Each transformer lives in its own file named after its role (e.g. `rehype-headings.ts`, `remark-code-meta.ts`) and is re-exported from `index.ts` alongside its public types.
+- Diagnostics are constructed through factory functions in `document-diagnostics.ts` (`compileDiagnostic`, `safetyFindingDiagnostic`) that produce a uniform `{code, severity, phase, message, remediation}` shape instead of throwing raw errors directly.
+- Source-safety scanning operates line-by-line, skipping fenced blocks and mermaid regions, and records findings with absolute line/column positions derived from a running cursor offset.
+- Generated Svelte module mutation uses regex to locate `<script context="module">` blocks followed by acorn-based AST binding analysis to avoid overwriting user-defined exports.
+- Shiki integration is lazy-cached via a module-level `highlighterPromise` so a single highlighter instance serves all code blocks across documents.

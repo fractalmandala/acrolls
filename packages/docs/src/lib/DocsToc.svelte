@@ -18,17 +18,20 @@
 		title?: string;
 		/** Re-scan when this changes (e.g. pathname) */
 		watch?: unknown;
+		/** `rail` = sticky right rail; `mobile` = collapsible <details> inside the article column */
+		variant?: 'rail' | 'mobile';
 		class?: string;
 	};
 
 	let {
 		headings,
 		contentEl = null,
-		contentSelector = '.acrolls-docs-shell__article',
+		contentSelector = '#acrolls-content',
 		minLevel = 2,
 		maxLevel = 3,
 		title = 'On this page',
 		watch,
+		variant = 'rail',
 		class: className = ''
 	}: Props = $props();
 
@@ -85,18 +88,42 @@
 </script>
 
 {#if items.length > 0}
-	<nav class={['acrolls-docs-toc', className].filter(Boolean).join(' ')} aria-label={title}>
-		<p class="acrolls-docs-toc__title">{title}</p>
-		<ul class="acrolls-docs-toc__list">
-			{#each items as item}
-				<li
-					class="acrolls-docs-toc__item"
-					class:is-active={activeId === item.id}
-					data-level={item.level}
-				>
-					<a href="#{item.id}" class="acrolls-docs-toc__link">{item.text}</a>
-				</li>
-			{/each}
-		</ul>
-	</nav>
+	{#if variant === 'mobile'}
+		<details class={['acrolls-docs-mobile-toc', className].filter(Boolean).join(' ')}>
+			<summary>
+				<span>{title}</span>
+				<svg class="acrolls-docs-mobile-toc-icon" aria-hidden="true" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+					<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6" />
+				</svg>
+			</summary>
+			<nav aria-label={title}>
+				<ul class="acrolls-docs-toc-list">
+					{#each items as item (item.id)}
+						<li class="acrolls-docs-toc-item" data-level={item.level}>
+							<a
+								class="acrolls-docs-toc-link"
+								href="#{item.id}"
+								aria-current={activeId === item.id ? 'location' : undefined}>{item.text}</a
+							>
+						</li>
+					{/each}
+				</ul>
+			</nav>
+		</details>
+	{:else}
+		<nav class={['acrolls-docs-toc', className].filter(Boolean).join(' ')} aria-label={title}>
+			<p class="acrolls-docs-toc-title">{title}</p>
+			<ul class="acrolls-docs-toc-list">
+				{#each items as item (item.id)}
+					<li class="acrolls-docs-toc-item" data-level={item.level}>
+						<a
+							class="acrolls-docs-toc-link"
+							href="#{item.id}"
+							aria-current={activeId === item.id ? 'location' : undefined}>{item.text}</a
+						>
+					</li>
+				{/each}
+			</ul>
+		</nav>
+	{/if}
 {/if}

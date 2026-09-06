@@ -37,15 +37,19 @@ command documents whether it writes anything.
 | Command | Purpose | Host files changed? |
 |---|---|---|
 | `acrolls` | Print detected host and configuration hints | No |
+| `acrolls create` | Scaffold a new pre-wired SvelteKit docs project | Yes (writes a new project directory) |
 | `acrolls onboard` | Walk through a complete docs installation | No |
 | `acrolls validate` | Compile and report one page or a corpus | Only with `--report` |
 | `acrolls studio` | Preview and edit one source file locally | Yes, only when its editor saves the selected source file |
 | `acrolls init` | Create an empty content directory | Yes |
 | `acrolls docs init` | Seed the docs directory with a starter `index.md` | Yes (never overwrites) |
 | `acrolls integrate` | Plan or apply reviewed host edits | Only with `--yes` |
+| `acrolls search-index` | Build the Pagefind search bundle from the built site | Yes (writes the bundle into the site output) |
+| `acrolls api-ref` | Generate Markdown API-reference pages from an OpenAPI/AsyncAPI/GraphQL spec | Yes (writes Markdown pages) |
 
-The normal first-run order is `onboard` → `validate` → host `pnpm check`/`pnpm build` → deploy.
-Use `integrate` only when you explicitly want its generator to edit the host.
+Start a brand-new project with `create`; to add Acrolls to an existing host, the normal first-run
+order is `onboard` → `validate` → host `pnpm check`/`pnpm build` → `search-index` → deploy. Use
+`integrate` only when you explicitly want its generator to edit the host.
 
 ## Flags at a glance
 
@@ -58,11 +62,70 @@ Global flags:
 | `--cwd <path>` | Run against a host directory without changing directories first |
 
 Onboarding flags are described in [onboard](#onboard). The other commands keep their flags
-local to the operation: `validate` has corpus-policy flags, `studio` has preview flags, and
-`integrate` has dry-run/apply flags. Unknown commands and invalid flag values exit with code 2.
+local to the operation: `validate` has corpus-policy flags, `studio` has preview flags,
+`integrate` has dry-run/apply flags, `search-index` has build-output flags, `api-ref` has
+spec/format/output flags, and `create` has scaffold-target flags. Unknown commands and invalid flag
+values exit with code 2.
 
 `--cwd` is global and should normally appear before the command. It changes into the selected
 host directory before resolving relative content paths, route paths, and reports.
+
+---
+
+## `create`
+
+Scaffold a **new**, minimal SvelteKit project already wired for Acrolls docs — the from-scratch
+counterpart to [`onboard`](#onboard), which walks an *existing* host. It writes a complete, buildable
+starter: a root landing route, a docs route driven by `DocsShell`, a single-corpus `source.ts`, the
+Acrolls mdsvex preprocessor and a static adapter in `vite.config.ts`, plain-CSS style entrypoints,
+and four warning-free starter Markdown pages.
+
+```bash
+# scaffold into ./my-docs (created if missing), docs served at /docs
+pnpm exec acrolls create my-docs
+
+# name the site, move the docs route, and pick the base style preset
+pnpm exec acrolls create my-docs --title "Field Handbook" --base-href /handbook --mode foundation
+
+# preview the tree without writing, or tailor the README/next steps to a package manager
+pnpm exec acrolls create my-docs --dry-run
+pnpm exec acrolls create my-docs --package-manager pnpm
+```
+
+The target directory is created if it does not exist. `create` **refuses a non-empty directory**
+unless you pass `--force`, so it can never scatter scaffold files into an unrelated project; with
+`--force`, colliding files are overwritten and other existing files are left alone. The package name
+is derived from the directory (`My Docs Site` → `my-docs-site`) and the title from the name
+(`my-docs-site` → `My Docs Site`) when you do not pass `--name`/`--title`. The `acrolls` dependency
+is pinned to the running CLI version.
+
+The generated project is CSS-first — it imports `acrolls/styles/<mode>.css` and
+`acrolls/docs/styles.css` and assumes no preprocessor — and it chooses neither a theme nor a deploy
+target beyond the included static adapter, which you can swap freely.
+
+| Flag | Meaning |
+|---|---|
+| `--name <pkg>` | npm package name (default: derived from the directory) |
+| `--title <name>` | Site/docs title (default: humanized from the name) |
+| `--base-href <path>` | Public docs URL and matching route directory (default: `/docs`) |
+| `--mode foundation\|default` | Base style preset imported by the root layout (default: `default`) |
+| `--package-manager npm\|pnpm\|yarn\|bun` | Package manager for the printed next steps and README (default: `npm`) |
+| `--force` | Scaffold into a non-empty directory, overwriting colliding files |
+| `--dry-run` | Report the tree; write nothing |
+
+After scaffolding, install and run:
+
+```bash
+cd my-docs
+pnpm install
+pnpm dev          # preview; pnpm build produces the static site + Pagefind index
+```
+
+| Exit | Meaning |
+|---|---|
+| `0` | Project scaffolded, or `--dry-run` reported the tree |
+| `1` | Target directory is non-empty and `--force` was not passed |
+| `2` | Bad usage: no directory, or an invalid `--mode`/`--package-manager` value |
 
 ---
 
@@ -100,8 +163,8 @@ the docs shell, lazy loading, and the 404 route. An existing file with unrelated
 pending for manual correction.
 
 Important onboarding cautions are deliberate: install only the `acrolls` package and use its
-public `acrolls/*` entrypoints. Keep the lazy `body` glob and the eager `modules` glob on the
-identical pattern string. The generated source discovers every
+public `acrolls/*` entrypoints. Keep the lazy `body` glob and the eager `metadata` and `facts`
+globs on the identical pattern string. The generated source discovers every
 folder automatically; leave `folders` out unless you need a label/order/presentation override.
 Use `error-page` only as an explicit Markdown migration policy; `.svx` remains executable and
 fail-fast. Acrolls does not choose the host adapter or deployment provider.
@@ -311,6 +374,134 @@ curl -fsSI https://example.com/docs/guides/installation
 Also test direct refreshes, a deliberately unknown slug (expected 404), code highlighting,
 Mermaid, navigation persistence, and any host-owned auth or base path. Acrolls does not make
 network requests, audit the deployed site, or manage the deployment provider.
+
+---
+
+## `search-index`
+
+Build the [Pagefind](https://pagefind.app) search bundle from the host's **already built** static
+output. `DocsSearch` (from `acrolls/docs`) loads that bundle in the browser at runtime; this
+command is the post-build step that produces it.
+
+```bash
+# after the host build
+pnpm build
+pnpm exec acrolls search-index
+
+# index a non-default output directory, or scope the file glob
+pnpm exec acrolls search-index --site dist --glob "**/*.html"
+pnpm exec acrolls search-index --site build --output build/pagefind --verbose
+```
+
+Pagefind ships native per-platform binaries, so Acrolls never bundles it. Add it to the host as a
+dev dependency first; the command uses the host's own install and fails with a clear message when
+it is missing:
+
+```bash
+pnpm add -D pagefind
+```
+
+| Flag | Meaning |
+|---|---|
+| `--site <path>` | Built static-site directory to index (default: `build`) |
+| `--output <path>` | Where to write the bundle (default: `<site>/pagefind`) |
+| `--glob <pattern>` | File glob within `--site` (default: `**/*.{html}`) |
+| `--bundle-path <url>` | Public URL printed for `DocsSearch` (default: `/pagefind/pagefind.js`) |
+| `--verbose` | Forward verbose logging to Pagefind |
+
+Scoping lives in the markup, not in this command: the docs shell marks the article with
+`data-pagefind-body` and its chrome with `data-pagefind-ignore`, so only article content is
+indexed. The reported page count is what Pagefind actually indexed (read back from the written
+manifest), which can be lower than the number of files scanned.
+
+Wire it into a single post-build script so the bundle is always fresh:
+
+```json
+{
+  "scripts": {
+    "build": "vite build && acrolls search-index"
+  }
+}
+```
+
+The default `--bundle-path` matches `DocsSearch`'s default `bundlePath`, so no extra wiring is
+needed. Pass `--bundle-path` only to change the printed hint (for example under a base path); the
+bundle location on disk is set by `--output`.
+
+> **`vite preview` does not serve the search bundle.** It serves SvelteKit's client output
+> (`.svelte-kit/output/client`, only `/_app/...`), which does **not** include the `build/pagefind/`
+> directory that `search-index` writes after the build. So `/pagefind/*` 404s under `vite preview`
+> and `DocsSearch` degrades to its "unavailable" note. To preview search, serve the whole `build/`
+> directory with a static file server: `pnpm dlx sirv build --port 4173 --cors`. Production hosts
+> deploy `build/` as the static output, so the bundle is served correctly there.
+
+| Exit | Meaning |
+|---|---|
+| `0` | Bundle written |
+| `1` | Site directory missing, Pagefind not installed, or a Pagefind error |
+| `2` | Bad usage |
+
+---
+
+## `api-ref`
+
+Generate Acrolls Markdown reference pages from an **OpenAPI**, **AsyncAPI**, or **GraphQL** spec — a
+single file or a directory of specs. The output is ordinary content-pipeline Markdown (YAML
+frontmatter, GFM tables, fenced examples) that Shiki highlights and `Publication` renders like any
+other page, so an API reference sits beside your guides with no extra runtime.
+
+```bash
+# one spec -> one page under content/api (the default output)
+pnpm exec acrolls api-ref ./specs/openapi.json
+
+# choose the output directory, or preview without writing anything
+pnpm exec acrolls api-ref ./specs/openapi.json --out src/content/api --dry-run
+
+# a directory of specs -> one page each; force a format or override a single slug
+pnpm exec acrolls api-ref ./specs --out src/content/api
+pnpm exec acrolls api-ref ./specs/legacy.yaml --format openapi --slug rest-api
+```
+
+Pass a file or a directory (walked recursively, skipping `node_modules`); the command reads `.json`,
+`.yaml`/`.yml`, and `.graphql`/`.gql` sources. The format is detected from the document (`openapi` or
+`swagger`, `asyncapi`, `__schema`, or GraphQL SDL) — pass `--format` only to force one. Each page
+carries a frontmatter `title` (plus `description` when the spec has one) and **no leading H1**,
+matching the conventions the shell enforces: it renders the title itself and warns on a leading H1.
+
+JSON specs — including GraphQL **introspection JSON** — need no extra dependency. YAML specs use the
+optional [`yaml`](https://www.npmjs.com/package/yaml) package and GraphQL **SDL** uses the optional
+[`graphql`](https://www.npmjs.com/package/graphql) package. Both are loaded lazily, so add one only
+when you need it; the command fails with a clear install hint when a required parser is missing:
+
+```bash
+pnpm add -D yaml       # for .yaml/.yml specs
+pnpm add -D graphql    # for .graphql/.gql SDL
+```
+
+| Flag | Meaning |
+|---|---|
+| `--out <path>` | Output directory for generated pages (default: `content/api`) |
+| `--format openapi\|asyncapi\|graphql` | Force a format instead of auto-detecting from content |
+| `--slug <name>` | Override the output filename for a single-file input |
+| `--dry-run` | Report what would be written; write nothing |
+
+Point `--out` at a content directory your docs source globs (see [Getting started](./getting-started.md)),
+then run the host build. Pages are overwritten in place, so regenerating after a spec change is safe
+to wire into a prebuild script:
+
+```json
+{
+  "scripts": {
+    "prebuild": "acrolls api-ref ./specs --out src/content/api"
+  }
+}
+```
+
+| Exit | Meaning |
+|---|---|
+| `0` | Pages written, or `--dry-run` reported what would be written |
+| `1` | Spec/directory not found, undetectable or invalid spec, a missing optional parser (`yaml`/`graphql`), or a render failure |
+| `2` | Bad usage: no input, or an invalid `--format` value |
 
 ## Error surfaces and exit codes
 

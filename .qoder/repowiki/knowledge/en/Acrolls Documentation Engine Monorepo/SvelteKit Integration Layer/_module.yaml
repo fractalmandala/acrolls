@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sveltekit_integration
+title: SvelteKit Integration Layer
+scope:
+    - packages/sveltekit/
+source_files: []
+depends_on: []
+related_to:
+    - path: docs_package/content_source_collection_api
+    - path: mdsvex

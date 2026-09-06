@@ -90,22 +90,22 @@
 	}
 </script>
 
-<aside class={['acrolls-docs-sidebar', className].filter(Boolean).join(' ')} aria-label="Documentation">
-	<div class="acrolls-docs-sidebar__brand">
-		<a class="acrolls-docs-sidebar__title" href={nav.baseHref}>{nav.title}</a>
+<div class={['acrolls-docs-sidebar', className].filter(Boolean).join(' ')}>
+	<div class="acrolls-docs-sidebar-brand">
+		<a class="acrolls-docs-sidebar-title" href={nav.baseHref}>{nav.title}</a>
 		{#if nav.subtitle}
-			<p class="acrolls-docs-sidebar__subtitle">{nav.subtitle}</p>
+			<p class="acrolls-docs-sidebar-subtitle">{nav.subtitle}</p>
 		{/if}
 	</div>
 
 	{#if filterable}
-		<label class="acrolls-docs-sidebar__filter">
+		<label class="acrolls-docs-sidebar-filter">
 			<span class="visually-hidden">Filter navigation</span>
 			<input type="search" placeholder="Filter pages…" bind:value={query} autocomplete="off" />
 		</label>
 	{/if}
 
-	<nav class="acrolls-docs-sidebar__nav" aria-label="{nav.title} sections">
+	<nav class="acrolls-docs-sidebar-nav" aria-label="{nav.title} sections">
 		{#each visibleSections as section (section.id)}
 			<DocsAccordion
 				{section}
@@ -115,7 +115,7 @@
 				forceOpen={Boolean(q)}
 			/>
 		{:else}
-			<p class="acrolls-docs-sidebar__empty">No matching pages.</p>
+			<p class="acrolls-docs-sidebar-empty">No matching pages.</p>
 		{/each}
 	</nav>
-</aside>
+</div>

@@ -1,6 +1,6 @@
 {
   "name": "acrolls",
-  "version": "0.1.4",
+  "version": "0.8.0",
   "description": "Acrolls publishing and documentation framework for SvelteKit.",
   "license": "Apache-2.0",
   "repository": { "type": "git", "url": "git+https://github.com/fractalmandala/Acrolls.git", "directory": "packages/acrolls" },
@@ -106,10 +106,22 @@
   ],
   "peerDependencies": {
     "svelte": "^5.0.0",
-    "fractalthemer": "^0.1.0"
+    "fractalthemer": "^0.1.0",
+    "pagefind": ">=1.0.0",
+    "yaml": ">=2.0.0",
+    "graphql": ">=16.0.0"
   },
   "peerDependenciesMeta": {
     "fractalthemer": {
+      "optional": true
+    },
+    "pagefind": {
+      "optional": true
+    },
+    "yaml": {
+      "optional": true
+    },
+    "graphql": {
       "optional": true
     }
   },

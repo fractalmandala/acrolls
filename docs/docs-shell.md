@@ -192,6 +192,7 @@ Multiple surfaces (user vs developer) = two `DocsNav` objects + two layouts.
 | `tocMinLevel` / `tocMaxLevel` | `2` / `3` | Heading levels in TOC |
 | `menuLabel` | `Docs menu` | Mobile button |
 | `searchable` | `true` | Mark the article `data-pagefind-body`; set `false` to exclude the page from search (see [Search](#search-pagefind)) |
+| `showThemeToggle` | `true` | Render the built-in light/dark `ThemeToggle` in the header; set `false` when the host already owns theme switching (e.g. a `fractalthemer` picker) so two controls never compete to write `data-theme` |
 
 ---
 
@@ -306,12 +307,18 @@ runtime the build step emits.
 pnpm add -D pagefind @sveltejs/adapter-static
 ```
 
-2. Run pagefind after the build (adapter-static outputs to `build/`):
+2. Build the search bundle after the site build. Acrolls ships `acrolls search-index` — a thin
+post-build wrapper around the host's own Pagefind install (adapter-static outputs to `build/`):
 
 ```jsonc
 // package.json
-"scripts": { "build": "vite build && pagefind --site build" }
+"scripts": { "build": "vite build && acrolls search-index" }
 ```
+
+It writes the bundle to `build/pagefind/` — exactly where `DocsSearch` loads it from — and prints
+the indexed page count. Calling `pagefind --site build` directly works too; the wrapper just wires
+the same defaults (`--site build`, `--output build/pagefind`). See
+[CLI · `search-index`](./cli.md#search-index) for its flags.
 
 3. Place `<DocsSearch />` — e.g. in the shell header:
 
@@ -340,6 +347,33 @@ to keep a page out of the index. `DocsSearch` degrades to a note when the index 
 > **Content must prerender.** Resolve the article component in the route `load` and render it
 > directly — an `{#await document.loader()}` block leaves the prerendered HTML empty, so Pagefind
 > (and SEO, and no-JS readers) get nothing to index.
+
+> **Preview search by serving `build/`, not `vite preview`.** `vite preview` only serves the
+> SvelteKit client output (`/_app/...`), never the post-build `build/pagefind/` bundle, so search
+> 404s there and `DocsSearch` shows its "unavailable" note. Serve the whole build directory
+> (`pnpm dlx sirv build --port 4173 --cors`) to exercise search locally; a real deployment serves
+> `build/` and works without extra wiring. See [CLI · `search-index`](./cli.md#search-index).
+
+---
+
+## Accessibility
+
+The shell ships a WCAG-minded baseline — no extra wiring needed:
+
+- **Skip link** — `.acrolls-docs-skip` is the first focusable element and jumps to `#acrolls-content`.
+- **Landmarks** — labelled `header`, nav `aside`, `main`, and TOC `aside`; chrome is `data-pagefind-ignore`.
+- **Nav toggle** — carries `aria-expanded` + `aria-controls` pointing at the drawer (`#acrolls-docs-nav-drawer`).
+- **Mobile drawer** — when closed it is `visibility: hidden`, so it leaves the tab order and the
+  accessibility tree (not merely slid off-screen). `Escape` or the overlay closes it; body scroll locks while open.
+- **Nav tree & mobile TOC** — native `<details>`/`<summary>` disclosures (keyboard-operable for free),
+  with `aria-current` on the active link.
+- **Search** — a native `<dialog>` opened with `showModal()`, so focus is trapped, `Escape` closes, and
+  focus restores to the trigger. The input is an ARIA 1.2 combobox (`role="combobox"` +
+  `aria-activedescendant` → `role="option"` results); `⌘K` / `Ctrl+K` opens it from anywhere.
+- **Tabs / CodeGroup** — `role="tablist"` with roving `tabindex`, `Arrow`/`Home`/`End` navigation,
+  `aria-selected` + `aria-controls`, and inactive panels `hidden` (out of AT and Pagefind).
+
+Bring your own focus-visible ring via the theme tokens; the shell does not hardcode outline colours.
 
 ---
 
