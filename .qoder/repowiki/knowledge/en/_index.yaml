@@ -3,7 +3,7 @@ schema_version: 1
 locale: en-US
 branch: main
 nodes_managed: true
-exported_at: "2026-09-06T11:38:35Z"
+exported_at: "2026-09-06T19:09:14Z"
 modules:
     "":
         dir_name: Acrolls Documentation Engine Monorepo
@@ -47,8 +47,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: cli
+        related_to: []
     cli:
         dir_name: Acrolls CLI (Command-Line Interface)
         title: Acrolls CLI (Command-Line Interface)
@@ -58,8 +57,6 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: acrolls_entrypoints
-            - path: documentation
             - path: mdsvex
     docs_package:
         dir_name: '@acrolls_docs — SvelteKit Docs Shell Package'
@@ -72,8 +69,7 @@ modules:
             - docs_package/discoverability_layer
             - docs_package/navigation_chrome
         depends_on: []
-        related_to:
-            - path: examples
+        related_to: []
     docs_package/content_source_collection_api:
         dir_name: Docs Content Source & Collection API
         title: Docs Content Source & Collection API
@@ -98,8 +94,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: docs_package/navigation_chrome
+        related_to: []
     docs_package/navigation_chrome:
         dir_name: Docs Navigation Chrome & Sidebar State
         title: Docs Navigation Chrome & Sidebar State
@@ -111,8 +106,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: docs_package/discoverability_layer
+        related_to: []
     documentation:
         dir_name: Acrolls Documentation & Integration Handbook
         title: Acrolls Documentation & Integration Handbook
@@ -121,8 +115,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: cli
+        related_to: []
     examples:
         dir_name: Acrolls Example Applications & Starter Templates
         title: Acrolls Example Applications & Starter Templates
@@ -131,8 +124,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: docs_package
+        related_to: []
     mdsvex:
         dir_name: mdsvex Compile & Source-Safety Pipeline
         title: mdsvex Compile & Source-Safety Pipeline
@@ -152,8 +144,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: svelte_components
+        related_to: []
     svelte_components:
         dir_name: Svelte Publication Primitives
         title: Svelte Publication Primitives
@@ -162,8 +153,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: styles
+        related_to: []
     sveltekit_integration:
         dir_name: SvelteKit Integration Layer
         title: SvelteKit Integration Layer

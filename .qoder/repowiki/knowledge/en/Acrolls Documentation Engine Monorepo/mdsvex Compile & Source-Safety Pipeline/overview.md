@@ -1,1 +1,0 @@
-Shared mdsvex compile pipeline that normalizes Markdown source safety, highlights code with Shiki, collects headings for TOC, and injects Acrolls document metadata into Svelte modules.

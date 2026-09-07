@@ -1,1 +1,0 @@
-`npm run build` runs `svelte-package -i src/lib -o dist` and copies styles.css/styles.sass into dist; `npm run dev` watches src/lib for incremental builds; `npm run test` runs vitest; `npm run check` runs svelte-check against tsconfig.json.

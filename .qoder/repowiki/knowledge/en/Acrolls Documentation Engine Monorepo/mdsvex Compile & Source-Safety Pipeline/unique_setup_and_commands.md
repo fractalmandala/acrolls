@@ -1,1 +1,0 @@
-Build via `npm run build` which runs `tsup src/index.ts --format esm --dts --clean`; type-check with `tsc --noEmit -p tsconfig.json`; tests run with `vitest run` using `vitest.config.ts`. The package is private (`"private": true`) and intended to be consumed by other Acrolls packages rather than published independently.

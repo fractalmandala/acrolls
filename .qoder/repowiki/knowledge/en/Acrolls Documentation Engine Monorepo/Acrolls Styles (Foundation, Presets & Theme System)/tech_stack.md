@@ -1,1 +1,0 @@
-Indented Sass compiled via the `sass` npm package with Node package importer (`--pkg-importer=node`) to resolve `pkg:fractalthemer/*` URLs at build time; relies on CSS `color-mix(in oklab, …)` and native `data-theme`/`data-mode` attributes for theming.

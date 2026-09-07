@@ -1,5 +1,0 @@
-- Each example project is an independent SvelteKit app with its own `package.json`, `tsconfig.json`, and `vite.config.ts`, isolated from the rest of the repo.
-- Docs routes follow SvelteKit's file-based routing convention, using `+layout.svelte`/`+page.svelte` pairs under `src/routes/docs/` with a `[...slug]` catch-all for dynamic doc pages.
-- Server-side data fetching for docs is implemented via `+page.ts` loaders that resolve content through a centralized `docs` source module rather than inline queries.
-- UI chrome is composed by importing `DocsShell`, `DocsSeo`, `DocsSearch`, and related helpers from the `acrolls/docs` entry point instead of re-implementing navigation or SEO logic.
-- Theme selection persists user preference in `localStorage` under a namespaced key (`acrolls-demo:theme`) and applies the active theme by setting `document.documentElement.dataset.acrollsTheme`.

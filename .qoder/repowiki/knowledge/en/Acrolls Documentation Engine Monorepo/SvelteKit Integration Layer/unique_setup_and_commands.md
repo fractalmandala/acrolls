@@ -1,1 +1,0 @@
-Build produces ESM bundles under `dist/` via `npm run build` (tsup `src/index.ts src/content.ts --format esm --dts --clean`); type-checking via `npm run check` (`tsc --noEmit -p tsconfig.json`). Consumers must install peer dependencies `@acrolls/svelte` and `mdsvex >=0.12.0`.

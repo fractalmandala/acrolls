@@ -1,1 +1,0 @@
-Markdown-based handbook, ADRs, playset sample site, and copy-paste SvelteKit integration snippets that guide hosts in installing and wiring the Acrolls docs + publication framework.

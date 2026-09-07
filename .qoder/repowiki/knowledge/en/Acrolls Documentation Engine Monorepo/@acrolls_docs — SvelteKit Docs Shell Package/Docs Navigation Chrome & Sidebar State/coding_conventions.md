@@ -1,6 +1,0 @@
-- Navigation tree mutations return new objects via spread rather than mutating inputs, keeping helper functions pure.
-- Path comparison always goes through `normalizePath` to strip query strings, fragments, and trailing slashes before equality checks.
-- Stable identifiers are derived deterministically via `stableId`/`slugify` from `nav-path.ts` and deduplicated with a `used` Set to avoid collisions.
-- Browser-only side effects (localStorage reads/writes) are wrapped in an `if (!browser)` guard so the same code runs on the server without errors.
-- Open/closed state decisions are computed as pure predicates (`sectionShouldOpen`, `nodeShouldOpen`, `openIdsForPath`) and persisted separately via `readOpenState`/`writeOpenState` keyed by `navStorageKey`.
-- Public APIs are re-exported through `index.ts`, grouping related utilities (nav, toc, storage) alongside their consuming Svelte components.

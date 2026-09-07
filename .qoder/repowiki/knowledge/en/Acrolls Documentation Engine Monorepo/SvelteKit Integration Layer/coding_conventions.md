@@ -1,5 +1,0 @@
-- Glob key normalization is centralized in private `normalizeGlobPath` and `removeGlobRoot` helpers used by every loader function to strip the configured `contentRoot` prefix and validate paths.
-- Content sources are expressed as `ContentLoader` objects with an `eager` flag and a `list()` method returning `LoadedDocument[]`, produced by `markdownGlob`, `customSource`, or the deprecated `createAcrollsDocsSource`.
-- Public APIs are thin wrappers around `@acrolls/docs` and `@acrolls/mdsvex` that add SvelteKit defaults (layout resolution, file extensions) rather than reimplementing logic.
-- Legacy three-glob source shape (`modules`/`metadata`/`facts`) is preserved behind a `@deprecated` `createAcrollsDocsSource` while new code uses the two-glob `body` + named `metadata`/`facts` form passed to `markdownGlob`.
-- Types are re-exported wholesale from `@acrolls/docs/collection` and `@acrolls/docs/content` so consumers see a unified surface without importing sibling packages.

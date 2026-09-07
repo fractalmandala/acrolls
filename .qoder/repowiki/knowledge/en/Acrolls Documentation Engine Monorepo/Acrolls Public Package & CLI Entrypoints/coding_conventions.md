@@ -1,4 +1,0 @@
-- Each `exports/*.js` barrel contains a single `export * from '@acrolls/<subpkg>'` (or a small curated set of named re-exports) rather than duplicating logic.
-- Every public JS export has a matching `.d.ts` type declaration file in `exports/` paired via the `exports` map's `types` field.
-- Style assets are published as dual `.css` and `.sass` variants under `styles/` and exposed through parallel `./styles/<name>` and `./styles/<name>.sass` export keys.
-- The CLI shim delegates all runtime work to a spawned child process of `@acrolls/cli`, keeping the entrypoint free of business logic.

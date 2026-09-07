@@ -1,5 +1,0 @@
-- Each package under `packages/` declares its own `build`/`check`/`test` scripts and is built/tested via root `pnpm -r --filter './packages/*'` rather than invoked directly.
-- All packages inherit shared TypeScript settings from `tsconfig.base.json` (ES2022, strict, isolatedModules, verbatimModuleSyntax, declaration + sourceMap) and extend it per-package.
-- Public APIs are re-exported through a top-level `acrolls` entrypoint package that aggregates sub-package exports, keeping consumers decoupled from internal package names.
-- Examples under `examples/` consume workspace packages via `workspace:*` so they exercise the same code path as published artifacts.
-- Documentation under `docs/` is treated as the canonical integration handbook and is not duplicated inside package READMEs.

@@ -1,1 +1,0 @@
-Svelte 5 components with svelte-package producing a dual ESM/Svelte export; vitest for unit tests co-located next to source files; peer dependency on Svelte and workspace dependency on @acrolls/styles for shared CSS.

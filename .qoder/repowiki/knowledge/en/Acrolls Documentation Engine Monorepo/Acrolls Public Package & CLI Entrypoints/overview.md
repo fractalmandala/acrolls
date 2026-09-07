@@ -1,1 +1,0 @@
-Publishes the unified `acrolls` npm package that re-exports sub-package APIs, exposes a CLI binary, and ships CSS/SASS styles for SvelteKit documentation sites.

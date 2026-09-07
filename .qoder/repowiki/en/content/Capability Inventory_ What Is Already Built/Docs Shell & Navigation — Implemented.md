@@ -10,6 +10,10 @@
 - [DocsPager.svelte](file://packages/docs/src/lib/DocsPager.svelte)
 - [DocsToc.svelte](file://packages/docs/src/lib/DocsToc.svelte)
 - [DocsPageHeader.svelte](file://packages/docs/src/lib/DocsPageHeader.svelte)
+- [DocsSearch.svelte](file://packages/docs/src/lib/DocsSearch.svelte)
+- [DocsHeader.svelte](file://packages/docs/src/lib/DocsHeader.svelte)
+- [PageActions.svelte](file://packages/docs/src/lib/PageActions.svelte)
+- [SearchDialog.svelte](file://docs-ui/lib/SearchDialog.svelte)
 - [nav.ts](file://packages/docs/src/lib/nav.ts)
 - [toc.ts](file://packages/docs/src/lib/toc.ts)
 - [storage.ts](file://packages/docs/src/lib/storage.ts)
@@ -17,6 +21,14 @@
 - [types.ts](file://packages/docs/src/lib/types.ts)
 - [browser.ts](file://packages/docs/src/lib/browser.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced DocsSearch component transformed into full-featured modal dialog with keyboard navigation and ARIA attributes
+- Added new header components (DocsHeader) integrating search functionality
+- Improved PageActions utility with enhanced copy-to-clipboard functionality
+- Added Cmd/Ctrl+K keyboard shortcuts for search accessibility
+- Enhanced focus management and proper ARIA combobox implementation
 
 ## Shell Compositions
 - The shell composes a sidebar-only docs layout with a top header area, scrollable article body, optional right-rail table of contents, and an optional pager footer. It owns the mobile drawer toggle and marks the article for Pagefind indexing via data attributes.
@@ -42,6 +54,71 @@ A --> G["Mobile Drawer Toggle"]
 - [DocsShell.svelte:10-36](file://packages/docs/src/lib/DocsShell.svelte#L10-L36)
 - [DocsShell.svelte:58-73](file://packages/docs/src/lib/DocsShell.svelte#L58-L73)
 - [DocsShell.svelte:76-145](file://packages/docs/src/lib/DocsShell.svelte#L76-L145)
+
+## Enhanced Search Components
+**Updated** Enhanced DocsSearch component now provides a full-featured modal dialog with comprehensive accessibility features and keyboard navigation support.
+
+- **Modal Dialog**: Native `<dialog>` element with `showModal()` API for proper focus trapping and backdrop handling
+- **Keyboard Navigation**: Full keyboard support including ArrowUp/ArrowDown for result navigation, Enter to select, Escape to close, and Cmd/Ctrl+K global shortcut
+- **ARIA Attributes**: Complete ARIA 1.2 combobox implementation with `role="combobox"`, `aria-activedescendant`, `aria-controls`, and `aria-expanded` states
+- **Focus Management**: Automatic focus restoration to trigger element on dialog close, proper focus trapping within modal
+- **Accessibility Features**: Live regions for screen reader announcements, proper labeling, and semantic HTML structure
+- **Pagefind Integration**: Dynamic loading of Pagefind runtime with graceful degradation when index is unavailable
+- **Debounced Search**: Optimized search with 160ms debounce to prevent excessive API calls
+
+```mermaid
+sequenceDiagram
+participant User as "User"
+participant Trigger as "Search Trigger"
+participant Dialog as "Search Dialog"
+participant Input as "Search Input"
+participant Pagefind as "Pagefind API"
+User->>Trigger : Click or Cmd/Ctrl+K
+Trigger->>Dialog : showModal()
+Dialog->>Input : Focus input
+User->>Input : Type query
+Input->>Input : Debounce (160ms)
+Input->>Pagefind : search(query)
+Pagefind-->>Input : Results
+Input->>Dialog : Display results
+User->>Input : Navigate with arrows
+Input->>Dialog : Highlight active result
+User->>Input : Press Enter
+Input->>Dialog : Navigate to selected URL
+Dialog->>Dialog : Close and restore focus
+```
+
+**Diagram sources**
+- [DocsSearch.svelte:110-175](file://packages/docs/src/lib/DocsSearch.svelte#L110-L175)
+- [DocsSearch.svelte:145-179](file://packages/docs/src/lib/DocsSearch.svelte#L145-L179)
+- [DocsSearch.svelte:180-280](file://packages/docs/src/lib/DocsSearch.svelte#L180-L280)
+
+**Section sources**
+- [DocsSearch.svelte:1-280](file://packages/docs/src/lib/DocsSearch.svelte#L1-280)
+
+## Header Components
+**New** Enhanced header components provide integrated search functionality and improved user experience.
+
+- **DocsHeader**: Sticky header with navigation toggle, brand/logo, section tabs, search integration, and theme toggle
+- **Search Integration**: Built-in search trigger with keyboard shortcut display (⌘K on Mac, Ctrl K on other platforms)
+- **Responsive Design**: Mobile-friendly with hamburger menu and adaptive layout
+- **Theme Support**: Integrated theme toggle with system preference detection
+- **GitHub Integration**: Optional GitHub repository link with proper accessibility attributes
+
+**Section sources**
+- [DocsHeader.svelte:1-131](file://packages/docs/src/lib/DocsHeader.svelte#L1-131)
+
+## Page Actions Utilities
+**Enhanced** PageActions component provides streamlined page utilities with improved copy-to-clipboard functionality.
+
+- **Copy to Clipboard**: Enhanced markdown copying with state management (idle/copied/error states)
+- **Scroll to Top**: Smooth scrolling back to page top
+- **Print Support**: Native print functionality for page export
+- **Configurable Actions**: Flexible action items with customizable labels and URLs
+- **Accessibility**: Proper ARIA attributes and keyboard navigation support
+
+**Section sources**
+- [PageActions.svelte:1-179](file://packages/docs/src/lib/PageActions.svelte#L1-179)
 
 ## Navigation Behaviors Present in Code
 - Sidebar composition: renders brand/title/subtitle, optional search filter, and a list of sections rendered as accordions. Filtering expands matching groups and hides non-matching items.
@@ -117,7 +194,7 @@ Pager --> Render
 ```
 
 **Diagram sources**
-- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-L26)
+- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-26)
 - [nav.ts:71-92](file://packages/docs/src/lib/nav.ts#L71-L92)
 - [nav.ts:130-177](file://packages/docs/src/lib/nav.ts#L130-L177)
 - [nav.ts:191-211](file://packages/docs/src/lib/nav.ts#L191-L211)
@@ -125,7 +202,7 @@ Pager --> Render
 - [toc.ts:16-47](file://packages/docs/src/lib/toc.ts#L16-L47)
 
 **Section sources**
-- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-L26)
+- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-26)
 - [nav.ts:71-92](file://packages/docs/src/lib/nav.ts#L71-L92)
 - [nav.ts:130-177](file://packages/docs/src/lib/nav.ts#L130-L177)
 - [nav.ts:191-211](file://packages/docs/src/lib/nav.ts#L191-L211)
@@ -134,7 +211,7 @@ Pager --> Render
 
 ## Persistence
 - Open-state persistence: accordion sections and nested groups can persist their open/closed state in `localStorage` under a namespaced key derived from the nav title (or explicit `storageKey`). The sidebar reads initial state on mount and re-reads when the storage key changes (e.g., switching between multiple nav surfaces). Writes are guarded against SSR and storage errors.
-- Storage API: `readOpenState` parses and validates stored JSON, `writeOpenState` merges a single id’s boolean into the map and persists it, and `clearOpenState` removes the namespace. All operations short-circuit gracefully outside the browser.
+- Storage API: `readOpenState` parses and validates stored JSON, `writeOpenState` merges a single id's boolean into the map and persists it, and `clearOpenState` removes the namespace. All operations short-circuit gracefully outside the browser.
 - Key derivation: `navStorageKey` uses `slugify(nav.title)` unless overridden, ensuring unique namespaces per docs surface.
 
 ```mermaid
@@ -173,7 +250,7 @@ end
 
 ## Browser Acceptance Status
 - DocsShell: fully implemented; composes sidebar, breadcrumbs, pager, TOC, mobile drawer, and article wrapper with searchability flags.
-- Sidebar-only composition: implemented; the shell’s primary layout is a left sidebar with main content and optional right-rail TOC.
+- Sidebar-only composition: implemented; the shell's primary layout is a left sidebar with main content and optional right-rail TOC.
 - Accordion nav tree: implemented; sections and nested groups use native `<details>` with path-aware defaults and optional forced open during filtering.
 - Breadcrumbs: implemented; derived from nav trail with Home, base, section, and intermediate nodes.
 - Pager: implemented; computed from flattened nav leaves with previous/next links.
@@ -182,6 +259,9 @@ end
 - Mobile drawer: implemented; accessible toggle with backdrop and route-change reset.
 - localStorage open-state persistence: implemented; namespaced per nav, SSR-safe, error-tolerant.
 - Pure nav helpers with deterministic node identity: implemented; stable IDs, path normalization, slugification, breadcrumb/pager/open-state utilities.
+- **Enhanced Search**: fully implemented; modal dialog with keyboard navigation, ARIA attributes, focus management, and Cmd/Ctrl+K shortcuts.
+- **Header Components**: implemented; integrated search trigger with platform-specific keyboard hints and responsive design.
+- **Page Actions**: enhanced; improved copy-to-clipboard functionality with state management and accessibility support.
 
 **Section sources**
 - [DocsShell.svelte:10-145](file://packages/docs/src/lib/DocsShell.svelte#L10-L145)
@@ -192,7 +272,10 @@ end
 - [DocsPager.svelte:4-30](file://packages/docs/src/lib/DocsPager.svelte#L4-L30)
 - [DocsToc.svelte:6-102](file://packages/docs/src/lib/DocsToc.svelte#L6-L102)
 - [DocsPageHeader.svelte:1-17](file://packages/docs/src/lib/DocsPageHeader.svelte#L1-L17)
-- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-L26)
+- [DocsSearch.svelte:1-280](file://packages/docs/src/lib/DocsSearch.svelte#L1-280)
+- [DocsHeader.svelte:1-131](file://packages/docs/src/lib/DocsHeader.svelte#L1-131)
+- [PageActions.svelte:1-179](file://packages/docs/src/lib/PageActions.svelte#L1-179)
+- [nav.ts:13-26](file://packages/docs/src/lib/nav.ts#L13-26)
 - [nav.ts:130-177](file://packages/docs/src/lib/nav.ts#L130-L177)
 - [nav.ts:191-211](file://packages/docs/src/lib/nav.ts#L191-L211)
 - [nav-path.ts:1-37](file://packages/docs/src/lib/nav-path.ts#L1-L37)

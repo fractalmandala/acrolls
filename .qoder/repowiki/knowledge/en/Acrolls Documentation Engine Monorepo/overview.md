@@ -1,1 +1,0 @@
-pnpm workspace that composes Acrolls into a cohesive docs engine by wiring Svelte components, mdsvex compilation, SvelteKit integration, styles, CLI tooling, and example sites under a single public `acrolls` package.

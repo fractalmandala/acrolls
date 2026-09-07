@@ -1,1 +1,0 @@
-Starter SvelteKit applications demonstrating how to integrate the acrolls documentation engine, including a full docs site consumer and a minimal docs template.

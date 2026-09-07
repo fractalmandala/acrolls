@@ -1,1 +1,0 @@
-`pnpm check` runs `node --check` against every file in `bin/` and `exports/` to validate syntax before publishing; the CLI binary auto-detects whether `@acrolls/cli` is installed or falls back to a local workspace path, printing a reinstall hint if neither is found.

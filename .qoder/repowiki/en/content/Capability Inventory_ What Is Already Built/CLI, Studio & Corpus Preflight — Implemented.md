@@ -10,13 +10,27 @@
 - [docs-init.ts](file://packages/cli/src/docs-init.ts)
 - [starter.ts](file://packages/cli/src/starter.ts)
 - [util.ts](file://packages/cli/src/util.ts)
+- [api-ref.ts](file://packages/cli/src/api-ref.ts)
+- [create.ts](file://packages/cli/src/create.ts)
+- [search-index.ts](file://packages/cli/src/search-index.ts)
+- [scaffold.ts](file://packages/cli/src/scaffold.ts)
 - [cli.md](file://docs/cli.md)
+- [api-ref.test.ts](file://packages/cli/src/api-ref.test.ts)
+- [create.test.ts](file://packages/cli/src/create.test.ts)
+- [search-index.test.ts](file://packages/cli/src/search-index.test.ts)
 - [docs-init.test.ts](file://packages/cli/src/docs-init.test.ts)
 - [integrate.test.ts](file://packages/cli/src/integrate.test.ts)
 - [onboarding.test.ts](file://packages/cli/src/onboarding.test.ts)
 - [util.test.ts](file://packages/cli/src/util.test.ts)
 - [validate.test.ts](file://packages/cli/src/validate.test.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added documentation for three new CLI commands: `acrolls api-ref`, `acrolls create`, and `acrolls search-index`
+- Enhanced existing CLI capabilities with comprehensive build-time API documentation generation and project scaffolding
+- Updated command dispatching and help text to include new commands
+- Added test coverage for all new functionality
 
 ## Commands Shipped
 - `acrolls` (status): prints host detection and configuration hints; no filesystem changes.
@@ -26,6 +40,9 @@
 - `acrolls onboard [--docs-dir <path>] [--base-href <path>] [--mode foundation|default] [--style css|sass] [--check] [--non-interactive|--interactive] [--json]`: generates a versioned onboarding plan with checkpoints for install, preprocessor, styles, content, source, docs layout, document page, routes, preflight, local check, and deploy; interactive mode steps through pending checkpoints; `--check` rescans completed steps; `--json` emits a stable plan schema.
 - `acrolls validate <file.md|file.svx|directory> [--strict] [--mode authored|migration] [--on-invalid fail|error-page] [--report <file>]`: compiles Markdown/mdsvex, runs Svelte compilation, renders HTML via the shared pipeline, enforces authored frontmatter rules, and reports diagnostics per document plus a corpus summary.
 - `acrolls studio <file.md|file.svx> [--port <n>] [--no-open] [--mode foundation|default]`: starts a localhost-only server that previews the selected file as a Publication article, allows saving back to disk atomically, and exposes an API preview endpoint.
+- **NEW** `acrolls create <dir> [--name <pkg>] [--title <name>] [--base-href <path>] [--mode foundation|default] [--package-manager npm|pnpm|yarn|bun] [--force] [--dry-run]`: scaffolds a minimal, pre-wired Acrolls SvelteKit docs project with complete starter files, configuration, and four warning-free sample pages.
+- **NEW** `acrolls api-ref <spec|dir> [--out <dir>] [--format openapi|asyncapi|graphql] [--slug <name>] [--dry-run]`: generates Markdown API-reference pages from OpenAPI, AsyncAPI, or GraphQL specs with YAML frontmatter, GFM tables, and fenced examples.
+- **NEW** `acrolls search-index [--site <dir>] [--output <dir>] [--glob <pattern>] [--bundle-path <path>] [--verbose]`: builds Pagefind search bundles from built static sites using the host's own Pagefind installation.
 
 All commands are dispatched from the CLI entrypoint and exit with the stable 0/1/2 contract described below.
 
@@ -33,13 +50,97 @@ All commands are dispatched from the CLI entrypoint and exit with the stable 0/1
 - [index.ts:19-34](file://packages/cli/src/index.ts#L19-L34)
 - [index.ts:36-99](file://packages/cli/src/index.ts#L36-L99)
 - [index.ts:118-165](file://packages/cli/src/index.ts#L118-L165)
+- [index.ts:152-164](file://packages/cli/src/index.ts#L152-L164)
 - [docs-init.ts:7-37](file://packages/cli/src/docs-init.ts#L7-L37)
 - [onboarding.ts:28-54](file://packages/cli/src/onboarding.ts#L28-L54)
 - [onboarding.ts:371-441](file://packages/cli/src/onboarding.ts#L371-L441)
 - [integrate.ts:146-287](file://packages/cli/src/integrate.ts#L146-L287)
 - [validate.ts:48-88](file://packages/cli/src/validate.ts#L48-L88)
 - [studio.ts:81-321](file://packages/cli/src/studio.ts#L81-L321)
+- [api-ref.ts:256-291](file://packages/cli/src/api-ref.ts#L256-L291)
+- [create.ts:139-191](file://packages/cli/src/create.ts#L139-L191)
+- [search-index.ts:138-159](file://packages/cli/src/search-index.ts#L138-L159)
 - [cli.md:32-66](file://docs/cli.md#L32-L66)
+
+## New Command Capabilities
+
+### Project Scaffolding (`acrolls create`)
+The `create` command provides a complete project scaffolding solution for new Acrolls documentation sites:
+
+- **Complete Starter Project**: Generates a fully functional SvelteKit project with Acrolls integration including package.json, TypeScript configuration, Vite setup, and all necessary dependencies
+- **Smart Defaults**: Automatically derives package names from directories, humanizes titles, and sets appropriate base hrefs
+- **Safety First**: Refuses to scaffold into non-empty directories unless `--force` is explicitly provided, preventing accidental data loss
+- **Flexible Configuration**: Supports custom package managers, base hrefs, style presets, and naming conventions
+- **Build Integration**: Includes post-build scripts that automatically generate search indexes
+
+```mermaid
+flowchart TD
+Start(["acrolls create"]) --> CheckDir{"Directory exists?"}
+CheckDir --> |No| CreateDir["Create directory"]
+CheckDir --> |Yes| CheckEmpty{"Is directory empty?"}
+CheckEmpty --> |Yes| Proceed["Proceed with scaffold"]
+CheckEmpty --> |No| ForceCheck{"--force flag?"}
+ForceCheck --> |No| Error["Error: Directory not empty"]
+ForceCheck --> |Yes| Proceed
+Proceed --> GenerateFiles["Generate project files"]
+GenerateFiles --> WriteFiles["Write files to disk"]
+WriteFiles --> NextSteps["Print next steps"]
+NextSteps --> Exit(["Exit 0"])
+Error --> Exit
+```
+
+**Diagram sources**
+- [create.ts:90-137](file://packages/cli/src/create.ts#L90-L137)
+- [create.ts:139-191](file://packages/cli/src/create.ts#L139-L191)
+
+### API Reference Generation (`acrolls api-ref`)
+The `api-ref` command transforms API specifications into documentation-ready Markdown:
+
+- **Multi-Format Support**: Handles OpenAPI, AsyncAPI, and GraphQL specifications with automatic format detection
+- **Intelligent Parsing**: Uses optional peer dependencies (`yaml`, `graphql`) loaded lazily to avoid bundling overhead
+- **Rich Output**: Generates Markdown with YAML frontmatter, GFM tables, and syntax-highlighted code examples
+- **Batch Processing**: Processes single files or entire directories of specifications
+- **Integration Ready**: Outputs standard Markdown that integrates seamlessly with the Acrolls content pipeline
+
+```mermaid
+sequenceDiagram
+participant User as "User"
+participant CLI as "CLI"
+participant Parser as "Spec Parser"
+participant Renderer as "Markdown Renderer"
+participant FS as "Filesystem"
+User->>CLI : acrolls api-ref <spec>
+CLI->>Parser : Parse spec file/directory
+Parser->>Parser : Detect format (OpenAPI/AsyncAPI/GraphQL)
+Parser->>Renderer : Convert to markdown structure
+Renderer->>FS : Write generated .md files
+FS-->>CLI : Success confirmation
+CLI-->>User : Generated N pages
+```
+
+**Diagram sources**
+- [api-ref.ts:219-254](file://packages/cli/src/api-ref.ts#L219-L254)
+- [api-ref.ts:256-291](file://packages/cli/src/api-ref.ts#L256-L291)
+
+### Search Index Building (`acrolls search-index`)
+The `search-index` command creates client-side search capabilities:
+
+- **Post-Build Process**: Works with already-built static site output to generate search indexes
+- **Optional Dependencies**: Uses the host's own Pagefind installation, avoiding dependency conflicts
+- **Configurable Scoping**: Supports custom globs and output directories for flexible deployment scenarios
+- **Performance Optimized**: Reads indexed page counts from manifests rather than scanning files repeatedly
+- **Service Management**: Properly manages Pagefind service lifecycle to ensure clean process termination
+
+**Section sources**
+- [create.ts:15-26](file://packages/cli/src/create.ts#L15-L26)
+- [create.ts:90-137](file://packages/cli/src/create.ts#L90-L137)
+- [create.ts:139-191](file://packages/cli/src/create.ts#L139-L191)
+- [api-ref.ts:14-28](file://packages/cli/src/api-ref.ts#L14-L28)
+- [api-ref.ts:219-254](file://packages/cli/src/api-ref.ts#L219-L254)
+- [api-ref.ts:256-291](file://packages/cli/src/api-ref.ts#L256-L291)
+- [search-index.ts:6-15](file://packages/cli/src/search-index.ts#L6-L15)
+- [search-index.ts:87-136](file://packages/cli/src/search-index.ts#L87-L136)
+- [search-index.ts:138-159](file://packages/cli/src/search-index.ts#L138-L159)
 
 ## Modes & Policies
 - Onboarding modes: `foundation` and `default`, controlling which Acrolls style preset snippets are shown and applied by `onboard` and `integrate`.
@@ -88,6 +189,9 @@ Policy --> |error-page| ExitPolicy["Exit code depends on rejected .md vs .svx"]
   - Integrate prints a plan and lists applied actions; backups are written under `.acrolls/backup/<timestamp>/`.
   - Validate prints per-document diagnostics with severity, file, line/column, diagnostic code, message, and optional remediation, followed by a corpus summary line showing discovered, ready, normalized, and rejected counts.
   - Studio prints the bound URL and editing target.
+  - **NEW** Create prints scaffolded file paths and next steps with package manager-specific commands.
+  - **NEW** Api-ref prints generated page locations with format indicators and titles.
+  - **NEW** Search-index prints indexed page counts, discovered file counts, and bundle output locations.
 - JSON contracts:
   - `onboard --json` emits a versioned plan object containing `version`, `root`, `host`, `docsDir`, `baseHref`, `mode`, `style`, and `steps` where each step has `id`, `title`, optional `file`, `action`, optional `command`, optional `code`, optional `caution`, `verify`, and `completed`.
   - `validate --report <file>` writes a serializable corpus result containing `root`, `documents`, and `summary` with `discovered`, `ready`, `normalized`, `rejected`; each document includes `file`, `status`, and `diagnostics`.
@@ -123,6 +227,9 @@ CLI-->>User : exit 0 | 1 | 2
 - [index.ts:118-165](file://packages/cli/src/index.ts#L118-L165)
 - [onboarding.ts:397-411](file://packages/cli/src/onboarding.ts#L397-L411)
 - [validate.ts:48-88](file://packages/cli/src/validate.ts#L48-L88)
+- [api-ref.ts:256-291](file://packages/cli/src/api-ref.ts#L256-L291)
+- [create.ts:139-191](file://packages/cli/src/create.ts#L139-L191)
+- [search-index.ts:138-159](file://packages/cli/src/search-index.ts#L138-L159)
 - [cli.md:203-208](file://docs/cli.md#L203-L208)
 - [cli.md:315-329](file://docs/cli.md#L315-L329)
 
@@ -180,6 +287,9 @@ Studio-->>Browser : 302 redirect to /
 - `onboarding.test.ts`: validates host-aware checkpoint generation, exact route and import paths for nested base hrefs, step ordering, completion predicates for legacy and migrated source shapes, rendered cautions and deployment checks, interactive step rendering, and preserved root base href behavior.
 - `util.test.ts`: confirms argument parsing preserves the command after boolean flags and handles value flags correctly.
 - `validate.test.ts`: aggregates valid/normalized/rejected documents across fixtures, enforces authored mode semantics, reports authored frontmatter issues and links to rejected documents, prevents migration `error-page` from passing rejected executable SVX files, and preserves zero-based compiler columns in human diagnostics.
+- **NEW** `api-ref.test.ts`: validates format detection for OpenAPI, AsyncAPI, and GraphQL specs; tests YAML and GraphQL optional dependency handling; verifies markdown generation with proper frontmatter, tables, and examples; ensures directory walking and dry-run functionality.
+- **NEW** `create.test.ts`: tests project scaffolding with complete file tree generation; validates smart defaults for names, titles, and base hrefs; ensures safety mechanisms prevent scaffolding into non-empty directories; verifies package manager integration and build script generation.
+- **NEW** `search-index.test.ts`: validates Pagefind integration with optional dependency loading; tests site directory validation and error handling; verifies bundle generation with custom output paths; ensures proper service lifecycle management and error propagation.
 
 ```mermaid
 graph TB
@@ -189,6 +299,9 @@ IT["integrate.test.ts"]
 OT["onboarding.test.ts"]
 UT["util.test.ts"]
 VT["validate.test.ts"]
+AIT["api-ref.test.ts"]
+CT["create.test.ts"]
+SIT["search-index.test.ts"]
 end
 subgraph "Implementation"
 DI["docs-init.ts"]
@@ -196,12 +309,20 @@ I["integrate.ts"]
 O["onboarding.ts"]
 U["util.ts"]
 V["validate.ts"]
+AR["api-ref.ts"]
+C["create.ts"]
+SI["search-index.ts"]
+SC["scaffold.ts"]
 end
 DIT --> DI
 IT --> I
 OT --> O
 UT --> U
 VT --> V
+AIT --> AR
+CT --> C
+CT --> SC
+SIT --> SI
 ```
 
 **Diagram sources**
@@ -210,6 +331,9 @@ VT --> V
 - [onboarding.test.ts:1-211](file://packages/cli/src/onboarding.test.ts#L1-L211)
 - [util.test.ts:1-16](file://packages/cli/src/util.test.ts#L1-L16)
 - [validate.test.ts:1-95](file://packages/cli/src/validate.test.ts#L1-L95)
+- [api-ref.test.ts:1-398](file://packages/cli/src/api-ref.test.ts#L1-L398)
+- [create.test.ts:1-296](file://packages/cli/src/create.test.ts#L1-L296)
+- [search-index.test.ts:1-166](file://packages/cli/src/search-index.test.ts#L1-L166)
 
 **Section sources**
 - [docs-init.test.ts:31-67](file://packages/cli/src/docs-init.test.ts#L31-L67)
@@ -217,3 +341,6 @@ VT --> V
 - [onboarding.test.ts:15-186](file://packages/cli/src/onboarding.test.ts#L15-L186)
 - [util.test.ts:4-15](file://packages/cli/src/util.test.ts#L4-L15)
 - [validate.test.ts:10-93](file://packages/cli/src/validate.test.ts#L10-L93)
+- [api-ref.test.ts:162-398](file://packages/cli/src/api-ref.test.ts#L162-L398)
+- [create.test.ts:50-296](file://packages/cli/src/create.test.ts#L50-L296)
+- [search-index.test.ts:50-166](file://packages/cli/src/search-index.test.ts#L50-L166)

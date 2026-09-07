@@ -1,1 +1,0 @@
-Defines the pluggable content source, Standard Schema validation, multi-source merging, and frontmatter field schemas that feed Acrolls' docs navigation and routing engine.

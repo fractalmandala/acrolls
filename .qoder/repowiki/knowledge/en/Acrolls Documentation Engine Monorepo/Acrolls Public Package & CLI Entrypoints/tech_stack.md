@@ -1,1 +1,0 @@
-Node ESM package (`"type": "module"`) targeting Node ≥20.19; uses `unified`/`remark`/`rehype`/`shiki`/`mermaid` toolchain internally via bundled sub-packages; peerDepends on Svelte 5 and optionally Fractalthemer.

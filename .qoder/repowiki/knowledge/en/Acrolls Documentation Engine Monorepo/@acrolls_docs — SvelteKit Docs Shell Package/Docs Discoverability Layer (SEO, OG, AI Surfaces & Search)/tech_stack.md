@@ -1,1 +1,0 @@
-Pure TypeScript helpers plus a Svelte 5 component using runes (`$state`, `$props`); relies on external runtimes installed by the host — Satori + `@resvg/resvg-js` for OG image rendering and Pagefind for client-side full-text search.
